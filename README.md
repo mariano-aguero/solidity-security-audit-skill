@@ -1,13 +1,3 @@
-```
-        ██████╗██╗      █████╗ ██╗   ██╗██████╗ ███████╗
-       ██╔════╝██║     ██╔══██╗██║   ██║██╔══██╗██╔════╝
-       ██║     ██║     ███████║██║   ██║██║  ██║█████╗
-       ██║     ██║     ██╔══██║██║   ██║██║  ██║██╔══╝
-       ╚██████╗███████╗██║  ██║╚██████╔╝██████╔╝███████╗
-        ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
-                          ✦ CODE ✦
-```
-
 <p align="center">
   <a href="https://claude.ai/code"><img src="https://img.shields.io/badge/Claude_Code-Compatible-D97706?style=for-the-badge" alt="Claude Code Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License"></a>
