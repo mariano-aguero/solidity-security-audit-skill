@@ -187,7 +187,10 @@ Apply CEI pattern and add ReentrancyGuard...
 
 ## Changelog
 
-### v2.0 (2026-02)
+### v2.0.1 (2026-02)
+- **Updated** `CLAUDE.md` — architecture updated with 17 files, new maintenance guidelines for diff-audit, severity-decision-tree, and defi-integrations; added Cantina, Halborn, Pashov to firm list
+
+### v2.0.0 (2026-02)
 - **New**: `diff-audit.md` — re-audit workflow, remediation verification, storage layout diff
 - **New**: `severity-decision-tree.md` — Impact×Likelihood matrix, per-vuln decision trees
 - **New**: `defi-integrations.md` — Uniswap v3/v4 hooks, Chainlink, Aave, Curve, Balancer
@@ -198,7 +201,7 @@ Apply CEI pattern and add ReentrancyGuard...
 - **Updated** `industry-standards.md` — EIP-7702, EIP-1153, EIP-4844, ERC-6551, ERC-6093; audit firms table
 - **Updated** `poc-templates.md` — V4 hook drain, transient storage bypass, ERC-7702 abuse PoCs
 
-### v1.0 (2026-02)
+### v1.0.0 (2026-02)
 - Initial release: 5-phase audit workflow, 14 reference files, 280KB documentation
 
 ## Contributing
