@@ -187,6 +187,9 @@ Apply CEI pattern and add ReentrancyGuard...
 
 ## Changelog
 
+### v2.0.2 (2026-02)
+- **New**: `package.json` — project metadata for Socket and Snyk security audit compatibility
+
 ### v2.0.1 (2026-02)
 - **Updated** `CLAUDE.md` — architecture updated with 17 files, new maintenance guidelines for diff-audit, severity-decision-tree, and defi-integrations; added Cantina, Halborn, Pashov to firm list
 
