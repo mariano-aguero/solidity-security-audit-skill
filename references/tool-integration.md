@@ -9,11 +9,12 @@ Each tool serves a different purpose — use them in combination for maximum cov
 
 | Tool | Type | Developer | Best For |
 |------|------|-----------|----------|
-| **Slither** | Static analyzer | Trail of Bits | Fast vulnerability detection, CI integration |
+| **Slither** | Static analyzer | Trail of Bits | Fast vulnerability detection, CI integration, SARIF output |
 | **Aderyn** | Static analyzer | Cyfrin | Solidity-specific patterns, Foundry integration |
+| **Slang** | AST analyzer | Nomic Foundation | Deep syntax-level analysis, custom queries, node traversal |
 | **Echidna** | Property-based fuzzer | Trail of Bits | Invariant testing, complex state exploration |
 | **Medusa** | Parallel fuzzer | Trail of Bits | Faster fuzzing via go-ethereum, multi-threaded |
-| **Foundry (Forge)** | Testing/fuzzing framework | Paradigm | Unit tests, fuzz tests, gas reports, fork testing |
+| **Foundry (Forge)** | Testing/fuzzing/coverage | Paradigm | Unit tests, fuzz tests, gas reports, fork testing, coverage |
 | **Halmos** | Symbolic testing | a16z | Formal verification of Solidity properties |
 | **Certora Prover** | Formal verification | Certora | Mathematical proof of correctness |
 | **Mythril** | Symbolic execution | Consensys | Automated vulnerability detection |
@@ -76,6 +77,45 @@ slither . --print upgradeability-checks
   with:
     target: '.'
     slither-args: '--json slither-report.json'
+```
+
+### SARIF Output (for CI/CD integration)
+
+SARIF (Static Analysis Results Interchange Format) is the industry standard for
+integrating security tool output into GitHub, GitLab, and other CI systems.
+
+```bash
+# Generate SARIF output
+slither . --sarif slither.sarif
+
+# GitHub Actions: upload SARIF to Security tab
+- name: Upload Slither SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: slither.sarif
+    category: slither
+```
+
+```yaml
+# Full CI workflow with SARIF upload
+name: Slither Analysis
+on: [push, pull_request]
+jobs:
+  slither:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Slither
+        uses: crytic/slither-action@v0.4.0
+        with:
+          target: '.'
+          slither-args: '--sarif slither.sarif --json slither.json'
+          fail-on: high
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: slither.sarif
 ```
 
 ### Limitations
@@ -274,6 +314,44 @@ forge test --fork-url $ETH_RPC_URL -vvv
 
 # Fork at specific block
 forge test --fork-url $ETH_RPC_URL --fork-block-number 18000000
+```
+
+### Coverage Analysis
+
+Coverage is essential for understanding what the existing test suite exercises.
+Gaps in coverage signal areas requiring deeper manual review.
+
+```bash
+# Generate coverage report (summary in terminal)
+forge coverage
+
+# Full LCOV report for HTML visualization
+forge coverage --report lcov
+genhtml lcov.info -o coverage-html
+open coverage-html/index.html
+
+# Summary only (fastest for CI)
+forge coverage --report summary
+
+# Filter to specific contracts
+forge coverage --report summary --match-path "src/core/*"
+```
+
+**Interpreting coverage output:**
+
+| Column | Meaning |
+|--------|---------|
+| `% Lines` | Percentage of executable lines hit |
+| `% Statements` | Percentage of statements executed |
+| `% Branches` | Percentage of conditional branches taken |
+| `% Funcs` | Percentage of functions called |
+
+**Audit usage**: Functions with 0% line coverage have no test verification — manually
+review these. Branches below 80% often indicate untested edge cases (reverts, error paths).
+
+```bash
+# Identify uncovered functions quickly
+forge coverage --report summary 2>&1 | grep "| 0.00%"
 ```
 
 ### Useful Cheatcodes for Security Testing
@@ -592,7 +670,164 @@ forge test --match-test test_Gas -vvv --gas-report
 
 ---
 
-## 9. Custom Slither Detectors
+## 9. Slang — AST-Based Analysis
+
+**What it does**: `@nomicfoundation/slang` provides a production-quality Solidity
+parser and AST (Abstract Syntax Tree) that enables deep, syntax-level analysis without
+requiring compilation. Ideal for custom queries and pattern detection across large codebases.
+
+### Installation
+
+```bash
+npm install @nomicfoundation/slang
+```
+
+### Core Usage Pattern
+
+```typescript
+import { Language } from "@nomicfoundation/slang/language";
+import { NonterminalKind } from "@nomicfoundation/slang/kinds";
+
+// Parse a Solidity file
+const language = new Language("0.8.24");
+const parseOutput = language.parse(
+  NonterminalKind.SourceUnit,
+  sourceCode
+);
+
+const tree = parseOutput.tree;
+// tree is a fully typed CST (Concrete Syntax Tree)
+```
+
+### Finding All External Calls
+
+```typescript
+import { cursor } from "@nomicfoundation/slang/cursor";
+import { NonterminalKind, TerminalKind } from "@nomicfoundation/slang/kinds";
+
+function findExternalCalls(source: string): string[] {
+  const language = new Language("0.8.24");
+  const parseOutput = language.parse(NonterminalKind.SourceUnit, source);
+
+  const externalCalls: string[] = [];
+  const treeCursor = parseOutput.tree.createTreeCursor();
+
+  // Walk all MemberAccessExpression nodes (e.g., foo.bar())
+  while (treeCursor.goToNextNonterminalWithKind(NonterminalKind.MemberAccessExpression)) {
+    const text = treeCursor.node.unparse();
+    if (text.includes(".call") || text.includes(".send") || text.includes(".transfer")) {
+      externalCalls.push(text);
+    }
+    treeCursor.goToParent();
+  }
+
+  return externalCalls;
+}
+```
+
+### Detecting CEI Violations
+
+```typescript
+// Detect state updates AFTER external calls in function bodies
+function detectCEIViolations(functionBody: string): boolean {
+  const language = new Language("0.8.24");
+  const parseOutput = language.parse(NonterminalKind.FunctionBody, functionBody);
+
+  let foundExternalCall = false;
+  let foundStateUpdateAfterCall = false;
+  const treeCursor = parseOutput.tree.createTreeCursor();
+
+  while (treeCursor.goToNext()) {
+    const node = treeCursor.node;
+
+    // Detect external call patterns
+    if (node.kind === NonterminalKind.FunctionCallExpression) {
+      const text = node.unparse();
+      if (text.match(/\.(call|send|transfer)\s*[\({]/)) {
+        foundExternalCall = true;
+      }
+    }
+
+    // Detect storage writes after an external call
+    if (foundExternalCall && node.kind === NonterminalKind.AssignmentExpression) {
+      foundStateUpdateAfterCall = true;
+    }
+  }
+
+  return foundStateUpdateAfterCall;
+}
+```
+
+### Detecting Spot Price Usage
+
+```typescript
+function detectSpotPriceUsage(source: string): Array<{ line: number; text: string }> {
+  const language = new Language("0.8.24");
+  const parseOutput = language.parse(NonterminalKind.SourceUnit, source);
+  const findings: Array<{ line: number; text: string }> = [];
+
+  const spotPricePatterns = [
+    "getReserves",
+    "slot0",
+    "getSqrtRatioAtTick",
+    "getSqrtTwapX96",
+  ];
+
+  const treeCursor = parseOutput.tree.createTreeCursor();
+  while (treeCursor.goToNextNonterminalWithKind(NonterminalKind.FunctionCallExpression)) {
+    const text = treeCursor.node.unparse();
+    if (spotPricePatterns.some(p => text.includes(p))) {
+      const range = treeCursor.textRange;
+      findings.push({ line: range.start.line + 1, text });
+    }
+    treeCursor.goToParent();
+  }
+
+  return findings;
+}
+```
+
+### Running Slang Analysis in a Project
+
+```typescript
+// scan-project.ts — scan all .sol files and report spot price usage
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
+
+function scanDirectory(dir: string): void {
+  const entries = readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = join(dir, entry);
+    if (statSync(fullPath).isDirectory()) {
+      scanDirectory(fullPath);
+    } else if (entry.endsWith(".sol")) {
+      const source = readFileSync(fullPath, "utf-8");
+      const findings = detectSpotPriceUsage(source);
+      for (const f of findings) {
+        console.log(`${fullPath}:${f.line} — ${f.text.slice(0, 80)}`);
+      }
+    }
+  }
+}
+
+scanDirectory("./src");
+```
+
+### When to Use Slang vs Slither
+
+| Task | Use Slang | Use Slither |
+|------|-----------|-------------|
+| Custom syntax pattern search | ✓ | — |
+| Requires no compilation | ✓ | — |
+| Pre-built vulnerability detectors | — | ✓ |
+| Control flow analysis | — | ✓ |
+| Dataflow / taint analysis | — | ✓ |
+| Parse invalid/partial Solidity | ✓ | — |
+| IDE / language server integration | ✓ | — |
+
+---
+
+## 10. Custom Slither Detectors
 
 Create protocol-specific detectors for patterns Slither doesn't catch by default.
 
@@ -709,6 +944,9 @@ slither . --detect my-detector,spot-price,missing-slippage
 
 # Run all detectors including custom
 slither . --detect all
+
+# Output as SARIF (for CI integration)
+slither . --detect my-detector --sarif custom-findings.sarif
 ```
 
 ### Useful Detector Patterns
