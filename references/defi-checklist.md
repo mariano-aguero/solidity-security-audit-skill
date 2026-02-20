@@ -227,6 +227,135 @@ Specialized security checklist organized by protocol type.
 
 ---
 
+## Restaking & Liquid Restaking Tokens (EigenLayer, Renzo, Kelp, Mellow style)
+
+Restaking protocols allow staked ETH (or LSTs) to be re-used as economic security
+for other services (AVSs). LRT protocols wrap restaked positions into liquid tokens.
+
+### Core Restaking Logic
+- [ ] Is the slashing mechanism from the underlying AVS correctly propagated to LRT holders?
+- [ ] Can an AVS slash cause the LRT to be temporarily under-collateralized?
+- [ ] Is there a circuit breaker if slashing exceeds a threshold percentage?
+- [ ] Are withdrawal queues correctly ordered (EigenLayer has a 7-day delay)?
+- [ ] Can the restaking strategy be changed by admin while user funds are deposited?
+
+### Operator & AVS Trust
+- [ ] Is the operator set permissioned or permissionless?
+- [ ] Can a single operator control a majority of restaked capital?
+- [ ] Is there delegation concentration risk (too many users delegating to one operator)?
+- [ ] What happens if an AVS is decommissioned while funds are still delegated to it?
+- [ ] Can AVS conditions be modified post-delegation without user consent?
+
+### Share Price & Accounting
+- [ ] Is the LRT share price calculated from total underlying assets including pending rewards?
+- [ ] Can queued withdrawals affect the share price calculation?
+- [ ] Is there a donation/inflation attack vector on the LRT vault?
+- [ ] Are slashing events immediately reflected in the share price?
+- [ ] Does reward compounding correctly track per-AVS yield?
+
+### Withdrawal Queue
+- [ ] Is the withdrawal queue FIFO or priority-based? Is the ordering exploitable?
+- [ ] Can the queue be griefed (spamming small withdrawals to delay large ones)?
+- [ ] Is there a maximum queue depth? What happens when it's full?
+- [ ] Are withdrawal requests properly validated against available liquidity?
+- [ ] Can an operator exit while users have pending withdrawals?
+
+### Oracle & Pricing
+- [ ] Is the LRT/ETH price determined on-chain or off-chain?
+- [ ] Can the price be manipulated by triggering a slash event?
+- [ ] If LSTs (stETH, rETH) are used as inputs, is their de-peg handled?
+- [ ] Are there circuit breakers if the LRT/ETH peg deviates by more than X%?
+
+---
+
+## Uniswap V4 Hooks Protocol
+
+V4 hooks are contracts that execute callbacks before/after pool operations.
+Protocols built on top of V4 hooks introduce additional security considerations
+beyond standard AMM security.
+
+### Hook Registration & Permissions
+- [ ] Are hook permission bits correctly set in the hook address?
+- [ ] Does the hook only request the minimum permissions it needs?
+- [ ] Is the hook address deterministic (CREATE2)? Can it be front-run?
+- [ ] Can the hook be replaced or upgraded after pools are initialized with it?
+
+### Callback Security
+- [ ] Are `beforeSwap`/`afterSwap` callbacks nonReentrant?
+- [ ] Does the hook validate `msg.sender == address(poolManager)` in all callbacks?
+- [ ] Is `hookData` validated — not blindly decoded as user-controlled input?
+- [ ] Can a malicious `hookData` cause the hook to drain tokens?
+- [ ] Do callbacks correctly handle the case where `delta` is zero?
+
+### Delta Accounting
+- [ ] Are returned `int128` delta values from callbacks correctly bounded?
+- [ ] Does the hook settle all open deltas before returning from callbacks?
+- [ ] Can unsettled deltas leave the PoolManager in an inconsistent state?
+- [ ] Are `take()` and `settle()` calls balanced within each callback?
+
+### Pool Initialization
+- [ ] Does `beforeInitialize` validate initial price and tick spacing?
+- [ ] Can a malicious actor front-run pool initialization with an extreme price?
+- [ ] Is the hook's state correctly initialized when a new pool is created with it?
+
+### Flash Accounting
+- [ ] Are flash loans via V4's `unlock()` correctly settled within the same call?
+- [ ] Can the hook's flash accounting be exploited via nested `unlock()` calls?
+- [ ] Are all currency deltas correctly net-settled at the end of the unlock callback?
+
+---
+
+## Points & Airdrop Protocols
+
+Points protocols (also called "pre-token incentive protocols") record off-chain
+or on-chain points for future airdrop allocation. Common in 2024-2025 DeFi.
+
+### Points Accounting
+- [ ] Can points be double-counted (same action recorded twice)?
+- [ ] Is there a Merkle proof or signature-based claim mechanism?
+- [ ] Can points be front-run (e.g., observing a pending large deposit and sandwiching)?
+- [ ] Is there a cap per address on total claimable points?
+- [ ] Are historical points correctly snapshotted if the accounting formula changes?
+
+### Merkle-Based Airdrop Claims
+- [ ] Is the Merkle root set by a trusted admin with no timelock? (rug risk)
+- [ ] Is there a deadline for claims? What happens to unclaimed tokens?
+- [ ] Can the Merkle root be updated after claims start (retroactive exclusion)?
+- [ ] Is there protection against claiming on behalf of another address without consent?
+- [ ] Are claimed tokens tracked to prevent double-claiming?
+
+```solidity
+// VULNERABLE: no double-claim protection
+function claim(uint256 amount, bytes32[] calldata proof) external {
+    require(MerkleProof.verify(proof, merkleRoot, leaf), "invalid proof");
+    token.transfer(msg.sender, amount); // can be called twice!
+}
+
+// SECURE: track claimed addresses
+mapping(address => bool) public claimed;
+function claim(uint256 amount, bytes32[] calldata proof) external {
+    require(!claimed[msg.sender], "already claimed");
+    require(MerkleProof.verify(proof, merkleRoot,
+        keccak256(abi.encodePacked(msg.sender, amount))), "invalid proof");
+    claimed[msg.sender] = true;
+    token.transfer(msg.sender, amount);
+}
+```
+
+### Vesting & Lock-ups
+- [ ] Are vesting schedules enforced correctly (cliff + linear)?
+- [ ] Can vesting be bypassed by transferring the vesting contract's position?
+- [ ] Is early unlock/exit handled correctly with penalty calculations?
+- [ ] Are vesting tokens correctly locked (not claimable before vesting starts)?
+
+### Sybil & Manipulation Resistance
+- [ ] Is points accrual based on economic activity that can't be cheaply Sybil-attacked?
+- [ ] Can a user create multiple addresses to multiply their airdrop allocation?
+- [ ] Is there a minimum threshold to claim (to prevent dust griefing)?
+- [ ] If based on off-chain activity, is the oracle/admin that submits data trusted and audited?
+
+---
+
 ## Token-Specific Checklists
 
 ### ERC-20 Token Audit

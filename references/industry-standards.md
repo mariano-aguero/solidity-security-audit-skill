@@ -57,10 +57,52 @@ Standard used by Immunefi, Sherlock, and Code4rena for classifying findings.
 | EIP | Title | Security Relevance |
 |-----|-------|--------------------|
 | EIP-712 | Typed Structured Data Hashing | Prevents signature replay across dApps |
+| EIP-1153 | Transient Storage Opcodes | tload/tstore — new reentrancy guard pattern, new collision risks |
 | EIP-1967 | Standard Proxy Storage Slots | Prevents storage collision in proxies |
 | EIP-2098 | Compact Signature Representation | Prevents signature malleability |
 | EIP-2612 | Permit (Gasless Approvals) | New approval attack surface |
-| EIP-4337 | Account Abstraction | New MEV and bundler trust vectors |
+| EIP-4337 | Account Abstraction via EntryPoint | New MEV, bundler trust, paymaster drain vectors |
 | EIP-4626 | Tokenized Vault Standard | Share inflation attacks |
-| EIP-6780 | SELFDESTRUCT Restriction | Changed selfdestruct behavior |
-| EIP-7201 | Namespaced Storage Layout | Prevents storage collision |
+| EIP-4844 | Shard Blob Transactions | Blob availability window, L2 data cost changes |
+| EIP-5792 | Wallet Call API | Batch transactions — new AA interaction surface |
+| EIP-6093 | Custom Errors for ERC Tokens | Standardized revert reasons — spoofing risk if checked naively |
+| EIP-6551 | Token-Bound Accounts (TBA) | NFTs owning assets — new ownership/reentrancy attack surface |
+| EIP-6780 | SELFDESTRUCT Restriction | Changed selfdestruct behavior post-Cancun |
+| EIP-7201 | Namespaced Storage Layout | Prevents storage collision in upgradeable contracts |
+| EIP-7702 | Set Code for EOAs | EOAs can become smart accounts — delegation and replay risks |
+
+---
+
+## Leading Audit Firms & Methodologies
+
+Reference for understanding how severity classifications map across firms:
+
+| Firm | Known For | Severity Scale |
+|------|-----------|---------------|
+| **Trail of Bits** | Deep research, custom tools (Slither, Echidna, Medusa) | Critical / High / Medium / Low / Informational |
+| **OpenZeppelin** | Secure contract libraries, formal reviews | Critical / High / Medium / Low / Informational |
+| **Consensys Diligence** | MythX, Scribble formal specs | Critical / High / Medium / Low |
+| **Cyfrin** | Foundry-native, CodeHawks competitive audits | Critical / High / Medium / Low / Gas / Informational |
+| **Sherlock** | Contest platform, on-chain insurance model | High / Medium (no Critical/Low — mapped to these two) |
+| **Code4rena** | Contest platform, warden community | Critical / High / Medium / Low / QA / Gas |
+| **Spearbit / Cantina** | Elite researcher network, Cantina competitions | Critical / High / Medium / Low / Informational |
+| **Halborn** | Security operations, blockchain-specific | Critical / High / Medium / Low / Informational |
+| **Pashov Audit Group** | Boutique, complex DeFi protocols | Critical / High / Medium / Low / Informational |
+| **Guardian Audits** | Competitive audits, DeFi / GameFi focus | Critical / High / Medium / Low |
+| **Immunefi** | Bug bounty platform, largest payouts | Critical / High / Medium / Low (bounty-aligned) |
+
+### Sherlock vs Code4rena Severity Mapping
+
+Sherlock only uses **High** and **Medium** in contest reports. When porting:
+- Critical → High (Sherlock)
+- High → High (Sherlock)
+- Medium → Medium (Sherlock)
+- Low / QA → Not rewarded in Sherlock contests (typically)
+
+### Immunefi Critical Payout Criteria
+
+Immunefi Critical pays for:
+- Direct theft of funds (any amount)
+- Permanent freezing of funds
+- Protocol insolvency
+- Governance takeover

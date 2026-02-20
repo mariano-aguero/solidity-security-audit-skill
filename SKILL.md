@@ -15,7 +15,10 @@ description: >
   "selfdestruct", "reentrancy guard", "access control vulnerability",
   "storage collision", "proxy upgrade security", "smart contract exploit",
   "L2 security", "cross-chain", "bridge security", "sequencer", "LayerZero", "CCIP",
-  "account abstraction", "ERC-4337", "smart account", "paymaster", "bundler", or "UserOperation".
+  "account abstraction", "ERC-4337", "smart account", "paymaster", "bundler", "UserOperation",
+  "re-audit", "diff audit", "remediation review", "fix verification", "Uniswap v4 hooks",
+  "Chainlink integration", "Aave integration", "flash loan receiver", "ERC-4626 vault",
+  "restaking", "EigenLayer", "severity classification", "severity decision".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -28,7 +31,22 @@ Perform professional-grade smart contract security audits following methodologie
 established by the world's leading Web3 security firms. Produce actionable,
 severity-classified findings with remediation guidance.
 
-## Audit Workflow
+## Audit Mode Selection
+
+Before starting, identify the audit mode:
+
+| Mode | When to Use | Entry Point |
+|------|-------------|-------------|
+| **Full Audit** | First-time review of a codebase | Phases 1–5 below |
+| **Re-audit / Diff** | Previous audit exists; team applied fixes or added features | `references/diff-audit.md` |
+| **Integration Review** | Contract integrates Uniswap, Chainlink, Aave, Curve, etc. | `references/defi-integrations.md` + Phase 3 |
+| **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` |
+
+For severity classification guidance at any point, consult `references/severity-decision-tree.md`.
+
+---
+
+## Full Audit Workflow
 
 Execute audits in this order. Each phase builds on the previous one.
 
@@ -184,6 +202,11 @@ patterns, consult these reference files:
 - `references/l2-crosschain.md` — L2 sequencer risks, bridge security, cross-chain patterns
 - `references/account-abstraction.md` — ERC-4337 security: accounts, paymasters, bundlers
 - `references/exploit-case-studies.md` — Real-world exploits analyzed (DAO, Euler, Curve, etc.)
+
+### New in v2
+- `references/diff-audit.md` — Re-audit and change review methodology
+- `references/severity-decision-tree.md` — Structured severity classification decision trees
+- `references/defi-integrations.md` — Secure integration patterns: Uniswap v3/v4, Chainlink, Aave, Curve, Balancer
 
 Load these files as needed based on the specific audit context.
 
