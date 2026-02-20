@@ -87,7 +87,13 @@ The skill supports multiple audit modes depending on context:
 ```bash
 # Static analysis
 slither . --sarif slither.sarif        # SARIF for GitHub Security tab
-aderyn .                                # Complementary analysis
+aderyn .                               # Complementary fast AST-based analysis
+
+# Symbolic execution
+halmos                                 # Requires check_* test functions
+
+# Property fuzzing
+echidna . --contract MyContract        # Requires echidna_* test functions
 
 # Coverage analysis
 forge coverage --report summary        # Identify untested functions
@@ -186,6 +192,9 @@ Apply CEI pattern and add ReentrancyGuard...
 ```
 
 ## Changelog
+
+### v2.0.3 (2026-02)
+- **Updated** `README.md` — Echidna and Halmos added to Tool Integration section with usage examples (`echidna_*` and `check_*` function conventions); explicit install commands for both tools
 
 ### v2.0.2 (2026-02)
 - **New**: `package.json` — project metadata for Socket and Snyk security audit compatibility
