@@ -786,11 +786,16 @@ The behavior is compatible but gas costs differ.
 | Base | `0xBCF85224fc0756B9Fa45aA7892530B47e10b6433` |
 | Metis | `0x58218ea7422255EBE94e56b504035a7A0Cd0f4b3` |
 | Scroll | `0x45c2b8C204568A03Dc7A2E32B71D67Fe97F908A9` |
-| Linea | Not available — use alternative checks |
-| zkSync Era | Not available — use alternative checks |
+| Linea | Not available — implement block-time circuit breaker |
+| zkSync Era | Not available — implement block-time circuit breaker |
 
 > **Note**: Always verify feed addresses against the official Chainlink documentation
 > before deployment — addresses can change between testnets and mainnets.
+>
+> **For Linea and zkSync Era** (no Chainlink sequencer feed): use an alternative
+> liveness check. One pattern: track the last block timestamp and revert if
+> `block.timestamp - lastUpdate > MAX_LAG` (e.g., 10 minutes). Another: integrate
+> an off-chain keeper that pauses the protocol if block production stalls.
 
 ```solidity
 // Standard sequencer check

@@ -339,9 +339,8 @@ abstract contract VaultStorage {
         uint256 totalDeposits;
     }
 
-    // keccak256(abi.encode(uint256(keccak256("vault.storage.main")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant MAIN_STORAGE_LOCATION =
-        0x1234...00;
+        keccak256(abi.encode(uint256(keccak256("vault.storage.main")) - 1)) & ~bytes32(uint256(0xff));
 
     function _getMainStorage() internal pure returns (MainStorage storage $) {
         assembly {
@@ -474,4 +473,45 @@ contract CircuitBreaker {
         // Protected by daily limit
     }
 }
+
+---
+
+## Pull Payment Pattern
+
+Eliminates push-payment DoS where a malicious recipient's `receive()` reverts,
+blocking all withdrawals. Instead, recipients pull their own funds.
+
+```solidity
+// VULNERABLE: push payment — one failed recipient blocks everyone
+function distributeRewards(address[] calldata recipients, uint256[] calldata amounts) external {
+    for (uint i = 0; i < recipients.length; i++) {
+        (bool ok,) = recipients[i].call{value: amounts[i]}("");
+        require(ok, "Transfer failed"); // attacker deploys contract that reverts here
+    }
+}
+
+// SECURE: pull payment — recipients withdraw themselves
+contract PullPayment {
+    mapping(address => uint256) public pendingWithdrawals;
+
+    // Accounting only — no external call
+    function _creditReward(address recipient, uint256 amount) internal {
+        pendingWithdrawals[recipient] += amount;
+    }
+
+    // Each user pulls their own funds
+    function withdraw() external {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        require(amount > 0, "Nothing to withdraw");
+
+        pendingWithdrawals[msg.sender] = 0; // CEI: clear before transfer
+        (bool ok,) = msg.sender.call{value: amount}("");
+        require(ok, "Transfer failed");
+    }
+}
+```
+
+When to use: any pattern where ETH/tokens are distributed to multiple addresses
+(rewards, refunds, auction proceeds). OpenZeppelin's `PullPayment` base contract
+provides a ready implementation.
 ```

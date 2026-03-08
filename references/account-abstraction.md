@@ -617,6 +617,75 @@ function validateUserOp(
 
 ---
 
+## EIP-7579 — Modular Smart Accounts
+
+EIP-7579 standardizes how **modules** attach to smart accounts. As of 2025, the
+major wallets (Kernel/ZeroDev, Alchemy Modular Account, Biconomy Nexus, Safe7579)
+all implement it. Auditing a modular account adds new attack surfaces beyond ERC-4337.
+
+### Module Types and Risks
+
+| Module Type | Role | Key Risks |
+|-------------|------|-----------|
+| **Validator** | Signature verification | Bypass validation, replay across accounts |
+| **Executor** | Execute arbitrary calls | Unbounded permissions, reentrancy |
+| **Fallback** | Handle unknown calldata | Selector collision with account functions |
+| **Hook** | Pre/post execution checks | Hook ordering bugs, DoS via reverting hook |
+
+### Installation Race Condition
+
+```solidity
+// VULNERABLE: no check if module is already installed
+function installModule(uint256 moduleType, address module, bytes calldata data)
+    external onlyEntryPointOrSelf
+{
+    // If called twice, second install overwrites config without event
+    _modules[moduleType][module] = true;
+    IModule(module).onInstall(data);
+}
+
+// SECURE: guard against re-installation
+function installModule(uint256 moduleType, address module, bytes calldata data)
+    external onlyEntryPointOrSelf
+{
+    require(!_modules[moduleType][module], "Already installed");
+    _modules[moduleType][module] = true;
+    IModule(module).onInstall(data);
+}
+```
+
+### Hook Ordering Manipulation
+
+If hooks run in insertion order and an attacker can install a hook that front-runs
+the real validator, they may intercept or block valid operations. Check:
+- [ ] Hook installation is restricted (only account owner/EntryPoint)
+- [ ] Hook execution order is deterministic and not manipulable
+- [ ] A reverting hook cannot permanently DoS the account (consider try/catch)
+
+### Selector Collision
+
+Fallback modules handle selectors not implemented by the account. An attacker
+could install a fallback that intercepts `execute()` or `validateUserOp()` if
+those functions are not explicitly guarded as native selectors.
+
+```
+[ ] Native account function selectors cannot be registered as fallback handlers
+[ ] Fallback module cannot shadow validator or executor interfaces
+```
+
+### Cross-Account Module Reuse
+
+EIP-7579 modules are deployed once and reused across many accounts. A bug in a
+shared module affects ALL accounts using it.
+
+```
+[ ] Module does not store per-account state in a way that can be cross-contaminated
+[ ] Module initialization (onInstall) isolates state per account address
+[ ] Uninstalling a module fully clears its per-account state
+```
+
+---
+
 ## Entry Point Interaction
 
 ```solidity

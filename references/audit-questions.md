@@ -308,6 +308,44 @@ function emergencyWithdraw() external { ... }
 
 ---
 
+## receive() / fallback() Functions
+
+```solidity
+receive() external payable { ... }
+fallback() external payable { ... }
+```
+
+### Questions
+- [ ] Does `receive()` / `fallback()` contain logic, or just accept ETH?
+- [ ] If it contains logic: does it follow CEI? (It can be called mid-transaction as a reentrancy callback)
+- [ ] Can an attacker trigger it deliberately via `.call{value: 0}("")`?
+- [ ] Does the logic update state? If yes, is reentrancy guarded?
+- [ ] Is there a `fallback()` that shadows expected selectors?
+- [ ] For proxies: does `fallback()` correctly delegate to implementation?
+- [ ] Is the 2300 gas stipend sufficient for the logic in `receive()`?
+- [ ] If `fallback()` handles arbitrary calldata, can it be called with a valid function selector?
+
+---
+
+## multicall() / batchCall() Functions
+
+```solidity
+function multicall(bytes[] calldata data) external returns (bytes[] memory results) { ... }
+```
+
+### Questions
+- [ ] Is `msg.value` forwarded to sub-calls? If yes: can the same ETH be counted multiple times?
+  - **Classic vector**: `multicall([deposit(), deposit()])` with `msg.value = 1 ether` credits 2 ETH
+- [ ] Is `delegatecall` used inside multicall? (ERC-2771 + delegatecall multicall allows caller spoofing)
+- [ ] Can a malicious sub-call reenter an outer function that hasn't updated state yet?
+- [ ] Is `msg.sender` preserved correctly across sub-calls?
+- [ ] Can multicall be used to atomically violate an invariant that a single call wouldn't?
+  - Example: deposit() + withdraw() in one tx to bypass cooldown
+- [ ] Are there functions intentionally excluded from multicall? Is that exclusion enforced?
+- [ ] Can failure of one sub-call cause unexpected state in other sub-calls (partial execution)?
+
+---
+
 ## Quick Reference: Red Flags
 
 When you see these patterns, investigate immediately:
@@ -324,3 +362,8 @@ When you see these patterns, investigate immediately:
 | Missing `nonReentrant` on payable | Reentrancy |
 | `getReserves()` for pricing | Flash loan manipulation |
 | Voting with live balances | Flash loan governance |
+| `msg.value` inside `multicall` | Double-spend ETH |
+| `assembly` without bounds checks | Memory corruption |
+| `block.prevrandao` for randomness | Validator manipulation |
+| `delegatecall` inside `multicall` | msg.sender spoofing (ERC-2771) |
+| `receive()` with state writes | Reentrancy callback entry point |

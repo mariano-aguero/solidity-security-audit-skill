@@ -50,6 +50,44 @@ For severity classification guidance at any point, consult `references/severity-
 
 Execute audits in this order. Each phase builds on the previous one.
 
+### Phase 0 — Threat Modeling
+
+Before touching code, build a mental model of what the protocol does and what
+can go wrong economically. This shapes where you spend time in Phase 3.
+
+1. **Map the actors**: who interacts with this protocol?
+   - Unprivileged users, liquidity providers, borrowers
+   - Privileged roles: admin, guardian, keeper, fee recipient
+   - External actors: MEV bots, flash loan attackers, liquidators, governance participants
+
+2. **Identify the crown jewels**: what assets or rights are at risk?
+   - User funds locked in the protocol
+   - Protocol-owned reserves or insurance funds
+   - Governance control (ability to upgrade, change parameters, drain)
+
+3. **Define critical invariants**: what must NEVER be false?
+   - Solvency: total liabilities ≤ total assets
+   - Accounting: sum of individual balances = tracked total
+   - Access: only authorized callers can execute privileged operations
+
+4. **Trace trust boundaries**: what external systems does this protocol trust?
+   - Oracles (Chainlink, TWAP, custom)
+   - External protocol integrations (Uniswap, Aave, Curve)
+   - Bridging / messaging layers (LayerZero, CCIP, Wormhole)
+   - Multisig signers or governance
+
+5. **Estimate MEV surface**: what operations create profitable ordering opportunities?
+   - Liquidations, arbitrage, sandwich-able swaps
+   - Front-runnable reveals, claims, or settlements
+
+6. **Note upgrade/admin blast radius**: if the admin key or a multisig is compromised,
+   what is the maximum damage? Is there a timelock? A pause mechanism?
+
+Output: a 5–10 line threat summary that focuses the manual review in Phase 3 on
+the highest-value attack paths. Skip this only for Quick Scan mode.
+
+---
+
 ### Phase 1 — Reconnaissance
 
 1. Identify the Solidity version, compiler settings, and framework (Hardhat/Foundry)

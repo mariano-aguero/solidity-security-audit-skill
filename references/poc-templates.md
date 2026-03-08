@@ -688,15 +688,13 @@ contract MaliciousWalletImpl {
 
 // Secure implementation for comparison
 contract SecureWalletImpl {
-    // Owner set at construction — cannot be re-initialized
-    address public immutable INITIAL_OWNER;
-    bool private _initialized;
+    // Uses ERC-7201 namespaced storage to isolate state across delegations.
+    // In ERC-7702, each EOA has its own storage space, so $.owner == address(0)
+    // correctly identifies an EOA that has not yet been initialized — regardless
+    // of which EOA is delegating to this implementation.
+    // There is no constructor: ERC-7702 implementations do not run constructors
+    // for the delegating EOA; state is set via initialize() instead.
 
-    constructor() {
-        INITIAL_OWNER = msg.sender; // deployer — not the EOA
-    }
-
-    // Uses ERC-7201 namespaced storage to avoid collision
     /// @custom:storage-location erc7201:wallet.storage
     struct WalletStorage {
         address owner;
@@ -710,7 +708,11 @@ contract SecureWalletImpl {
         assembly { $.slot := _WALLET_STORAGE }
     }
 
+    // One-time initialization: owner can only be set once per EOA.
+    // $.owner == address(0) is the guard — safe because ERC-7201 namespacing
+    // ensures this slot is isolated from other implementations.
     function initialize(address _owner) external {
+        require(_owner != address(0), "zero owner");
         WalletStorage storage $ = _getStorage();
         require($.owner == address(0), "already initialized");
         $.owner = _owner;

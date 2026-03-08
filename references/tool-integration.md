@@ -961,3 +961,138 @@ slither . --detect my-detector --sarif custom-findings.sarif
 | tx.origin usage | Phishing vulnerability |
 | delegatecall to variable | Code injection |
 | Unchecked array access | Out of bounds |
+
+---
+
+## 11. Mythril (Symbolic Execution)
+
+**What it does**: Performs symbolic execution on EVM bytecode to detect security
+vulnerabilities. Works without source code — analyzes compiled bytecode directly.
+
+### Usage
+
+```bash
+# Analyze a Solidity file
+myth analyze contract.sol
+
+# Analyze deployed contract via RPC
+myth analyze -a 0xContractAddress --rpc mainnet
+
+# Analyze with increased analysis depth
+myth analyze contract.sol --execution-timeout 120
+
+# JSON output for CI integration
+myth analyze contract.sol -o json
+
+# List all detectors
+myth list-detectors
+```
+
+### Key Detectors
+
+- Integer overflow/underflow
+- Reentrancy (ETH theft via external calls)
+- Timestamp dependence
+- Unprotected selfdestruct
+- Delegatecall to user-controlled address
+- Unprotected ether withdrawal
+- Assertion violations
+
+### When to Use
+
+Mythril excels at **bytecode-level analysis** — useful when source is unavailable
+(e.g., auditing deployed contracts without verified source). It can find bugs that
+Slither misses because Slither operates at the source level.
+
+```bash
+# Install
+pip install mythril
+
+# Analyze bytecode directly
+myth analyze --bin-runtime <bytecode_hex>
+```
+
+### Limitations
+
+Mythril is slow on complex contracts (path explosion). Set `--execution-timeout`
+to cap analysis time. Not recommended as the primary tool — use after Slither/Aderyn
+to catch missed patterns, or for unverified bytecode analysis.
+
+---
+
+## 12. Manticore (Symbolic Execution + EVM Simulation)
+
+**What it does**: Full EVM simulation with symbolic execution. Unlike Mythril,
+Manticore can simulate multi-transaction attack sequences and has a programmatic
+Python API for writing custom analyses.
+
+### Usage
+
+```bash
+# Run default analysis on a Solidity file
+manticore contract.sol
+
+# With Docker (recommended — avoids dependency issues)
+docker run --rm -v "$(pwd)":/workdir trailofbits/manticore:latest \
+  manticore /workdir/contract.sol
+
+# Run with specific contract
+manticore contract.sol --contract MyContract
+
+# Output to directory
+manticore contract.sol --workspace ./manticore-output
+```
+
+### Programmatic API (Python)
+
+```python
+from manticore.ethereum import ManticoreEVM
+
+m = ManticoreEVM()
+
+# Deploy contract
+with open("contract.sol") as f:
+    source = f.read()
+
+owner = m.create_account(balance=10**18)
+contract = m.solidity_create_contract(source, owner=owner, contract_name="Vault")
+
+# Create symbolic user
+user = m.create_account(balance=10**18)
+
+# Symbolic call — Manticore explores all possible inputs
+amount = m.make_symbolic_value()
+with m.transaction(caller=user):
+    contract.withdraw(amount)
+
+# Check for properties
+for state in m.all_states:
+    world = state.platform
+    if world.get_balance(contract.address) < 0:
+        print(f"Found state where balance goes negative: {state}")
+
+m.finalize()
+```
+
+### When to Use
+
+- **Multi-transaction vulnerability analysis**: attacks requiring a sequence of calls
+  (e.g., approve → transferFrom → withdraw) are better modeled in Manticore
+- **Custom property verification**: write Python scripts to check protocol-specific
+  invariants that no off-the-shelf tool covers
+- **Controlled symbolic analysis**: when you need to constrain the analysis to
+  a specific code path or attack vector
+
+### Limitations
+
+Manticore is the slowest tool in the standard toolkit. Expect minutes-to-hours
+on non-trivial contracts. Use it last, after Slither/Echidna/Foundry, targeted
+at the specific functions or paths you want to prove safe.
+
+```bash
+# Install (pip, requires Python 3.8+)
+pip install manticore[native]
+
+# Or via Trail of Bits Docker toolbox (includes all tools)
+docker pull ghcr.io/trailofbits/eth-security-toolbox:nightly
+```
