@@ -484,10 +484,12 @@ blocking all withdrawals. Instead, recipients pull their own funds.
 
 ```solidity
 // VULNERABLE: push payment — one failed recipient blocks everyone
-function distributeRewards(address[] calldata recipients, uint256[] calldata amounts) external {
-    for (uint i = 0; i < recipients.length; i++) {
-        (bool ok,) = recipients[i].call{value: amounts[i]}("");
-        require(ok, "Transfer failed"); // attacker deploys contract that reverts here
+contract PushDistributor {
+    function distributeRewards(address[] calldata recipients, uint256[] calldata amounts) external {
+        for (uint i = 0; i < recipients.length; i++) {
+            (bool ok,) = recipients[i].call{value: amounts[i]}("");
+            require(ok, "Transfer failed"); // attacker deploys contract that reverts here
+        }
     }
 }
 
@@ -515,3 +517,121 @@ contract PullPayment {
 When to use: any pattern where ETH/tokens are distributed to multiple addresses
 (rewards, refunds, auction proceeds). OpenZeppelin's `PullPayment` base contract
 provides a ready implementation.
+
+---
+
+## Commit-Reveal Pattern
+
+Prevents front-running by separating intent submission (commit) from execution (reveal).
+Common use cases: auctions, lotteries, NFT mints, on-chain RNG.
+
+```solidity
+contract CommitReveal {
+    mapping(address => bytes32) public commitments;
+    mapping(address => bool) public revealed;
+    uint256 public commitDeadline;
+    uint256 public revealDeadline;
+
+    // Phase 1: User commits hash of their choice + salt
+    function commit(bytes32 _commitment) external {
+        require(block.timestamp < commitDeadline, "Commit phase over");
+        commitments[msg.sender] = _commitment;
+    }
+
+    // Phase 2: User reveals their actual choice
+    function reveal(uint256 choice, bytes32 salt) external {
+        require(block.timestamp >= commitDeadline, "Reveal phase not started");
+        require(block.timestamp < revealDeadline, "Reveal phase over");
+        require(!revealed[msg.sender], "Already revealed");
+
+        // Verify commitment matches — bind to msg.sender to prevent theft
+        bytes32 expected = keccak256(abi.encodePacked(msg.sender, choice, salt));
+        require(commitments[msg.sender] == expected, "Invalid reveal");
+
+        revealed[msg.sender] = true;
+        _processReveal(msg.sender, choice);
+    }
+
+    function _processReveal(address user, uint256 choice) internal virtual {}
+}
+```
+
+Key points:
+- Salt must be unpredictable and kept secret until reveal phase
+- Bind the commitment to `msg.sender` via `abi.encodePacked(msg.sender, choice, salt)` — prevents commitment theft
+- Enforce strict time windows for commit and reveal phases separately
+
+---
+
+## Timelock Pattern
+
+Delays sensitive admin operations, giving users time to exit before changes take effect.
+Standard in major DeFi protocols (Compound, Aave, Uniswap governance).
+
+```solidity
+contract Timelock {
+    uint256 public constant MIN_DELAY = 2 days;
+    uint256 public constant MAX_DELAY = 30 days;
+
+    mapping(bytes32 => bool) public queuedTransactions;
+
+    event TransactionQueued(bytes32 indexed txHash, address target, uint256 value, bytes data, uint256 eta);
+    event TransactionExecuted(bytes32 indexed txHash);
+    event TransactionCancelled(bytes32 indexed txHash);
+
+    address public immutable owner;
+
+    constructor() { owner = msg.sender; }
+
+    function queue(
+        address target,
+        uint256 value,
+        bytes calldata data,
+        uint256 eta
+    ) external onlyOwner returns (bytes32) {
+        require(eta >= block.timestamp + MIN_DELAY, "Delay too short");
+        require(eta <= block.timestamp + MAX_DELAY, "Delay too long");
+
+        bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
+        queuedTransactions[txHash] = true;
+
+        emit TransactionQueued(txHash, target, value, data, eta);
+        return txHash;
+    }
+
+    function execute(
+        address target,
+        uint256 value,
+        bytes calldata data,
+        uint256 eta
+    ) external payable onlyOwner returns (bytes memory) {
+        bytes32 txHash = keccak256(abi.encode(target, value, data, eta));
+        require(queuedTransactions[txHash], "Not queued");
+        require(block.timestamp >= eta, "Too early");
+        require(block.timestamp <= eta + 14 days, "Expired");
+
+        queuedTransactions[txHash] = false;
+
+        (bool success, bytes memory returnData) = target.call{value: value}(data);
+        require(success, "Execution failed");
+
+        emit TransactionExecuted(txHash);
+        return returnData;
+    }
+
+    function cancel(bytes32 txHash) external onlyOwner {
+        require(queuedTransactions[txHash], "Not queued");
+        queuedTransactions[txHash] = false;
+        emit TransactionCancelled(txHash);
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
+    }
+}
+```
+
+OpenZeppelin's `TimelockController` is battle-tested — prefer it over reimplementing.
+Minimum delay for major protocols: 2–7 days. Emergency pause/guardian actions should be
+the only operations exempt from the timelock.

@@ -19,6 +19,8 @@ ecrecover(            → Signature issues
 abi.encodePacked(     → Hash collision (if 2+ dynamic types)
 transfer(             → 2300 gas limit issues
 send(                 → Silent failure risk
+onERC1155Received(    → Reentrancy hook (like ERC-777)
+IERC7702Delegation(   → EOA-as-contract risks (Pectra)
 ```
 
 ---
@@ -178,7 +180,7 @@ totalSupply == sum(balances)
 contract.balance >= trackedDeposits
 
 // ERC-4626
-previewRedeem(totalSupply) <= totalAssets
+convertToAssets(totalSupply()) <= totalAssets()  // solvency
 sharePrice only increases (no loss)
 
 // Lending

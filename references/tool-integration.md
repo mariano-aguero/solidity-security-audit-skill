@@ -19,6 +19,9 @@ Each tool serves a different purpose — use them in combination for maximum cov
 | **Certora Prover** | Formal verification | Certora | Mathematical proof of correctness |
 | **Mythril** | Symbolic execution | Consensys | Automated vulnerability detection |
 | **Manticore** | Symbolic execution | Trail of Bits | Complex multi-tx attacks, full EVM simulation |
+| **Wake** | Static analyzer + fuzzer | Ackee Blockchain | Python-based, deep data flow, Foundry-style tests |
+| **Semgrep** | Pattern matching | Semgrep Inc. | Fast regex+AST rules, CI integration, custom rules |
+| **4naly3er** | Report generator | Community | Code4rena-style automated finding lists |
 
 ---
 
@@ -1095,4 +1098,80 @@ pip install manticore[native]
 
 # Or via Trail of Bits Docker toolbox (includes all tools)
 docker pull ghcr.io/trailofbits/eth-security-toolbox:nightly
+```
+
+---
+
+## Tool Selection Matrix
+
+Quick reference for choosing the right tool. No single tool covers everything — use them in combination.
+
+| Tool | Static | Fuzz | Symbolic | No-compile | Speed | False+ | Best Use Case |
+|------|:------:|:----:|:--------:|:----------:|-------|--------|---------------|
+| **Slither** | ✓ | | | | Fast | Medium | General-purpose CI scan, 90+ built-in detectors |
+| **Aderyn** | ✓ | | | | Fast | Low | First-pass scan, clean markdown reports |
+| **Wake** | ✓ | ✓ | | | Medium | Low | Data flow analysis, Python scripting, invariants |
+| **Semgrep** | ✓ | | | ✓ | Fast | Low-Med | Custom org-specific patterns, monorepo CI |
+| **4naly3er** | ✓ | | | | Fast | Medium | Competition prep, Code4rena style reports |
+| **Foundry** | | ✓ | | | Medium | Low | Unit/fuzz/invariant tests, fork testing |
+| **Echidna** | | ✓ | | | Medium | Low | Multi-step invariant breaking, corpus reuse |
+| **Medusa** | | ✓ | | | Fast | Low | Parallel fuzzing, large codebases |
+| **Halmos** | | | ✓ | | Slow | Very Low | Prove properties for ALL inputs, no fuzzing luck |
+| **Certora** | | | ✓ | | Slow | Very Low | Mathematical proofs, high-value protocol guarantees |
+| **Mythril** | | | ✓ | ✓ | Slow | Medium | Bytecode-only analysis, unverified contracts |
+| **Manticore** | | | ✓ | | Slowest | Low | Multi-tx custom analysis, Python scripting |
+| **Slang** | ✓ | | | ✓ | Fast | N/A | Custom AST queries, IDE integration, no-compile |
+
+### Decision Guide
+
+```
+Starting an audit      → Slither + Aderyn (fast, catch low-hanging fruit)
+Invariant testing      → Foundry (quick) → Echidna (thorough) → Medusa (parallel)
+Proving correctness    → Halmos (bounded) → Certora (unbounded, expensive)
+Custom patterns        → Slither detector (Python) | Semgrep (YAML) | Slang (TypeScript AST)
+Unverified bytecode    → Mythril
+Competition prep       → 4naly3er for automated findings list
+CI/CD pipeline         → Slither + Aderyn + Semgrep (fast, all support SARIF output)
+```
+
+### Wake Quick Start
+
+```bash
+# Install
+pip install eth-wake
+
+# Run all detectors
+wake detect all
+
+# Run specific detector
+wake detect reentrancy
+
+# Print call graph
+wake print call-graph
+
+# Run tests (Foundry-compatible syntax)
+wake test
+```
+
+### Semgrep Quick Start
+
+```bash
+# Install
+pip install semgrep
+
+# Run official Solidity ruleset
+semgrep --config p/solidity .
+
+# Run Trail of Bits ruleset
+semgrep --config p/trailofbits .
+
+# Custom rule example (save as rules/missing-slippage.yaml):
+# rules:
+#   - id: missing-slippage-protection
+#     patterns:
+#       - pattern: $ROUTER.swapExactTokensForTokens($AMOUNT, 0, ...)
+#     message: "Zero minAmountOut — vulnerable to sandwich attack"
+#     severity: WARNING
+#     languages: [solidity]
+semgrep --config rules/ src/
 ```

@@ -40,7 +40,7 @@ Before starting, identify the audit mode:
 | **Full Audit** | First-time review of a codebase | Phases 1–5 below |
 | **Re-audit / Diff** | Previous audit exists; team applied fixes or added features | `references/diff-audit.md` |
 | **Integration Review** | Contract integrates Uniswap, Chainlink, Aave, Curve, etc. | `references/defi-integrations.md` + Phase 3 |
-| **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` — skip Phase 0, run Phases 1–2 only, focus Phase 3 on Critical/High patterns from `quick-reference.md` |
+| **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` — abbreviated Phase 0 (5 min max), run Phases 1–2 only, focus Phase 3 on Critical/High patterns from `quick-reference.md` |
 
 For severity classification guidance at any point, consult `references/severity-decision-tree.md`.
 
@@ -220,7 +220,7 @@ For detailed vulnerability descriptions, exploit examples, and remediation
 patterns, consult these reference files:
 
 ### Core References
-- `references/vulnerability-taxonomy.md` — 40+ vulnerability types with code examples
+- `references/vulnerability-taxonomy.md` — 50+ vulnerability types with code examples
 - `references/defi-checklist.md` — Protocol-specific checklists (lending, AMM, vaults, bridges, tokens)
 - `references/industry-standards.md` — SWC Registry, severity classification, security EIPs
 - `references/quick-reference.md` — One-page cheat sheet for rapid security assessment
