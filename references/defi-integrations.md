@@ -96,7 +96,9 @@ function swapUnsafe(uint256 amountIn) external {
 function swapSafe(uint256 amountIn, uint256 minAmountOut, uint256 deadline) external {
     require(deadline >= block.timestamp, "deadline passed");
     IERC20(tokenA).safeTransferFrom(msg.sender, address(this), amountIn);
-    IERC20(tokenA).safeApprove(address(router), amountIn);
+    // safeApprove is deprecated in OZ 5.x (has same race condition as approve).
+    // Use forceApprove (sets to 0 then to amount atomically) or safeIncreaseAllowance.
+    IERC20(tokenA).forceApprove(address(router), amountIn);
 
     uint256 amountOut = router.exactInputSingle(ISwapRouter.ExactInputSingleParams({
         tokenIn: tokenA, tokenOut: tokenB, fee: 3000,
