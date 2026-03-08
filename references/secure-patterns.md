@@ -473,6 +473,7 @@ contract CircuitBreaker {
         // Protected by daily limit
     }
 }
+```
 
 ---
 
@@ -514,4 +515,3 @@ contract PullPayment {
 When to use: any pattern where ETH/tokens are distributed to multiple addresses
 (rewards, refunds, auction proceeds). OpenZeppelin's `PullPayment` base contract
 provides a ready implementation.
-```

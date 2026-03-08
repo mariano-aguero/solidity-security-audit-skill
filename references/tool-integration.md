@@ -478,12 +478,13 @@ halmos --contract MyTest --solver-timeout-assertion 600
 
 ```solidity
 function check_withdrawNeverExceedsBalance(uint256 amount) public {
-    // Symbolic setup
-    vm.assume(amount <= maxDeposit);
-    deposit(amount);
+    uint256 balanceBefore = balanceOf(address(this));
+    vm.assume(amount > 0 && amount <= balanceBefore);
 
-    // This must hold for ALL valid amounts
-    assert(balanceOf(address(this)) >= 0);
+    withdraw(amount);
+
+    // Balance must decrease by exactly the withdrawn amount
+    assert(balanceOf(address(this)) == balanceBefore - amount);
 }
 ```
 
@@ -702,8 +703,7 @@ const tree = parseOutput.tree;
 ### Finding All External Calls
 
 ```typescript
-import { cursor } from "@nomicfoundation/slang/cursor";
-import { NonterminalKind, TerminalKind } from "@nomicfoundation/slang/kinds";
+import { NonterminalKind } from "@nomicfoundation/slang/kinds";
 
 function findExternalCalls(source: string): string[] {
   const language = new Language("0.8.24");
