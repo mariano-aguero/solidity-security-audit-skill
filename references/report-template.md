@@ -165,20 +165,33 @@ function withdraw() external nonReentrant {
 
 ## Appendix
 
+### Threat Model Summary
+
+_Produced during Phase 0. Include only for Full Audit mode._
+
+| Dimension | Assessment |
+|-----------|------------|
+| **Actors** | [e.g., users, liquidators, keepers, governance, MEV bots] |
+| **Crown Jewels** | [e.g., user funds in Vault.sol ~$XM TVL] |
+| **Critical Invariants** | [e.g., totalBorrows ≤ totalAssets at all times] |
+| **Trust Boundaries** | [e.g., Chainlink ETH/USD feed, Uniswap V3 TWAP, 3/5 multisig] |
+| **MEV Surface** | [e.g., liquidations are MEV-able; swaps have no deadline] |
+| **Admin Blast Radius** | [e.g., owner can upgrade + pause; no timelock → high risk] |
+
 ### Methodology
 
 Tools and techniques used:
 - Manual code review
 - Static analysis (Slither, Aderyn)
-- Dynamic testing (Foundry)
-- [Other tools]
+- Dynamic testing (Foundry invariant + fuzz)
+- [Other tools used]
 
 ### Test Coverage
 
-| Contract | Coverage |
-|----------|----------|
-| Contract1.sol | XX% |
-| Contract2.sol | XX% |
+| Contract | Line Coverage | Branch Coverage |
+|----------|--------------|-----------------|
+| Contract1.sol | XX% | XX% |
+| Contract2.sol | XX% | XX% |
 
 ### Disclaimer
 
@@ -292,8 +305,28 @@ Estimated loss: Up to entire pool TVL
 
 #### Recommendation
 
-Use Chainlink oracle with staleness checks, or implement TWAP with minimum
-observation window of 30 minutes.
+Use Chainlink oracle with staleness checks instead of spot reserves:
+
+```solidity
+// Before (vulnerable)
+function getCollateralValue(address user) public view returns (uint256) {
+    (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+    uint256 price = reserve1 * 1e18 / reserve0; // manipulatable
+    return userCollateral[user] * price / 1e18;
+}
+
+// After (secure)
+function getCollateralValue(address user) public view returns (uint256) {
+    (, int256 price,, uint256 updatedAt,) = priceFeed.latestRoundData();
+    require(price > 0, "Invalid price");
+    require(block.timestamp - updatedAt < 1 hours, "Stale price");
+    return userCollateral[user] * uint256(price) / 1e8; // Chainlink 8 decimals
+}
+```
+
+#### Team Response
+
+[Team's response to the finding]
 ```
 
 ---
@@ -401,6 +434,41 @@ Lock pragma to specific version: `pragma solidity 0.8.20;`
 
 ---
 
+## Gas Finding Format
+
+Gas findings use `[G-XX]` prefix. They are optional in private audits but
+required in Code4rena, Cyfrin, and Sherlock contests.
+
+```markdown
+### [G-01] Gas Finding Title
+
+**Severity**: Gas
+**Status**: Open
+**File**: `Contract.sol`
+**Lines**: L10-L15
+
+#### Description
+
+Explanation of the inefficiency and why it wastes gas.
+
+#### Gas Saved
+
+Estimated savings: ~X gas per call / ~X gas per deployment
+
+#### Recommendation
+
+```solidity
+// Before
+for (uint256 i = 0; i < array.length; i++) { ... }
+
+// After — cache length
+uint256 len = array.length;
+for (uint256 i = 0; i < len; i++) { ... }
+```
+```
+
+---
+
 ## Severity Guidelines
 
 | Severity | Criteria |
@@ -410,3 +478,4 @@ Lock pragma to specific version: `pragma solidity 0.8.20;`
 | **Medium** | Indirect loss, griefing with cost, issues requiring specific conditions |
 | **Low** | Minor issues, best practice violations, theoretical edge cases |
 | **Informational** | Code quality, gas optimizations, documentation gaps |
+| **Gas** | Unnecessary gas consumption with no security impact |

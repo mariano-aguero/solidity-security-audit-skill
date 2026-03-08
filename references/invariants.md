@@ -7,56 +7,80 @@ and verify protocol correctness.
 
 ## Universal Invariants (All Protocols)
 
-### Accounting
+> **Notation**: The spec blocks below use pseudocode to express invariant intent.
+> Scroll to the "Writing Invariant Tests in Foundry" section for compilable
+> templates. For Echidna, use `assert()` inside public functions prefixed with
+> `echidna_`. For Certora CVL, use `invariant` keyword with similar logic.
 
-```solidity
-// Total supply equals sum of all balances
-invariant totalSupply_equals_sumBalances() {
-    assert(token.totalSupply() == sum(token.balanceOf(user) for all users));
-}
+### Accounting (Specification)
 
-// Contract balance >= tracked balance
-invariant solvency() {
-    assert(address(contract).balance >= contract.totalDeposits());
-    assert(token.balanceOf(address(contract)) >= contract.totalTokenDeposits());
-}
+```text
+// Total supply equals sum of all individual balances
+// → track via ghost variable in handler (see Foundry template below)
+INVARIANT: token.totalSupply() == Σ token.balanceOf(user) for all users
 
-// No negative balances (implicit in uint, but check logic)
-invariant no_negative_balances() {
-    assert(balances[user] >= 0); // Always true for uint
-    assert(balances[user] <= totalSupply); // Sanity check
-}
+// Protocol is solvent: real holdings cover tracked obligations
+INVARIANT: address(protocol).balance >= protocol.totalDeposits()
+INVARIANT: token.balanceOf(address(protocol)) >= protocol.totalTokenDeposits()
+
+// No user balance exceeds total supply
+INVARIANT: ∀ user: balances[user] <= totalSupply
 ```
 
-### Access Control
+### Accounting (Foundry — compilable)
 
 ```solidity
-// Only authorized can call admin functions
-invariant admin_only() {
-    // After any tx, verify admin state unchanged by non-admins
-    assert(owner == previousOwner || msg.sender == previousOwner);
-}
+// Ghost variable maintained by handler to track sum of balances
+contract ProtocolHandler is Test {
+    uint256 public ghost_sumBalances;
 
-// Roles cannot escalate without proper authorization
-invariant no_privilege_escalation() {
-    assert(!hasRole(ADMIN_ROLE, user) || wasGrantedByAdmin(user));
-}
-```
+    function deposit(uint256 amount) public {
+        uint256 balBefore = protocol.balanceOf(actor);
+        // ... deposit logic
+        ghost_sumBalances += protocol.balanceOf(actor) - balBefore;
+    }
 
-### State Consistency
-
-```solidity
-// Initialized only once
-invariant single_initialization() {
-    assert(initializedCount <= 1);
-}
-
-// Paused state respected
-invariant pause_respected() {
-    if (paused) {
-        assert(no_state_changing_functions_executed());
+    function withdraw(uint256 amount) public {
+        uint256 balBefore = protocol.balanceOf(actor);
+        // ... withdraw logic
+        ghost_sumBalances -= balBefore - protocol.balanceOf(actor);
     }
 }
+
+contract InvariantTest is Test {
+    function invariant_totalSupply_equals_sumBalances() public view {
+        assertEq(token.totalSupply(), handler.ghost_sumBalances());
+    }
+
+    function invariant_solvency() public view {
+        assertGe(
+            token.balanceOf(address(protocol)),
+            protocol.totalTokenDeposits()
+        );
+    }
+}
+```
+
+### Access Control (Specification)
+
+```text
+// Admin role cannot be acquired without explicit grant from current admin
+INVARIANT: hasRole(ADMIN_ROLE, user) → granted by admin via grantRole()
+
+// Owner can only change via transferOwnership (Ownable2Step: requires acceptance)
+INVARIANT: owner != address(0)
+INVARIANT: owner transitions only through acceptOwnership()
+```
+
+### State Consistency (Specification)
+
+```text
+// Initialized exactly once
+INVARIANT: initializedCount == 1 after first valid initialize() call
+
+// Paused state blocks state-changing functions
+INVARIANT: paused == true → deposit/borrow/swap revert
+INVARIANT: paused == true → withdraw still succeeds (user protection)
 ```
 
 ---
@@ -67,28 +91,34 @@ invariant pause_respected() {
 contract ERC20Invariants is Test {
     ERC20 token;
 
-    // Total supply is constant (unless mint/burn)
-    function invariant_totalSupply_constant() public view {
-        // If no mint/burn, totalSupply unchanged
+    // Total supply tracked by ghost variable equals on-chain value
+    // (requires handler to track ghost_totalSupply via mint/burn calls)
+    function invariant_totalSupply_matches_ghost() public view {
+        assertEq(token.totalSupply(), handler.ghost_totalSupply());
     }
 
     // Transfer doesn't create or destroy tokens
+    // (verified by ghost sum — if ghost_sumBalances == totalSupply, conservation holds)
     function invariant_transfer_conservation() public view {
-        assert(
-            balanceBefore[from] + balanceBefore[to] ==
-            token.balanceOf(from) + token.balanceOf(to)
-        );
+        assertEq(token.totalSupply(), handler.ghost_sumBalances());
     }
 
-    // Allowance decreases correctly
-    function invariant_allowance_decreases() public view {
-        // After transferFrom, allowance decreased by amount
-        // Unless infinite approval
+    // Allowance after transferFrom is reduced by the transferred amount
+    // (unless it was type(uint256).max — infinite approval)
+    function invariant_allowance_decreases_after_transferFrom() public view {
+        uint256 used = handler.ghost_lastTransferFromAmount();
+        uint256 prevAllowance = handler.ghost_allowanceBefore();
+        if (prevAllowance != type(uint256).max) {
+            assertEq(
+                token.allowance(handler.ghost_owner(), handler.ghost_spender()),
+                prevAllowance - used
+            );
+        }
     }
 
-    // Zero address has no balance
+    // Zero address has no balance (tokens sent to address(0) are burned)
     function invariant_zero_address_no_balance() public view {
-        assert(token.balanceOf(address(0)) == 0);
+        assertEq(token.balanceOf(address(0)), 0);
     }
 }
 ```
@@ -147,39 +177,49 @@ contract VaultInvariants is Test {
 contract LendingInvariants is Test {
     ILendingPool pool;
 
-    // Total borrows <= total deposits
-    function invariant_borrows_lte_deposits() public view {
-        assert(pool.totalBorrows() <= pool.totalDeposits());
+    // Total borrows (including accrued interest) <= total assets held by protocol
+    // NOTE: totalBorrows can exceed original deposit principal as interest accrues —
+    // the correct solvency check is against totalAssets(), not totalDeposits().
+    function invariant_borrows_lte_assets() public view {
+        assertLe(pool.totalBorrows(), pool.totalAssets());
     }
 
-    // Utilization <= 100%
+    // Utilization <= 100% (borrows cannot exceed available liquidity)
     function invariant_utilization_bounded() public view {
-        uint256 utilization = pool.totalBorrows() * 1e18 / pool.totalDeposits();
-        assert(utilization <= 1e18);
+        if (pool.totalAssets() > 0) {
+            uint256 utilization = pool.totalBorrows() * 1e18 / pool.totalAssets();
+            assertLe(utilization, 1e18);
+        }
     }
 
-    // Interest accrual never negative
+    // Interest accrual is monotonically non-decreasing between blocks
     function invariant_interest_non_negative() public view {
-        assert(pool.totalBorrows() >= pool.previousTotalBorrows());
+        assertGe(pool.totalBorrows(), handler.ghost_previousTotalBorrows());
     }
 
-    // Health factor: liquidatable users have HF < 1
+    // Health factor: liquidatable users must have HF < 1e18 (< 1.0)
+    // Uses actors array — Solidity does not support for-each over arbitrary addresses
     function invariant_liquidation_threshold() public view {
-        for (address user in borrowers) {
+        address[] memory actors = handler.actors();
+        for (uint256 i = 0; i < actors.length; i++) {
+            address user = actors[i];
             if (pool.isLiquidatable(user)) {
-                assert(pool.healthFactor(user) < 1e18);
+                assertLt(pool.healthFactor(user), 1e18);
             }
         }
     }
 
-    // Collateral always covers debt (with LTV)
+    // Collateral always covers outstanding debt within LTV bounds
     function invariant_collateralization() public view {
-        for (address user in borrowers) {
-            uint256 collateralValue = pool.getCollateralValue(user);
-            uint256 debtValue = pool.getDebtValue(user);
-            uint256 maxLTV = pool.maxLTV();
-
-            assert(debtValue <= collateralValue * maxLTV / 1e18);
+        address[] memory actors = handler.actors();
+        for (uint256 i = 0; i < actors.length; i++) {
+            address user = actors[i];
+            if (pool.getDebtValue(user) > 0) {
+                uint256 collateralValue = pool.getCollateralValue(user);
+                uint256 debtValue = pool.getDebtValue(user);
+                uint256 maxLTV = pool.maxLTV();
+                assertLe(debtValue, collateralValue * maxLTV / 1e18);
+            }
         }
     }
 }
@@ -211,9 +251,12 @@ contract AMMInvariants is Test {
         // totalSupply * price = reserve0 + reserve1 (simplified)
     }
 
-    // No tokens created from swaps
+    // Swap conservation: k increases (or stays equal) after every swap due to fees
+    // k = reserve0 * reserve1; fees cause k to strictly increase
     function invariant_swap_conservation() public view {
-        // token0_out + token1_out <= token0_in + token1_in (minus fees)
+        (uint112 reserve0, uint112 reserve1,) = pair.getReserves();
+        uint256 currentK = uint256(reserve0) * uint256(reserve1);
+        assertGe(currentK, handler.ghost_lastK());
     }
 
     // Minimum liquidity locked
@@ -251,9 +294,18 @@ contract StakingInvariants is Test {
         assert(staking.rewardPerToken() >= previousRewardPerToken);
     }
 
-    // Unstake returns exact amount (no slashing in basic staking)
-    function invariant_unstake_amount() public view {
-        // userBalance after unstake == userBalance before - unstakedAmount
+    // Unstake returns exact amount staked (no slashing in basic staking)
+    // ghost_stakedBefore and ghost_unstakedAmount set by handler on withdraw call
+    function invariant_unstake_exact_amount() public view {
+        uint256 stakedBefore = handler.ghost_stakedBefore();
+        uint256 unstakedAmount = handler.ghost_unstakedAmount();
+        address lastActor = handler.ghost_lastActor();
+        if (unstakedAmount > 0) {
+            assertEq(
+                staking.stakedBalance(lastActor),
+                stakedBefore - unstakedAmount
+            );
+        }
     }
 }
 ```
@@ -384,4 +436,91 @@ forge test --match-test invariant -vvv
 
 # With more runs
 forge test --match-test invariant --fuzz-runs 10000
+```
+
+---
+
+## Echidna Invariant Format
+
+Echidna uses public functions prefixed with `echidna_` that return `bool`.
+No assertion library needed — returning `false` is a counterexample.
+
+```solidity
+contract ProtocolEchidnaTest {
+    Protocol protocol;
+
+    constructor() {
+        protocol = new Protocol();
+    }
+
+    // Solvency: ETH held >= tracked deposits
+    function echidna_solvency() public view returns (bool) {
+        return address(protocol).balance >= protocol.totalDeposits();
+    }
+
+    // Total supply consistency
+    function echidna_totalSupply_non_zero_after_deposit() public returns (bool) {
+        try protocol.deposit{value: 1 ether}() {
+            return protocol.totalSupply() > 0;
+        } catch {
+            return true; // revert is acceptable
+        }
+    }
+}
+```
+
+```yaml
+# echidna.yaml
+testMode: "assertion"
+testLimit: 50000
+deployer: "0x10000"
+sender: ["0x10000", "0x20000", "0x30000"]
+```
+
+See `references/tool-integration.md` section 4 (Echidna) for full configuration
+and corpus management options.
+
+---
+
+## Uniswap V3 / Concentrated Liquidity Invariants
+
+V3 replaces the global `x*y=k` with per-tick liquidity. The invariants differ
+significantly from V2.
+
+```solidity
+contract UniswapV3Invariants is Test {
+    IUniswapV3Pool pool;
+
+    // Active liquidity must be positive when price is in range
+    function invariant_active_liquidity_positive() public view {
+        uint128 liquidity = pool.liquidity();
+        (uint160 sqrtPriceX96,,,,,,) = pool.slot0();
+        if (sqrtPriceX96 > 0) {
+            // If pool has a price, it must have liquidity
+            assertGt(liquidity, 0);
+        }
+    }
+
+    // sqrtPrice must stay within tick bounds of active range
+    function invariant_price_within_tick_bounds() public view {
+        (, int24 currentTick,,,,,) = pool.slot0();
+        int24 tickSpacing = pool.tickSpacing();
+        // Current tick must be a valid multiple of tickSpacing
+        assertEq(currentTick % tickSpacing, 0);
+    }
+
+    // Fee growth global must be monotonically non-decreasing
+    function invariant_fee_growth_monotonic() public view {
+        uint256 feeGrowth0 = pool.feeGrowthGlobal0X128();
+        uint256 feeGrowth1 = pool.feeGrowthGlobal1X128();
+        assertGe(feeGrowth0, handler.ghost_lastFeeGrowth0());
+        assertGe(feeGrowth1, handler.ghost_lastFeeGrowth1());
+    }
+
+    // Protocol cannot owe more fees than it has collected
+    function invariant_protocol_fees_bounded() public view {
+        (uint128 token0Fees, uint128 token1Fees) = pool.protocolFees();
+        assertLe(token0Fees, token.balanceOf(address(pool)));
+    }
+}
 ```

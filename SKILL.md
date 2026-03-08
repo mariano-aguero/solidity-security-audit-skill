@@ -40,7 +40,7 @@ Before starting, identify the audit mode:
 | **Full Audit** | First-time review of a codebase | Phases 1–5 below |
 | **Re-audit / Diff** | Previous audit exists; team applied fixes or added features | `references/diff-audit.md` |
 | **Integration Review** | Contract integrates Uniswap, Chainlink, Aave, Curve, etc. | `references/defi-integrations.md` + Phase 3 |
-| **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` |
+| **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` — skip Phase 0, run Phases 1–2 only, focus Phase 3 on Critical/High patterns from `quick-reference.md` |
 
 For severity classification guidance at any point, consult `references/severity-decision-tree.md`.
 
