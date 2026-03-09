@@ -191,6 +191,110 @@ function swap(PoolKey calldata key, ...) external {
 [ ] Hook permissions (flags) are minimal for the hook's actual needs
 ```
 
+### V4 Math Layer Pitfalls
+
+Hooks that interact with V4's internal math libraries (`TickMath`, `SqrtPriceMath`,
+`FullMath`) must understand their precision boundaries and failure modes.
+
+#### TickMath Boundaries
+
+`TickMath.getSqrtPriceAtTick(tick)` reverts if `tick` is outside `[MIN_TICK, MAX_TICK]`
+(`[-887272, 887272]`). A hook that computes a target tick without clamping can brick
+a pool or create a griefable revert path.
+
+```solidity
+// VULNERABLE: unclamped tick computation in beforeSwap hook
+function beforeSwap(...) external override {
+    int24 targetTick = currentTick + tickOffset; // can overflow MIN/MAX_TICK
+    uint160 sqrtPrice = TickMath.getSqrtPriceAtTick(targetTick); // reverts if out of range
+}
+
+// SECURE: clamp before calling TickMath
+int24 targetTick = int24(
+    Math.max(TickMath.MIN_TICK, Math.min(TickMath.MAX_TICK, int256(currentTick) + tickOffset))
+);
+uint160 sqrtPrice = TickMath.getSqrtPriceAtTick(targetTick);
+```
+
+**Checklist:**
+- [ ] All tick values passed to `TickMath.getSqrtPriceAtTick` are clamped to `[MIN_TICK, MAX_TICK]`
+- [ ] Tick spacing is validated: `tick % tickSpacing == 0` before use
+- [ ] Integer overflow in tick arithmetic is impossible (use `int256` intermediate)
+
+#### SqrtPriceMath Precision Loss
+
+`SqrtPriceMath.getAmount0Delta` and `getAmount1Delta` operate in Q64.96 fixed-point.
+Precision loss occurs when the price range is narrow or liquidity is very large.
+
+```solidity
+// VULNERABLE: assuming getAmount0Delta is always exact
+uint256 amount0 = SqrtPriceMath.getAmount0Delta(sqrtRatioLower, sqrtRatioUpper, liquidity, true);
+// amount0 can be off by 1 wei due to rounding — critical for accounting invariants
+
+// SECURE: account for rounding direction explicitly
+// roundUp = true when computing how much to take FROM the user (conservative)
+// roundUp = false when computing how much to give TO the user (conservative)
+uint256 amount0ToTake = SqrtPriceMath.getAmount0Delta(lower, upper, liq, true);  // ceiling
+uint256 amount0ToGive = SqrtPriceMath.getAmount0Delta(lower, upper, liq, false); // floor
+```
+
+**Checklist:**
+- [ ] Rounding direction (`roundUp` parameter) matches economic intent (ceiling for debit, floor for credit)
+- [ ] No accounting invariant assumes exact equality when `SqrtPriceMath` is involved
+- [ ] Tests verify ±1 wei rounding edge cases
+
+#### FullMath.mulDiv Overflow Conditions
+
+`FullMath.mulDiv(a, b, denominator)` computes `a * b / denominator` with 512-bit
+intermediate precision. It reverts if `denominator == 0` or if the result overflows uint256.
+
+```solidity
+// DANGEROUS pattern: user-controlled denominator
+function priceRatio(uint160 sqrtA, uint160 sqrtB) internal pure returns (uint256) {
+    return FullMath.mulDiv(sqrtA, sqrtA, sqrtB * sqrtB);
+    // If sqrtB == 0 → denominator == 0 → revert (griefable if sqrtB is user-controlled)
+}
+
+// SECURE: validate denominator before calling
+function priceRatio(uint160 sqrtA, uint160 sqrtB) internal pure returns (uint256) {
+    require(sqrtB > 0, "Zero sqrtPrice");
+    return FullMath.mulDiv(sqrtA, sqrtA, uint256(sqrtB) * sqrtB);
+}
+```
+
+**Checklist:**
+- [ ] `FullMath.mulDiv` denominator is never zero under any input conditions
+- [ ] If denominator depends on user input, validate `> 0` before calling
+- [ ] `FullMath.mulDivRoundingUp` is used when ceiling is required (e.g., fee computation)
+
+#### sqrtPriceLimitX96 in Hook-Initiated Swaps
+
+When a hook initiates a swap (e.g., in `afterSwap` for rebalancing), using `sqrtPriceLimitX96 = 0`
+tells the pool to use the maximum/minimum price — sandwichable.
+
+```solidity
+// VULNERABLE: no price limit in hook-initiated swap
+IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+    zeroForOne: true,
+    amountSpecified: -int256(rebalanceAmount),
+    sqrtPriceLimitX96: 0  // no limit — sandwichable
+});
+
+// SECURE: set price limit based on current price + tolerance
+uint160 currentSqrtPrice = poolManager.getSlot0(poolId).sqrtPriceX96;
+uint160 priceLimit = uint160(uint256(currentSqrtPrice) * 99 / 100); // 1% max slippage
+IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
+    zeroForOne: true,
+    amountSpecified: -int256(rebalanceAmount),
+    sqrtPriceLimitX96: priceLimit
+});
+```
+
+**Checklist:**
+- [ ] Hook-initiated swaps never use `sqrtPriceLimitX96 = 0`
+- [ ] Price limit is computed from a manipulation-resistant price source (TWAP, not slot0)
+- [ ] Hook-initiated swap amounts are bounded to prevent runaway loops
+
 ---
 
 ## Chainlink Price Feeds

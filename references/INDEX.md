@@ -134,6 +134,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Uniswap V3 integration | defi-integrations.md | Uniswap V3 |
 | Uniswap V4 hooks — checklist | defi-checklist.md | Uniswap V4 Hooks Protocol |
 | Uniswap V4 hooks — integration | defi-integrations.md | Uniswap V4 Hooks |
+| Uniswap V4 math layer (TickMath, SqrtPriceMath, FullMath) | defi-integrations.md | V4 Math Layer Pitfalls |
 | Vault / ERC-4626 — checklist | defi-checklist.md | Vaults & Yield Aggregators |
 | ERC-4626 vault integration | defi-integrations.md | ERC-4626 Vault Integration |
 | Bridge / cross-chain — checklist | defi-checklist.md | Bridges & Cross-Chain |
