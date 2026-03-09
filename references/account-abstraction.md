@@ -687,6 +687,59 @@ function validateUserOp(
 
 ---
 
+## EIP-7701 — Native Account Abstraction (Draft)
+
+**Status**: Draft / under active discussion | **Risk**: Protocol-level AA design
+
+EIP-7701 proposes native AA by adding a new transaction type (`AA_TX_TYPE`) and
+a new `ACCEPT_ROLE` opcode to the EVM. Unlike ERC-4337's off-chain mempool design,
+EIP-7701 validators would be invoked at the protocol level by the EVM itself.
+
+### Security Risks
+
+**1. Legacy contracts with `ACCEPT_ROLE` bytecode accidentally become AA validators**
+
+If EIP-7701 activates with `ACCEPT_ROLE` at an opcode value that currently maps to
+an existing opcode (or `INVALID`), any deployed contract containing that byte could
+become an unintentional AA validation entry point.
+
+```
+Concern: Opcode 0xFE is currently `INVALID` (always reverts).
+If EIP-7701 repurposes 0xFE or an adjacent opcode as ACCEPT_ROLE,
+legacy contracts compiled against older EVM specs may contain it accidentally.
+
+A contract that becomes an AA validator can:
+- Approve malicious UserOperations signed by the attacker
+- Block legitimate UserOperations (DoS)
+- Leak validation context to attackers
+```
+
+**2. Validation storage restrictions differ from ERC-4337**
+
+ERC-4337 validation is restricted via ERC-7562 simulation rules (no `SLOAD` of
+associated storage outside a narrow set). EIP-7701 native validation may impose
+different or weaker storage access rules — creating new frontrunning opportunities
+during the validation phase.
+
+**3. Trust model changes for smart contract wallets**
+
+In ERC-4337, the Entry Point is a well-audited singleton. With native AA (EIP-7701),
+the EVM itself calls into the validator contract. A validator that was correct under
+ERC-4337 assumptions may fail under native AA (e.g., different gas model, different
+`msg.sender`, different available context).
+
+### What to Check (if auditing a protocol that anticipates EIP-7701)
+
+- [ ] Does the wallet implementation assume `msg.sender == ENTRY_POINT_V0_7`? Native AA changes the caller.
+- [ ] Is there a migration path if the wallet needs to transition from ERC-4337 to native AA?
+- [ ] Does any assembly code in the contract contain bytes that could be misinterpreted as `ACCEPT_ROLE` on EIP-7701 activation?
+- [ ] Is validation logic isolated from execution logic? (Native AA separates them more strictly)
+
+> **Note**: EIP-7701 is a draft as of 2025. Monitor [eips.ethereum.org/EIPS/eip-7701](https://eips.ethereum.org/EIPS/eip-7701)
+> for finalization. Do not architect production systems around its specifics until stable.
+
+---
+
 ## Common Attack Vectors
 
 | Attack | Description | Prevention |

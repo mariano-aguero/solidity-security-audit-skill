@@ -69,8 +69,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Gas — unchecked arithmetic for safe ops | vulnerability-taxonomy.md | §13.5 |
 | Gas — custom errors | vulnerability-taxonomy.md | §13.6 |
 | Arithmetic — overflow sentinel value in custom math libs (Cetus pattern) | vulnerability-taxonomy.md | §3.4 |
+| Oracle — ERC-7726 false validity assumption (standard provides no data guarantees) | vulnerability-taxonomy.md | §4.5 |
 | Proxy — OZ v4→v5 storage slot migration break (ERC-7201 namespace change) | vulnerability-taxonomy.md | §6.6 |
 | Logic — phantom collateral via failed external call (Abracadabra pattern) | vulnerability-taxonomy.md | §12.6 |
+| Uniswap V4 — LDF rounding attack (Bunni $8.4M pattern) | vulnerability-taxonomy.md | §18.6 |
 | Solidity — floating pragma | vulnerability-taxonomy.md | §14.1 |
 | Solidity — shadowed variables | vulnerability-taxonomy.md | §14.2 |
 | Solidity — incorrect inheritance order | vulnerability-taxonomy.md | §14.3 |
@@ -146,8 +148,12 @@ Use this when you know what you're looking for but not which file covers it.
 | AMM / DEX — checklist | defi-checklist.md | AMMs & DEXs |
 | Uniswap V3 integration | defi-integrations.md | Uniswap V3 |
 | Uniswap V4 hooks — checklist | defi-checklist.md | Uniswap V4 Hooks Protocol |
+| Uniswap V4 — JIT liquidity attack via hooks | defi-checklist.md | Uniswap V4 Hooks Protocol → JIT |
+| Uniswap V4 — LDF rounding checklist | defi-checklist.md | Uniswap V4 Hooks Protocol → LDF |
 | Uniswap V4 hooks — integration | defi-integrations.md | Uniswap V4 Hooks |
 | Uniswap V4 math layer (TickMath, SqrtPriceMath, FullMath) | defi-integrations.md | V4 Math Layer Pitfalls |
+| Modular lending — Morpho Blue permissionless markets | defi-checklist.md | Modular Lending Protocols |
+| Modular lending — Euler V2 EVC cross-vault health | defi-checklist.md | Modular Lending Protocols → EVC |
 | Vault / ERC-4626 — checklist | defi-checklist.md | Vaults & Yield Aggregators |
 | ERC-4626 vault integration | defi-integrations.md | ERC-4626 Vault Integration |
 | Bridge / cross-chain — checklist | defi-checklist.md | Bridges & Cross-Chain |
@@ -302,6 +308,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Bundler considerations | account-abstraction.md | Bundler Considerations |
 | Session keys | account-abstraction.md | Session Keys |
 | EIP-7579 modular smart accounts | account-abstraction.md | EIP-7579 |
+| EIP-7701 native AA — ACCEPT_ROLE opcode risk | account-abstraction.md | EIP-7701 Native AA |
 | AA checklist | account-abstraction.md | Checklist: Account Abstraction |
 | Re-audit / diff audit methodology | diff-audit.md | (full file) |
 | Severity classification decision trees | severity-decision-tree.md | (full file) |

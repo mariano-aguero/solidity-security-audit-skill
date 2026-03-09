@@ -387,6 +387,68 @@ beyond standard AMM security.
 - [ ] Can the hook's flash accounting be exploited via nested `unlock()` calls?
 - [ ] Are all currency deltas correctly net-settled at the end of the unlock callback?
 
+### JIT (Just-In-Time) Liquidity Attacks
+
+JIT liquidity is when an actor injects concentrated liquidity into a pool immediately
+before a large swap (to capture fees) and removes it immediately after. In V4, a hook
+can automate this on-chain — bypassing the mempool entirely — turning it into a
+systematic fee extraction mechanism against passive LPs.
+
+- [ ] Can the hook inject and remove liquidity within a single `unlock()` callback, capturing swap fees at zero market risk?
+- [ ] Is there a minimum liquidity duration (blocks or time) before removal is permitted?
+- [ ] Can an actor with hook `BEFORE_SWAP` + `AFTER_SWAP` permissions perform JIT entirely within one swap callback?
+- [ ] Are fee tiers designed to make JIT economically unattractive (e.g., fee > JIT opportunity cost)?
+- [ ] Does the hook track `addedAt` timestamp for positions? Is it enforced on removal?
+- [ ] Can JIT be performed via a flash loan within the same `unlock()` without holding capital?
+
+### Liquidity Distribution Function (LDF) Rounding
+
+For hooks that implement custom liquidity distribution across ticks (Bunni-style):
+
+- [ ] Is the LDF weight function symmetric? (`weight(tick, current+N) == weight(tick, current-N)`)
+- [ ] Are rounding directions consistent between add-liquidity and remove-liquidity paths?
+- [ ] Can a flash loan move the current tick enough to shift the LDF's active tick range?
+- [ ] Is there a minimum position size that prevents dust-amplified rounding discrepancies?
+- [ ] Is there a price impact cap on swaps that bounds tick movement within a single tx?
+
+---
+
+## Modular Lending Protocols (Morpho Blue, Euler V2 EVC)
+
+Modular lending architectures allow permissionless creation of isolated lending markets.
+Morpho Blue lets anyone create a market with any oracle and any LTV. Euler V2's Ethereum
+Vault Connector (EVC) enables cross-vault liquidity combinations. The protocol core can be
+audited, but individual market/vault parameters create unbounded new attack surfaces.
+
+### Morpho Blue — Permissionless Market Risks
+
+- [ ] Can anyone register a market with a malicious oracle (spot price, self-reporting)?
+- [ ] Is there market-level oracle validation, or only protocol-level audit?
+- [ ] Can a market creator set LTV so high (e.g., 99%) that collateral is always undercollateralized after a small price move?
+- [ ] Can the IRM (interest rate model) be set to an adversarial contract that manipulates borrow rates?
+- [ ] Are MetaMorpho vault curators (who select which markets to allocate to) properly permissioned?
+- [ ] Can the MetaMorpho vault curator change oracle or LTV parameters mid-operation for depositors?
+- [ ] Is `reallocateTo()` gated against flash-loan-amplified reallocation that drains one market?
+- [ ] Are uncurated markets (anyone can supply/borrow) excluded from vault allocation?
+
+### Euler V2 — Ethereum Vault Connector (EVC) Risks
+
+The EVC allows accounts to combine collateral from multiple vaults. A health check in one
+vault depends on positions in other vaults — creating cross-vault health invariants.
+
+- [ ] Is the health check computed atomically across ALL vaults in the account's sub-account?
+- [ ] Can an EVC callback (during a cross-vault operation) violate health between the start and end of a transaction?
+- [ ] Are EVC `permit()` messages (signed EVC operations) protected against replay across chains?
+- [ ] Can a user create a circular dependency between vaults (A uses B as collateral, B uses A)?
+- [ ] Is vault deactivation (removing a collateral vault) safe when the account still has borrows backed by it?
+- [ ] Does the governor/admin have a timelock before changing risk parameters (LTV, oracle, IRM)?
+
+### Shared Risks (Morpho & Euler)
+
+- [ ] Does the integrating protocol inherit the risk of each individual market's oracle, not just the core protocol's audit?
+- [ ] Are bad debt socialization mechanisms clearly defined? Who absorbs losses from insolvent positions?
+- [ ] Can an attacker create a market/vault specifically to drain integrating protocols that auto-route to it?
+
 ---
 
 ## Points & Airdrop Protocols
