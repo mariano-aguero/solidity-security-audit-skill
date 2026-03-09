@@ -1,0 +1,292 @@
+# Reference Index
+
+Topic-to-file:section map for fast lookup during audits.
+Use this when you know what you're looking for but not which file covers it.
+
+---
+
+## By Vulnerability Type
+
+| Topic | File | Section |
+|-------|------|---------|
+| Reentrancy — classic (single-function) | vulnerability-taxonomy.md | §1.1 |
+| Reentrancy — cross-function | vulnerability-taxonomy.md | §1.2 |
+| Reentrancy — cross-contract | vulnerability-taxonomy.md | §1.3 |
+| Reentrancy — read-only | vulnerability-taxonomy.md | §1.4 |
+| Reentrancy — transient storage guard (EIP-1153) | vulnerability-taxonomy.md | §1.5 |
+| Reentrancy — ERC-1155 hook | vulnerability-taxonomy.md | §1.6 |
+| Access control — missing modifiers | vulnerability-taxonomy.md | §2.1 |
+| Access control — unprotected initializer | vulnerability-taxonomy.md | §2.2 |
+| Access control — tx.origin auth | vulnerability-taxonomy.md | §2.3 |
+| Access control — incorrect role hierarchy | vulnerability-taxonomy.md | §2.4 |
+| Access control — single-step ownership transfer | vulnerability-taxonomy.md | §2.5 |
+| Access control — AccessManager (OZ 5.x) | vulnerability-taxonomy.md | §2.6 |
+| Integer overflow/underflow (unchecked blocks) | vulnerability-taxonomy.md | §3.1 |
+| Division precision loss | vulnerability-taxonomy.md | §3.2 |
+| Rounding direction attacks | vulnerability-taxonomy.md | §3.3 |
+| Oracle — spot price dependency | vulnerability-taxonomy.md | §4.1 |
+| Oracle — stale price / no staleness check | vulnerability-taxonomy.md | §4.2 |
+| Oracle — centralization risk | vulnerability-taxonomy.md | §4.3 |
+| Oracle — L2 sequencer dependency | vulnerability-taxonomy.md | §4.4 |
+| Flash loan — governance attack | vulnerability-taxonomy.md | §5.1 |
+| Flash loan — price manipulation | vulnerability-taxonomy.md | §5.2 |
+| Flash loan — collateral ratio manipulation | vulnerability-taxonomy.md | §5.3 |
+| Proxy — storage collision | vulnerability-taxonomy.md | §6.1 |
+| Proxy — uninitialized implementation | vulnerability-taxonomy.md | §6.2 |
+| Proxy — function selector clash | vulnerability-taxonomy.md | §6.3 |
+| Proxy — UUPS missing authorization | vulnerability-taxonomy.md | §6.4 |
+| Proxy — storage layout changes on upgrade | vulnerability-taxonomy.md | §6.5 |
+| External call — unchecked return values | vulnerability-taxonomy.md | §7.1 |
+| External call — delegatecall to untrusted contract | vulnerability-taxonomy.md | §7.2 |
+| External call — unsafe external interaction | vulnerability-taxonomy.md | §7.3 |
+| External call — gas griefing | vulnerability-taxonomy.md | §7.4 |
+| DoS — unbounded loops | vulnerability-taxonomy.md | §8.1 |
+| DoS — unexpected revert in loops | vulnerability-taxonomy.md | §8.2 |
+| DoS — block gas limit manipulation | vulnerability-taxonomy.md | §8.3 |
+| DoS — selfdestruct force-send ETH | vulnerability-taxonomy.md | §8.4 |
+| Front-running — transaction ordering | vulnerability-taxonomy.md | §9.1 |
+| Front-running — sandwich attack | vulnerability-taxonomy.md | §9.2 |
+| Front-running — commit-reveal weakness | vulnerability-taxonomy.md | §9.3 |
+| MEV — ERC-4337 / Account Abstraction | vulnerability-taxonomy.md | §9.4 |
+| Signature — replay attack | vulnerability-taxonomy.md | §10.1 |
+| Signature — malleability | vulnerability-taxonomy.md | §10.2 |
+| Signature — missing signer validation | vulnerability-taxonomy.md | §10.3 |
+| Signature — EIP-712 implementation errors | vulnerability-taxonomy.md | §10.4 |
+| ERC-20 — fee-on-transfer / rebasing tokens | vulnerability-taxonomy.md | §11.1 |
+| ERC-20 — missing return values | vulnerability-taxonomy.md | §11.2 |
+| ERC-20 — approve race condition (permit frontrunning) | vulnerability-taxonomy.md | §11.3 |
+| ERC-721 — safe mint reentrancy | vulnerability-taxonomy.md | §11.4 |
+| ERC-4626 — vault inflation attack (first depositor) | vulnerability-taxonomy.md | §11.5 |
+| Logic — incorrect state machine transitions | vulnerability-taxonomy.md | §12.1 |
+| Logic — off-by-one errors | vulnerability-taxonomy.md | §12.2 |
+| Logic — incorrect fee/reward calculations | vulnerability-taxonomy.md | §12.3 |
+| Logic — missing slippage protection | vulnerability-taxonomy.md | §12.4 |
+| Logic — inconsistent state after partial execution | vulnerability-taxonomy.md | §12.5 |
+| Gas — storage vs memory vs calldata | vulnerability-taxonomy.md | §13.1 |
+| Gas — redundant storage reads | vulnerability-taxonomy.md | §13.2 |
+| Gas — packed storage | vulnerability-taxonomy.md | §13.3 |
+| Gas — immutable and constant | vulnerability-taxonomy.md | §13.4 |
+| Gas — unchecked arithmetic for safe ops | vulnerability-taxonomy.md | §13.5 |
+| Gas — custom errors | vulnerability-taxonomy.md | §13.6 |
+| Solidity — floating pragma | vulnerability-taxonomy.md | §14.1 |
+| Solidity — shadowed variables | vulnerability-taxonomy.md | §14.2 |
+| Solidity — incorrect inheritance order | vulnerability-taxonomy.md | §14.3 |
+| Solidity — uninitialized storage pointers | vulnerability-taxonomy.md | §14.4 |
+| Solidity — selfdestruct risks | vulnerability-taxonomy.md | §14.5 |
+| Solidity — block properties as randomness | vulnerability-taxonomy.md | §14.6 |
+| Governance — flash loan attack | vulnerability-taxonomy.md | §15.1 |
+| Governance — low quorum exploitation | vulnerability-taxonomy.md | §15.2 |
+| Governance — timelock bypass | vulnerability-taxonomy.md | §15.3 |
+| Governance — proposal griefing | vulnerability-taxonomy.md | §15.4 |
+| Cross-chain — message verification | vulnerability-taxonomy.md | §16.1 |
+| Cross-chain — replay across chains | vulnerability-taxonomy.md | §16.2 |
+| Cross-chain — validator trust | vulnerability-taxonomy.md | §16.3 |
+| Cross-chain — token wrapping accounting | vulnerability-taxonomy.md | §16.4 |
+| ERC-7702 — malicious delegation target | vulnerability-taxonomy.md | §17.1 |
+| ERC-7702 — signature replay / stale authorization | vulnerability-taxonomy.md | §17.2 |
+| ERC-7702 — EOA nonce race condition | vulnerability-taxonomy.md | §17.3 |
+| ERC-7702 — re-initialization of delegated code | vulnerability-taxonomy.md | §17.4 |
+| Uniswap V4 — hook vulnerabilities | vulnerability-taxonomy.md | §18 |
+| Transient storage — specific issues | vulnerability-taxonomy.md | §19 |
+| Supply chain & build system attacks | vulnerability-taxonomy.md | §20 |
+
+---
+
+## By Secure Pattern / Fix
+
+| Topic | File | Section |
+|-------|------|---------|
+| Checks-Effects-Interactions (CEI) | secure-patterns.md | Reentrancy Protection → CEI |
+| ReentrancyGuard (OZ) | secure-patterns.md | Reentrancy Protection → ReentrancyGuard |
+| Transient storage reentrancy lock | secure-patterns.md | Reentrancy Protection → Transient Storage Lock |
+| Ownable2Step | secure-patterns.md | Access Control → Ownable2Step |
+| Role-based access (AccessControl) | secure-patterns.md | Access Control → Role-Based |
+| Initializer protection (_disableInitializers) | secure-patterns.md | Access Control → Initializer |
+| SafeERC20 | secure-patterns.md | Safe External Calls → SafeERC20 |
+| Checking call return values | secure-patterns.md | Safe External Calls → Return Values |
+| Safe delegatecall (immutable implementation) | secure-patterns.md | Safe External Calls → Safe Delegatecall |
+| Chainlink with full validation | secure-patterns.md | Oracle Integration → Chainlink |
+| L2 sequencer check | secure-patterns.md | Oracle Integration → L2 Sequencer |
+| EIP-712 typed data signature | secure-patterns.md | Signature Handling → EIP-712 |
+| SignatureChecker (ERC-1271, smart wallets) | secure-patterns.md | Signature Handling → SignatureChecker |
+| UUPS proxy | secure-patterns.md | Proxy Patterns → UUPS |
+| ERC-7201 namespaced storage | secure-patterns.md | Proxy Patterns → ERC-7201 |
+| ERC-4626 with inflation protection | secure-patterns.md | Token Patterns → ERC-4626 |
+| Fee-on-transfer token handling | secure-patterns.md | Token Patterns → Fee-on-Transfer |
+| Snapshot voting (flash loan resistance) | secure-patterns.md | Governance Patterns → Snapshot |
+| Pausable + guardian | secure-patterns.md | Emergency Patterns → Pausable |
+| Circuit breaker (daily outflow limit) | secure-patterns.md | Emergency Patterns → Circuit Breaker |
+| Pull payment pattern | secure-patterns.md | Pull Payment Pattern |
+| Commit-reveal scheme | secure-patterns.md | Commit-Reveal Pattern |
+| Timelock for admin operations | secure-patterns.md | Timelock Pattern |
+| Merkle airdrop + duplicate-claim prevention | secure-patterns.md | Merkle Airdrop |
+| EIP-1167 minimal proxy (clone factory) | secure-patterns.md | EIP-1167 Minimal Proxy |
+
+---
+
+## By Protocol / DeFi Context
+
+| Context | File | Section |
+|---------|------|---------|
+| Lending (Aave/Compound/Morpho) — checklist | defi-checklist.md | Lending Protocols |
+| Lending — integration pitfalls | defi-integrations.md | Compound V3 (Comet) |
+| AMM / DEX — checklist | defi-checklist.md | AMMs & DEXs |
+| Uniswap V3 integration | defi-integrations.md | Uniswap V3 |
+| Uniswap V4 hooks — checklist | defi-checklist.md | Uniswap V4 Hooks Protocol |
+| Uniswap V4 hooks — integration | defi-integrations.md | Uniswap V4 Hooks |
+| Vault / ERC-4626 — checklist | defi-checklist.md | Vaults & Yield Aggregators |
+| ERC-4626 vault integration | defi-integrations.md | ERC-4626 Vault Integration |
+| Bridge / cross-chain — checklist | defi-checklist.md | Bridges & Cross-Chain |
+| Governance DAO — checklist | defi-checklist.md | Governance |
+| Staking — checklist | defi-checklist.md | Staking Protocols |
+| NFT marketplace — checklist | defi-checklist.md | NFT Protocols |
+| Restaking / LRT (EigenLayer) — checklist | defi-checklist.md | Restaking & LRT |
+| Points & airdrop — checklist | defi-checklist.md | Points & Airdrop Protocols |
+| Token-specific (rebasing, FoT, USDT) | defi-checklist.md | Token-Specific Checklists |
+| Chainlink integration | defi-integrations.md | Chainlink Price Feeds |
+| Aave V3 flash loans | defi-integrations.md | Aave V3 Flash Loans |
+| Curve integration | defi-integrations.md | Curve Finance |
+| Balancer integration | defi-integrations.md | Balancer Integration |
+| Multi-protocol integration bugs | defi-integrations.md | Common Multi-Protocol Integration Bugs |
+
+---
+
+## By Invariant Type
+
+| Context | File | Section |
+|---------|------|---------|
+| Universal invariants (all protocols) | invariants.md | Universal Invariants |
+| ERC-20 token invariants | invariants.md | ERC20 Token Invariants |
+| ERC-4626 vault invariants | invariants.md | ERC4626 Vault Invariants |
+| Lending protocol invariants | invariants.md | Lending Protocol Invariants |
+| AMM / DEX invariants | invariants.md | AMM / DEX Invariants |
+| Staking invariants | invariants.md | Staking Protocol Invariants |
+| Governance invariants | invariants.md | Governance Invariants |
+| Bridge invariants | invariants.md | Bridge Invariants |
+| Uniswap V3 / concentrated liquidity | invariants.md | Uniswap V3 Invariants |
+| Writing invariant tests (Foundry) | invariants.md | Writing Invariant Tests |
+| Echidna invariant format | invariants.md | Echidna Invariant Format |
+
+---
+
+## By Tool
+
+| Tool | File | Section |
+|------|------|---------|
+| Slither — static analysis | tool-integration.md | §1 Slither |
+| Aderyn — Rust-based static analysis | tool-integration.md | §2 Aderyn |
+| Foundry Forge — testing & fuzzing | tool-integration.md | §3 Foundry |
+| Echidna — property-based fuzzing | tool-integration.md | §4 Echidna |
+| Medusa — parallel fuzzing | tool-integration.md | §5 Medusa |
+| Halmos — symbolic testing | tool-integration.md | §6 Halmos |
+| Certora Prover — formal verification | tool-integration.md | §7 Certora |
+| Gas benchmarking (Foundry) | tool-integration.md | §8 Gas Benchmarking |
+| Slang — AST-based analysis | tool-integration.md | §9 Slang |
+| Custom Slither detectors | tool-integration.md | §10 Custom Detectors |
+| Mythril — symbolic execution | tool-integration.md | §11 Mythril |
+| Manticore — EVM simulation | tool-integration.md | §12 Manticore |
+| Tool selection matrix (when to use which) | tool-integration.md | Tool Selection Matrix |
+| Recommended audit pipeline | tool-integration.md | Recommended Audit Pipeline |
+| Automated scan workflow | automated-detection.md | Automated Scan Workflow |
+
+---
+
+## By Automated Detection Pattern
+
+| Pattern | File | Section |
+|---------|------|---------|
+| Oracle manipulation (spot price) | automated-detection.md | DeFi-Specific → Oracle Manipulation |
+| Flash loan attack vector | automated-detection.md | DeFi-Specific → Flash Loan |
+| Missing slippage protection | automated-detection.md | DeFi-Specific → Missing Slippage |
+| ERC-777 reentrancy | automated-detection.md | DeFi-Specific → ERC777 |
+| Donation attack (balanceOf shares) | automated-detection.md | DeFi-Specific → Donation Attack |
+| Precision loss in division | automated-detection.md | DeFi-Specific → Precision Loss |
+| Missing Chainlink staleness check | automated-detection.md | DeFi-Specific → Oracle Staleness |
+| Unchecked ERC-20 transfer | automated-detection.md | DeFi-Specific → Unchecked Transfer |
+| Front-running (reveal/claim functions) | automated-detection.md | DeFi-Specific → Front-Running |
+| ERC-7702 delegatecall in receive() | automated-detection.md | ERC-7702 → Delegatecall |
+| ERC-7702 nonce replay | automated-detection.md | ERC-7702 → Nonce Replay |
+| ERC-7702 delegation phishing | automated-detection.md | ERC-7702 → Phishing |
+| Transient storage without cleanup | automated-detection.md | Transient Storage → No Cleanup |
+| Permit frontrunning | automated-detection.md | Transient Storage → Permit Frontrunning |
+| Hardcoded addresses | automated-detection.md | Web3 General → Hardcoded Addresses |
+| Console.log in production | automated-detection.md | Web3 General → Console.log |
+| Floating pragma | automated-detection.md | Web3 General → Floating Pragma |
+| Unlimited token approval | automated-detection.md | Web3 General → Unlimited Approval |
+
+---
+
+## By PoC Template
+
+| Attack Type | File | Section |
+|-------------|------|---------|
+| Reentrancy | poc-templates.md | Reentrancy PoC |
+| Flash loan + oracle manipulation | poc-templates.md | Flash Loan Attack PoC |
+| Oracle manipulation | poc-templates.md | Oracle Manipulation PoC |
+| Access control bypass | poc-templates.md | Access Control Bypass PoC |
+| Vault inflation (first depositor) | poc-templates.md | First Depositor / Inflation Attack PoC |
+| Signature replay | poc-templates.md | Signature Replay PoC |
+| Governance attack | poc-templates.md | Governance Attack PoC |
+| Uniswap V4 hook drain | poc-templates.md | Uniswap V4 Hook Drain PoC |
+| Transient storage guard bypass | poc-templates.md | Transient Storage Reentrancy Guard Bypass PoC |
+| ERC-7702 malicious delegation | poc-templates.md | ERC-7702 Malicious Delegation PoC |
+| Simulation guard bypass (Safe/multisig) | poc-templates.md | Simulation Guard Bypass PoC |
+| Supply chain / bytecode verification | poc-templates.md | Supply Chain Verification PoC |
+
+---
+
+## By Infrastructure / Specialized Context
+
+| Context | File | Section |
+|---------|------|---------|
+| L2 architecture overview | l2-crosschain.md | L2 Architecture |
+| Sequencer risks | l2-crosschain.md | Sequencer Risks |
+| L1 ↔ L2 message passing | l2-crosschain.md | L1 ↔ L2 Message Passing |
+| Bridge security patterns | l2-crosschain.md | Bridge Security Patterns |
+| Cross-chain reentrancy | l2-crosschain.md | Cross-Chain Reentrancy |
+| Optimistic rollup specific | l2-crosschain.md | Optimistic Rollup |
+| ZK rollup specific | l2-crosschain.md | ZK Rollup |
+| Cross-chain messaging (CCIP, Wormhole, LayerZero) | l2-crosschain.md | Cross-Chain Messaging Protocols |
+| Blast L2 yield-bearing assets | l2-crosschain.md | Blast L2 |
+| zkEVM-specific | l2-crosschain.md | zkEVM-Specific |
+| EIP-4844 (blobs) security | l2-crosschain.md | EIP-4844 |
+| L2 precompile security | l2-crosschain.md | L2 Precompile Security |
+| L2 sequencer feeds (Chainlink) | l2-crosschain.md | L2 Sequencer Feeds |
+| ERC-4337 account architecture | account-abstraction.md | Architecture Overview |
+| UserOperation structure | account-abstraction.md | UserOperation Structure |
+| Smart account (wallet) vulnerabilities | account-abstraction.md | Account Vulnerabilities |
+| Paymaster vulnerabilities | account-abstraction.md | Paymaster Vulnerabilities |
+| Factory vulnerabilities (AA) | account-abstraction.md | Factory Vulnerabilities |
+| Nonce management (AA) | account-abstraction.md | Nonce Management |
+| Bundler considerations | account-abstraction.md | Bundler Considerations |
+| Session keys | account-abstraction.md | Session Keys |
+| EIP-7579 modular smart accounts | account-abstraction.md | EIP-7579 |
+| AA checklist | account-abstraction.md | Checklist: Account Abstraction |
+| Re-audit / diff audit methodology | diff-audit.md | (full file) |
+| Severity classification decision trees | severity-decision-tree.md | (full file) |
+| Audit report format | report-template.md | (full file) |
+| Real exploit case studies | exploit-case-studies.md | (full file) |
+| Audit questions by function type | audit-questions.md | (full file) |
+| One-page cheat sheet | quick-reference.md | (full file) |
+| Industry standards (SWC, EIPs, firms) | industry-standards.md | (full file) |
+
+---
+
+## Quick Lookup: "I found X, what do I do?"
+
+| What you found | Start here |
+|----------------|------------|
+| Uses `balanceOf(address(this))` for share math | taxonomy §11.5, checklist Vaults, detection Donation Attack |
+| Uses `getReserves()` or spot price | taxonomy §4.1, detection Oracle Manipulation |
+| `latestRoundData()` without staleness | taxonomy §4.2, detection Missing Oracle Staleness |
+| `transfer()` without checking return | taxonomy §11.2, detection Unchecked ERC-20 Transfer |
+| `delegatecall` to user-controlled address | taxonomy §7.2, secure-patterns Safe Delegatecall |
+| `initialize()` without `initializer` modifier | taxonomy §2.2, secure-patterns Initializer |
+| Flash loan in same tx as governance vote | taxonomy §5.1 + §15.1, invariants Governance |
+| Swap with `amountOutMin = 0` | taxonomy §12.4, detection Missing Slippage |
+| `tstore` without cleanup | automated-detection Transient Storage, taxonomy §19 |
+| ERC-7702 authorization tuple | taxonomy §17, automated-detection ERC-7702, PoC ERC-7702 |
+| Safe/multisig module approval | poc-templates Simulation Guard Bypass, case-studies Bybit |
+| Merkle claim without bitmap | secure-patterns Merkle Airdrop |
+| Clone/minimal proxy factory | secure-patterns EIP-1167, taxonomy §6.2 |
+| `permit()` call that can be front-run | automated-detection Permit Frontrunning, taxonomy §11.3 |

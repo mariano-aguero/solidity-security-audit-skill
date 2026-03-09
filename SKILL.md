@@ -246,6 +246,9 @@ patterns, consult these reference files:
 - `references/severity-decision-tree.md` — Structured severity classification decision trees
 - `references/defi-integrations.md` — Secure integration patterns: Uniswap v3/v4, Chainlink, Aave, Curve, Balancer
 
+### Navigation
+- `references/INDEX.md` — Topic → file:section map; use when you know the topic but not which file covers it
+
 Load these files as needed based on the specific audit context.
 
 ## Important Notes

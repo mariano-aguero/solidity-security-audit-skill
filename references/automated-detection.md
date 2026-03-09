@@ -313,6 +313,160 @@ require(addr != address(0), "Zero address");
 
 ---
 
+## ERC-7702 Account Vulnerability Patterns
+
+Patterns specific to EIP-7702 (set-code transactions) introduced in the Pectra upgrade.
+A user can delegate their EOA to execute arbitrary bytecode, opening new attack surfaces.
+
+### ERC-7702 Delegatecall in receive() / fallback() (CRITICAL)
+
+**Description**: When an EOA is delegated to a contract that has a `receive()` or `fallback()`
+with `delegatecall`, ETH sends to the EOA can trigger arbitrary code in the EOA's storage context.
+
+**Detection Pattern**:
+```regex
+(receive\s*\(\s*\)|fallback\s*\([^)]*\))\s*\{[^}]*delegatecall
+```
+
+**Vulnerable Code**:
+```solidity
+// Malicious delegation target — receive() performs delegatecall
+contract MaliciousDelegate {
+    receive() external payable {
+        address target = 0xdeadbeef...;
+        (bool ok,) = target.delegatecall(abi.encodeWithSignature("drain()"));
+    }
+}
+// When Alice sets her EOA code to MaliciousDelegate, any ETH transfer
+// to Alice triggers drain() in Alice's storage context.
+```
+
+**Recommendation**:
+1. Legitimate delegation contracts must not have `receive()` or `fallback()` with `delegatecall`
+2. Audit wallet UIs that support EIP-7702 for blind-signing of authorization tuples
+3. See `vulnerability-taxonomy.md` Section 17 for full ERC-7702 threat model
+
+---
+
+### ERC-7702 Nonce Replay / Stale Authorization (HIGH)
+
+**Description**: EIP-7702 authorization tuples include `nonce` and `chain_id`. Stale
+authorizations (saved by attackers) can be replayed if the EOA nonce resets, or
+cross-chain if `chain_id = 0`.
+
+**Detection Pattern**:
+```regex
+(chainId\s*==\s*0|chain_id.*0x00|authorization.*nonce.*0x0)
+```
+
+**Recommendation**:
+1. Wallets must increment EOA nonce after each authorization to invalidate prior tuples
+2. Never sign authorizations with `chain_id = 0` (valid on all chains)
+3. Verify nonce monotonicity in any on-chain authorization verifier
+
+---
+
+### ERC-7702 Delegation Phishing (HIGH)
+
+**Description**: Users can be tricked into signing an EIP-7702 authorization tuple that
+delegates their EOA to attacker-controlled code, granting the attacker full control of
+the EOA's assets and storage.
+
+**Detection Pattern**:
+```regex
+(setCode|AUTHCALL|eip7702|EIP7702|authorization.*tuple|delegate.*eoa)
+```
+
+**Recommendation**:
+1. Wallets must display human-readable description of delegation target before signing
+2. Restrict `setCode` to audited, well-known contracts (delegation registries)
+3. Off-chain: scan authorization relays for unverified contract bytecode
+
+---
+
+## Transient Storage Patterns
+
+Patterns for EIP-1153 (`tload`/`tstore`) introduced in Solidity 0.8.24 (Cancun).
+Transient storage clears at transaction end but persists across internal calls in the same tx.
+
+### Transient Storage Without Cleanup (MEDIUM)
+
+**Description**: Using `tstore` without a corresponding cleanup `tstore(slot, 0)` at the
+end of a function can leak state across internal calls or composable interactions within
+the same transaction. This is the most common transient storage misuse pattern.
+
+**Detection Pattern**:
+```regex
+tstore\s*\([^)]+\)(?![\s\S]{0,500}tstore\s*\([^,]+,\s*0\s*\))
+```
+
+**Vulnerable Code**:
+```solidity
+// BAD: tstore without cleanup — value persists for rest of transaction
+function lockOperation() internal {
+    assembly { tstore(LOCK_SLOT, 1) }
+    _doWork();
+    // Missing: assembly { tstore(LOCK_SLOT, 0) }
+    // If _doWork() calls another contract that checks LOCK_SLOT,
+    // they will see stale value 1 even after lockOperation() returns
+}
+```
+
+**Secure Code**:
+```solidity
+// GOOD: always clean up transient storage
+function lockOperation() internal {
+    assembly { tstore(LOCK_SLOT, 1) }
+    _doWork();
+    assembly { tstore(LOCK_SLOT, 0) } // explicit cleanup
+}
+```
+
+**Recommendation**:
+1. Always pair `tstore(slot, value)` with `tstore(slot, 0)` in a `finally`-equivalent pattern
+2. Use try-catch or assembly to ensure cleanup even on revert paths
+3. Prefer OpenZeppelin's `ReentrancyGuardTransient` over manual `tstore` for locks
+
+---
+
+### Permit Frontrunning (MEDIUM)
+
+**Description**: ERC-20 `permit()` signatures can be front-run: an attacker extracts the
+signature from a pending `depositWithPermit()` call and calls `permit()` first, then
+the original tx fails if the protocol checks for allowance via `transferFrom` only.
+Alternatively, MEV bots consume the permit to grief the user.
+
+**Detection Pattern**:
+```regex
+function\s+\w*[Pp]ermit\w*\s*\([^)]*uint8\s+v[^)]*bytes32\s+r[^)]*bytes32\s+s[^)]*\)\s*(external|public)(?![^{]*try)
+```
+
+**Vulnerable Code**:
+```solidity
+// BAD: if permit is front-run, this reverts — DoS on deposit
+function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+    IERC20Permit(token).permit(msg.sender, address(this), amount, deadline, v, r, s);
+    IERC20(token).transferFrom(msg.sender, address(this), amount); // reverts if allowance already consumed
+}
+```
+
+**Secure Code**:
+```solidity
+// GOOD: use try-catch around permit — allowance already set is also acceptable
+function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+    try IERC20Permit(token).permit(msg.sender, address(this), amount, deadline, v, r, s) {} catch {}
+    // Falls back to existing allowance if permit was already consumed
+    IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+}
+```
+
+**Recommendation**:
+1. Wrap `permit()` calls in `try-catch` — a consumed permit is not an error
+2. Never revert if allowance is already sufficient
+3. Cross-reference `vulnerability-taxonomy.md` Section 10.3 for full permit attack taxonomy
+
+---
+
 ## SWC Registry Patterns
 
 See `industry-standards.md` for the complete SWC Registry reference table.

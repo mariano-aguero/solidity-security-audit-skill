@@ -29,7 +29,8 @@ references/
 ├── account-abstraction.md      # ERC-4337 smart accounts
 ├── diff-audit.md               # Re-audit and change review methodology      [v2]
 ├── severity-decision-tree.md   # Structured severity classification trees     [v2]
-└── defi-integrations.md        # Uniswap v3/v4, Chainlink, Aave, Curve, Bal  [v2]
+├── defi-integrations.md        # Uniswap v3/v4, Chainlink, Aave, Curve, Bal  [v2]
+└── INDEX.md                    # Topic → file:section navigation map         [v2]
 ```
 
 **References** are loaded on-demand based on audit context. Files cross-reference each other to avoid duplication.
@@ -49,6 +50,7 @@ When updating this skill:
 - **Re-audit workflow**: Update `diff-audit.md` with new diff patterns, remediation verification checklists, or storage layout tooling
 - **Severity classification**: Update `severity-decision-tree.md` when new vulnerability types need dedicated decision trees
 - **DeFi integrations**: Add new protocol integration patterns to `defi-integrations.md` (new DEX, oracle, lending protocol)
+- **Index**: When adding new sections to any reference file, add corresponding entries to `INDEX.md` in the appropriate table
 
 ## Severity Classification
 

@@ -635,3 +635,136 @@ contract Timelock {
 OpenZeppelin's `TimelockController` is battle-tested — prefer it over reimplementing.
 Minimum delay for major protocols: 2–7 days. Emergency pause/guardian actions should be
 the only operations exempt from the timelock.
+
+---
+
+## Merkle Airdrop with Duplicate-Claim Prevention
+
+Standard implementation for on-chain Merkle airdrops. The critical invariant is that
+each leaf can only be claimed once — enforced by a bitmap (`claimed`) keyed on the leaf index.
+
+```solidity
+import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+contract MerkleAirdrop {
+    using SafeERC20 for IERC20;
+
+    bytes32 public immutable merkleRoot;
+    IERC20 public immutable token;
+
+    // index => claimed bit (1 bit per index stored in uint256 words)
+    mapping(uint256 => uint256) private claimedBitMap;
+
+    event Claimed(uint256 indexed index, address account, uint256 amount);
+
+    constructor(bytes32 _merkleRoot, IERC20 _token) {
+        merkleRoot = _merkleRoot;
+        token = _token;
+    }
+
+    function isClaimed(uint256 index) public view returns (bool) {
+        uint256 claimedWordIndex = index / 256;
+        uint256 claimedBitIndex = index % 256;
+        uint256 claimedWord = claimedBitMap[claimedWordIndex];
+        return claimedWord & (1 << claimedBitIndex) != 0;
+    }
+
+    function _setClaimed(uint256 index) private {
+        uint256 claimedWordIndex = index / 256;
+        uint256 claimedBitIndex = index % 256;
+        claimedBitMap[claimedWordIndex] |= (1 << claimedBitIndex);
+    }
+
+    function claim(
+        uint256 index,
+        address account,
+        uint256 amount,
+        bytes32[] calldata merkleProof
+    ) external {
+        // 1. CHECK: not already claimed
+        require(!isClaimed(index), "Already claimed");
+
+        // 2. CHECK: valid Merkle proof
+        bytes32 leaf = keccak256(abi.encodePacked(index, account, amount));
+        require(MerkleProof.verify(merkleProof, merkleRoot, leaf), "Invalid proof");
+
+        // 3. EFFECT: mark claimed before transfer (CEI)
+        _setClaimed(index);
+
+        // 4. INTERACTION: transfer tokens
+        token.safeTransfer(account, amount);
+
+        emit Claimed(index, account, amount);
+    }
+}
+```
+
+Key invariants:
+- Leaf encoding must include `index` — prevents an address from claiming a different
+  entry at the same position with the same proof
+- Bitmap indexed by `index`, not by `address` — an address can appear multiple times
+  in the tree (e.g., multiple rounds), each with its own unique index
+- CEI: `_setClaimed()` before `safeTransfer()` prevents reentrancy on ERC-777/ERC-1155 tokens
+
+---
+
+## EIP-1167 Minimal Proxy (Clone Factory)
+
+Creates cheap clones of a logic contract. Each clone is a 45-byte proxy that
+delegatecalls to the implementation. 10x cheaper to deploy than a full contract copy.
+
+```solidity
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+// ─── Logic contract (deployed once) ───────────────────────────────────────────
+contract VaultLogic is Initializable {
+    address public owner;
+    uint256 public totalDeposits;
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers(); // block direct initialization of implementation
+    }
+
+    function initialize(address _owner) external initializer {
+        owner = _owner;
+    }
+
+    function deposit() external payable {
+        totalDeposits += msg.value;
+    }
+}
+
+// ─── Factory (deploys clones) ──────────────────────────────────────────────────
+contract VaultFactory {
+    address public immutable implementation;
+
+    event VaultCreated(address indexed vault, address indexed owner);
+
+    constructor(address _implementation) {
+        implementation = _implementation;
+    }
+
+    /// @notice Deploy a deterministic clone (same address every time for same owner+salt)
+    function createVault(bytes32 salt) external returns (address vault) {
+        // Deterministic: address depends on (implementation, salt, factory)
+        vault = Clones.cloneDeterministic(implementation, salt);
+        VaultLogic(vault).initialize(msg.sender);
+        emit VaultCreated(vault, msg.sender);
+    }
+
+    /// @notice Predict clone address before deployment (useful for pre-approvals)
+    function predictAddress(bytes32 salt) external view returns (address) {
+        return Clones.predictDeterministicAddress(implementation, salt);
+    }
+}
+```
+
+Security checks:
+- Implementation **must** call `_disableInitializers()` in its constructor — otherwise
+  the bare implementation contract can be initialized and used directly
+- `initialize()` **must** be guarded by `initializer` modifier — prevents re-initialization
+- For non-upgradeable clones, `initialize()` replaces the constructor entirely
+- Clone storage is isolated per instance — state changes in one clone do not affect others
