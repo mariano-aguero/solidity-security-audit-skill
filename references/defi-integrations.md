@@ -595,8 +595,82 @@ Price is off by 1e10 → all calculations wrong.
 
 ---
 
+## Intent-Based Protocols (Permit2, UniswapX, 1inch Fusion)
+
+Intent protocols separate order signing (off-chain) from order execution (on-chain).
+Users sign typed EIP-712 messages; fillers/solvers execute them. Security model shifts
+from AMM state to signature validation + callback logic.
+
+See `intent-protocols.md` for deep reference and attack vectors.
+
+### Permit2
+
+Universal token approval contract enabling signature-based transfers. Used by UniswapX,
+many aggregators, and third-party protocols.
+
+**Key checks:**
+- [ ] Is `deadline` enforced strictly? Expired permits must not be replayable
+- [ ] Is `nonce` invalidated after use? Bitmap nonces (word + bit) must be atomically consumed
+- [ ] Is `spender` restricted to the expected contract address?
+- [ ] `SignatureTransfer` (one-time, nonce-based) vs `AllowanceTransfer` (expiry-based) — correct mode chosen?
+- [ ] Is the Permit2 contract address the canonical Uniswap deployment?
+
+**Common vulnerability:**
+```solidity
+// VULN: signer is msg.sender — attacker can use their own permit to drain others
+permit2.permitTransferFrom(permit, transferDetails, msg.sender, sig);
+
+// SECURE: signer must be the original order creator, passed explicitly
+permit2.permitTransferFrom(permit, transferDetails, orderOwner, sig);
+```
+
+### UniswapX Reactor Integration
+
+Users sign `DutchOrder`/`LimitOrder` structs; fillers call `reactor.execute()`.
+
+**Key checks:**
+- [ ] Is the `exclusiveFiller` window honored? Non-exclusive fills during the window must revert
+- [ ] Is Dutch auction decay linear? Can `endAmount` be hit instantly on the same block?
+- [ ] Is nonce bitmap invalidation correct? Replay must revert even across different nonce words
+- [ ] Are output tokens validated against what was signed? Filler cannot substitute tokens
+
+**Callback security:**
+```solidity
+contract Filler is IReactorCallback {
+    IReactor public immutable reactor;
+
+    function reactorCallback(ResolvedOrder[] calldata, bytes calldata) external {
+        require(msg.sender == address(reactor), "Only reactor"); // Critical auth check
+        // Execute fill logic — input tokens already transferred by reactor
+        // Must approve output tokens to reactor before returning
+    }
+}
+```
+
+### 1inch Fusion / Limit Order Protocol v4
+
+Dutch auction with resolvers. Orders are gasless; resolvers pay gas and compete to fill.
+
+**Key checks:**
+- [ ] Are `PreInteraction` and `PostInteraction` hooks reentrant-safe?
+- [ ] Can `Extension` data inject arbitrary calldata into resolver callbacks?
+- [ ] Is `takerAsset`/`makerAsset` validation sufficient to prevent token substitution?
+- [ ] Are order expirations enforced? Cannot fill expired orders even in same block?
+- [ ] Is `series` nonce (epoch-based mass cancellation) handled without cross-user interference?
+
+### Cross-Protocol Intent Risks
+
+- **Order front-running**: Signed intents in mempool before reaching filler network
+- **Filler collusion**: Permissioned fillers delay execution until Dutch price hits floor
+- **Griefing via cancellation**: Spam cancellations invalidate in-progress honest fills
+- **Solver insolvency**: Flash-loan-based fills must guarantee atomic repayment
+- **Token rescue abuse**: Functions to recover sent tokens could drain in-transit funds
+
+---
+
 ## Cross-References
 
+- `intent-protocols.md` — Deep reference: witness hashes, decay math, callback auth
 - `vulnerability-taxonomy.md` — Flash loan vectors, oracle manipulation, reentrancy
 - `defi-checklist.md` — Protocol-specific security checklists
 - `l2-crosschain.md` — Sequencer feeds, L2-specific oracle considerations

@@ -141,6 +141,18 @@ Use this when you know what you're looking for but not which file covers it.
 | Staking — checklist | defi-checklist.md | Staking Protocols |
 | NFT marketplace — checklist | defi-checklist.md | NFT Protocols |
 | Restaking / LRT (EigenLayer) — checklist | defi-checklist.md | Restaking & LRT |
+| EigenLayer AVS contracts — checklist | defi-checklist.md | EigenLayer AVS Contracts |
+| Intent protocols (Permit2, UniswapX) — checklist | defi-integrations.md | Intent-Based Protocols |
+| Intent protocols — deep reference | intent-protocols.md | (all sections) |
+| Permit2 — nonce bitmap, witness hash | intent-protocols.md | §1 Signature & Nonce Security |
+| UniswapX — Dutch auction, callback auth | intent-protocols.md | §2–3 |
+| Perpetual DEX — GMX v2, Synthetix Perps | perpetual-dex.md | (all sections) |
+| Perpetual DEX — oracle, liquidation, LP | perpetual-dex.md | §1–4 |
+| Perpetual DEX — PnL precision, leverage | perpetual-dex.md | §5 |
+| ZK-VM — ZK proof verification | zkvm-specific.md | §1 ZK Proof Verification |
+| ZK-VM — EVM equivalence gaps (zkSync/zkEVM) | zkvm-specific.md | §2 EVM Equivalence Gaps |
+| ZK circuit vulnerabilities (Circom/Halo2) | zkvm-specific.md | §3 ZK Circuit Vulnerabilities |
+| ZK-coprocessor (Risc0, SP1) | zkvm-specific.md | §4 ZK-Coprocessor |
 | Points & airdrop — checklist | defi-checklist.md | Points & Airdrop Protocols |
 | Token-specific (rebasing, FoT, USDT) | defi-checklist.md | Token-Specific Checklists |
 | Chainlink integration | defi-integrations.md | Chainlink Price Feeds |
@@ -246,6 +258,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Cross-chain reentrancy | l2-crosschain.md | Cross-Chain Reentrancy |
 | Optimistic rollup specific | l2-crosschain.md | Optimistic Rollup |
 | ZK rollup specific | l2-crosschain.md | ZK Rollup |
+| ZK-VM (zkSync Era, Polygon zkEVM) — deep reference | zkvm-specific.md | §2 EVM Equivalence Gaps |
+| ZK proof verification vulnerabilities | zkvm-specific.md | §1 ZK Proof Verification |
+| ZK circuit under-constraining (Circom, Halo2) | zkvm-specific.md | §3 ZK Circuit Vulnerabilities |
+| ZK-coprocessor (Risc0, SP1) on-chain verification | zkvm-specific.md | §4 ZK-Coprocessor |
 | Cross-chain messaging (CCIP, Wormhole, LayerZero) | l2-crosschain.md | Cross-Chain Messaging Protocols |
 | Blast L2 yield-bearing assets | l2-crosschain.md | Blast L2 |
 | zkEVM-specific | l2-crosschain.md | zkEVM-Specific |
@@ -264,7 +280,8 @@ Use this when you know what you're looking for but not which file covers it.
 | AA checklist | account-abstraction.md | Checklist: Account Abstraction |
 | Re-audit / diff audit methodology | diff-audit.md | (full file) |
 | Severity classification decision trees | severity-decision-tree.md | (full file) |
-| Audit report format | report-template.md | (full file) |
+| Audit report format (private) | report-template.md | Report Structure |
+| Contest submission format (Code4rena, Sherlock) | report-template.md | Contest Submission Format |
 | Real exploit case studies | exploit-case-studies.md | (full file) |
 | Audit questions by function type | audit-questions.md | (full file) |
 | One-page cheat sheet | quick-reference.md | (full file) |

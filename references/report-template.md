@@ -479,3 +479,173 @@ for (uint256 i = 0; i < len; i++) { ... }
 | **Low** | Minor issues, best practice violations, theoretical edge cases |
 | **Informational** | Code quality, gas optimizations, documentation gaps |
 | **Gas** | Unnecessary gas consumption with no security impact |
+
+---
+
+## Contest Submission Format
+
+Competitive audit platforms (Code4rena, Sherlock, Cantina) use specific formats
+that differ from private audit reports. Below are the canonical formats.
+
+---
+
+### Code4rena
+
+Each finding is a separate GitHub issue. PoC is required for H/M.
+
+```markdown
+## [H-01] Concise, specific finding title
+
+**Lines of code**: https://github.com/[org]/[repo]/blob/[commit]/src/Contract.sol#L42-L67
+
+### Impact
+
+Direct statement of what an attacker achieves. Use dollar amounts where possible.
+Example: "An attacker can drain the entire vault by reentering `withdraw()` before
+state is updated. At current TVL of ~$2M this is a complete loss of user funds."
+
+### Proof of Concept
+
+Step-by-step attack, then Foundry PoC:
+
+1. Attacker deploys `AttackContract` pointing at the vulnerable vault
+2. Calls `attack()`, which deposits 1 ETH then calls `withdraw()`
+3. Vault sends ETH before updating `balances` — attacker re-enters in `receive()`
+4. Repeats until vault is drained
+
+```solidity
+function testExploit() public {
+    vm.deal(address(attacker), 1 ether);
+    uint256 vaultBefore = address(vault).balance;
+    attacker.attack{value: 1 ether}();
+    assertEq(address(vault).balance, 0);
+    assertGt(address(attacker).balance, vaultBefore);
+}
+```
+
+### Recommended Mitigation
+
+```diff
+ function withdraw() external {
++    require(!locked, "Reentrant");
++    locked = true;
+     uint256 amount = balances[msg.sender];
++    balances[msg.sender] = 0;
+     (bool ok,) = msg.sender.call{value: amount}("");
+     require(ok);
+-    balances[msg.sender] = 0;
++    locked = false;
+ }
+```
+```
+
+**Severity labels**: `[H-01]`, `[M-01]`, `[L-01]`, `[N-01]` (non-critical), `[G-01]` (gas)
+**QA/Gas**: bundled into a single report file, not individual issues
+**Duplicates**: same root cause = duplicate; highest-quality unique submission earns full reward
+
+---
+
+### Sherlock
+
+Findings are markdown files in the contest repo under `findings/`. Strict structure required.
+
+```markdown
+## [H-01] Finding Title
+
+**Severity**: High
+
+**Summary**
+One paragraph: what the vulnerability is, where it lives, what it enables.
+
+**Root Cause**
+In [Contract.sol#L42](https://github.com/[org]/[repo]/blob/[commit]/src/Contract.sol#L42),
+`_validateSignature()` does not check for `address(0)` from `ecrecover`, allowing
+any signature to pass when `trustedSigner` is uninitialized.
+
+**Internal pre-conditions**
+1. `trustedSigner` is `address(0)` (possible during initialization window)
+2. Protocol is not paused
+
+**External pre-conditions**
+1. None — attacker only needs to send a transaction
+
+**Attack Path**
+1. Attacker observes `trustedSigner == address(0)` on-chain
+2. Calls `claimReward(anyHash, randomSig)` — `ecrecover` returns `address(0)`
+3. `require(signer == trustedSigner)` passes (both are `address(0)`)
+4. Attacker receives full reward pool
+
+**Impact**
+High — complete drain of reward pool (~$500k at current rates) with no preconditions.
+
+**Proof of Concept**
+```solidity
+function test_claimWithoutValidSig() public {
+    assertEq(protocol.trustedSigner(), address(0)); // Uninitialized
+    bytes memory fakeSig = new bytes(65);
+    protocol.claimReward(keccak256("any"), fakeSig); // Passes
+    assertGt(rewardToken.balanceOf(attacker), 0);
+}
+```
+
+**Recommended Mitigation**
+```solidity
+function claimReward(bytes32 hash, bytes calldata sig) external {
++   require(trustedSigner != address(0), "Signer not configured");
+    address signer = ECDSA.recover(hash, sig); // reverts on address(0)
+    require(signer == trustedSigner, "Wrong signer");
+    _payReward(msg.sender);
+}
+```
+```
+
+**Severity**: Only H/M findings are rewarded; Low/Informational receive no payout
+**Duplicates**: Grouped by root cause; lowest SLOC PoC wins the group
+**Escalation**: Watson escalation system — disputed findings go to senior Watsons
+
+---
+
+### Cantina / Cyfrin CodeHawks
+
+```markdown
+**Title**: [Severity] Concise finding title
+
+**Severity**: Critical / High / Medium / Low / Informational
+
+**Context**: `src/Contract.sol#L42-L67`
+
+**Description**
+Technical explanation referencing specific code. State the violated invariant.
+
+**Proof of Concept**
+[Foundry test or numbered attack steps]
+
+**Recommendation**
+[Specific fix with code diff if applicable]
+
+**[Protocol Response]**: Fixed / Acknowledged / Won't Fix
+**Fix**: [commit hash or PR link]
+```
+
+---
+
+### Severity Comparison Across Platforms
+
+| Severity | Code4rena | Sherlock | Cantina/Cyfrin |
+|----------|-----------|----------|----------------|
+| Highest | High | High | Critical |
+| Second | Medium | Medium | High |
+| Third | Low (QA) | Low (no reward) | Medium |
+| Notes | Gas / NC | Gas / Info | Low / Info |
+
+---
+
+### Common Rejection Reasons
+
+1. **No PoC for H/M** — judges require a working Foundry test
+2. **Invalid preconditions** — attack requires conditions prevented elsewhere
+3. **Known issue** — check `README.md`, prior audits, bot race findings
+4. **Wrong severity** — H needs direct loss; M needs conditional loss or griefing
+5. **Duplicate root cause** — even with a different attack path, same root = duplicate
+6. **Out of scope** — test files, deployment scripts, external dependencies
+7. **Admin trust assumption** — if admin is trusted, admin-abuse findings are typically Low

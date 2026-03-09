@@ -268,6 +268,64 @@ for other services (AVSs). LRT protocols wrap restaked positions into liquid tok
 
 ---
 
+## EigenLayer AVS Contracts
+
+AVS (Actively Validated Service) contracts define tasks, operator registration,
+slashing conditions, and reward distribution for services built on EigenLayer restaked security.
+Key references: EigenLayer M2 mainnet contracts, `ServiceManager`, `ECDSAStakeRegistry`, `BLSSignatureChecker`.
+
+### AVS Registration & Operator Management
+- [ ] Is operator registration permissioned or open? Can a malicious operator grief the AVS?
+- [ ] Is there a minimum stake requirement for operators? Can an undercollateralized operator be slashed beyond their stake?
+- [ ] Are operator deregistration delays sufficient to prevent stake-withdrawal-before-slash races?
+- [ ] Can the AVS owner add/remove operators unilaterally, enabling censorship of legitimate operators?
+- [ ] Is the quorum threshold correctly enforced (e.g., 2/3 BLS signers) before accepting task responses?
+
+### Task Lifecycle & Validation
+- [ ] Are tasks correctly mapped to their response window (challenge window expiry)?
+- [ ] Can tasks be submitted with invalid calldata that passes validation but triggers unexpected behavior?
+- [ ] Is there protection against task ID collisions or replay of previously completed task IDs?
+- [ ] Can a single operator submit both a task and its own response (self-dealing)?
+- [ ] Are off-chain computation results verified on-chain, or is there trust-only attestation?
+- [ ] Is BLS signature aggregation resistant to rogue-key attacks?
+
+### Slashing Conditions
+- [ ] Are slashing conditions precisely defined and unambiguous? Can they be triggered accidentally by honest operators?
+- [ ] Is there a challenge/dispute period before slashing finalizes? Can it be griefed?
+- [ ] Who can trigger slashing — only the AVS contract or any address? Is permissioning correct?
+- [ ] Can slashing be front-run (operator withdraws stake right before slash tx lands)?
+- [ ] Are slashing events bounded? Can a single bug slash 100% of operator stake?
+- [ ] Is the slashing veto period (EigenLayer M2 veto committee) accounted for in protocol timing assumptions?
+
+### Payment & Reward Distribution
+- [ ] Are rewards distributed proportionally to stake weight? Is there a rounding attack?
+- [ ] Can reward claims be replayed or double-claimed?
+- [ ] Is there a lock period for rewards to prevent claim before full task validation?
+- [ ] Can an operator claim rewards for tasks they didn't honestly complete?
+- [ ] Are unclaimed rewards handled correctly (expiry, protocol treasury, rollover)?
+
+### Integration with EigenLayer Core
+- [ ] Does the AVS correctly integrate with `DelegationManager` for stake accounting?
+- [ ] Are `StrategyManager` share values correctly interpreted (shares ≠ underlying tokens 1:1)?
+- [ ] Does the AVS handle the EigenLayer withdrawal delay (7-day queue) in its trust assumptions?
+- [ ] Is the AVS registered in `AVSDirectory`? Are metadata URI updates validated?
+- [ ] Does `ServiceManagerBase.slashOperator()` correctly propagate to `DelegationManager`?
+
+### BLS & Signature Security (if using BLSSignatureChecker)
+- [ ] Is the BLS G2 point validation correct? Are zero/invalid G2 points rejected?
+- [ ] Is the aggregate BLS signature verified against the correct message hash?
+- [ ] Are non-signers correctly accounted for in the quorum weight calculation?
+- [ ] Is the sigma freshness validated (maximum age before rejection)?
+- [ ] Is the `referenceBlockNumber` within allowed bounds to prevent stale quorum data?
+
+### ECDSA Quorum (if using ECDSAStakeRegistry)
+- [ ] Is the operator signing key separate from the operator's Ethereum address?
+- [ ] Can an operator change their signing key mid-task, invalidating in-flight signatures?
+- [ ] Is there a delay between signing key rotation and effectiveness?
+- [ ] Are signature weight thresholds (e.g., 67% of total stake) enforced correctly?
+
+---
+
 ## Uniswap V4 Hooks Protocol
 
 V4 hooks are contracts that execute callbacks before/after pool operations.
