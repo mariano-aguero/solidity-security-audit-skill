@@ -346,6 +346,63 @@ function multicall(bytes[] calldata data) external returns (bytes[] memory resul
 
 ---
 
+## AI-Generated Code Review
+
+When the codebase is known or suspected to be AI-assisted (ChatGPT, Copilot, Claude,
+Cursor), apply heightened scrutiny to these common AI failure patterns. In 2025,
+an estimated 30-40% of code4rena/Sherlock contest submissions include AI-generated code.
+
+### Questions
+
+**Access Control:**
+- [ ] Does every state-changing function have explicit access control (`onlyOwner`, role check, or documented as intentionally public)?
+  - AI often adds logic without adding the modifier, especially on `initialize()` or admin setters
+- [ ] Are `initialize()` / `_init()` functions protected with `initializer` modifier?
+  - AI frequently generates initializable contracts without the OpenZeppelin `initializer` modifier
+- [ ] Are `onlyOwner` vs `onlyRole` applied consistently — not mixed randomly?
+
+**Reentrancy:**
+- [ ] Does every function that (a) makes external calls AND (b) modifies state follow CEI order?
+  - AI knows the CEI pattern but frequently inverts it when the "natural" narrative order is reversed
+  - Red flag: `emit Transfer(...)` after `token.transferFrom(...)` but state update also after
+- [ ] Is `nonReentrant` applied even when CEI is followed?
+  - AI rarely adds `nonReentrant` as defense in depth; it considers CEI sufficient
+- [ ] Are cross-function reentrancy paths considered?
+  - AI typically reasons about single functions, not shared-state cross-function paths
+
+**Arithmetic:**
+- [ ] Are division operations clearly ordered to avoid precision loss?
+  - AI often writes `a / b * c` where `a * c / b` is intended (precision loss)
+- [ ] Are unchecked blocks used only where the no-overflow invariant is proven?
+  - AI copies unchecked patterns from gas-optimized code without verifying safety
+
+**Input Validation:**
+- [ ] Are zero-address checks present for all address parameters?
+  - AI frequently omits these — they don't appear in training examples prominently
+- [ ] Are amount/value bounds validated at function entry?
+- [ ] Are return values from external calls checked?
+  - AI often uses `token.transfer()` (ignores return value) instead of `SafeERC20`
+
+**Event Emissions:**
+- [ ] Are events emitted for all significant state changes?
+  - AI tends to omit events on internal helper functions, missing them in state tracking
+- [ ] Do event parameters match the actual values set (pre vs post-update)?
+
+**Code Quality Red Flags (AI-specific):**
+- [ ] Are there string revert messages (`require(x, "Error string")`) instead of custom errors?
+  - Signals older AI training data or uncritical generation
+- [ ] Are hardcoded addresses present (e.g., `address(0x1234...)`) instead of constructor params?
+- [ ] Is there redundant / copy-pasted code that should be extracted into an internal function?
+- [ ] Do comments accurately describe what the code does (AI comments can be confidently wrong)?
+- [ ] Are magic numbers used without constants? (`1000` instead of `PRECISION = 1000`)
+
+**Architecture:**
+- [ ] Does the inheritance structure make sense? AI sometimes inherits from the wrong base contracts
+- [ ] Are there functions that should be `view` but are not marked as such?
+- [ ] Are there `public` functions that should be `external` (no internal calls)?
+
+---
+
 ## Quick Reference: Red Flags
 
 When you see these patterns, investigate immediately:

@@ -89,6 +89,9 @@ Use this when you know what you're looking for but not which file covers it.
 | Uniswap V4 — hook vulnerabilities | vulnerability-taxonomy.md | §18 |
 | Transient storage — specific issues | vulnerability-taxonomy.md | §19 |
 | Supply chain & build system attacks | vulnerability-taxonomy.md | §20 |
+| ERC-6909 — dual approval model confusion | vulnerability-taxonomy.md | §21.1 |
+| ERC-6909 — donation / inflation attack (no totalSupply) | vulnerability-taxonomy.md | §21.2 |
+| ERC-6909 — Uniswap V4 claim token misuse | vulnerability-taxonomy.md | §21.3 |
 
 ---
 
@@ -205,6 +208,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Mythril — symbolic execution | tool-integration.md | §11 Mythril |
 | Manticore — EVM simulation | tool-integration.md | §12 Manticore |
 | Semgrep — pattern matching | tool-integration.md | §13 Semgrep |
+| Wake — data flow analysis + fuzzing | tool-integration.md | §14 Wake |
 | Tool selection matrix (when to use which) | tool-integration.md | Tool Selection Matrix |
 | Recommended audit pipeline | tool-integration.md | Recommended Audit Pipeline |
 | Automated scan workflow | automated-detection.md | Automated Scan Workflow |
@@ -333,3 +337,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Staking insurance fund sized for 32 ETH max | staking-consensus §2.1 Slashing Amplification |
 | Validator consolidation with BLS not verified | staking-consensus §2.2 Consolidation Race |
 | Two-step deposit (pubkey then credentials separate) | staking-consensus §3.1 Deposit Front-Running |
+| ERC-6909 dual approval — `isOperator` bypasses allowance | taxonomy §21.1 |
+| ERC-6909 with V4 PoolManager claim tokens | taxonomy §21.3 |
+| MEV bot without `onlyOwner` on sweep | defi-checklist MEV Bot Contracts |
+| AI-generated code — missing `nonReentrant`, CEI violations | audit-questions AI-Generated Code |

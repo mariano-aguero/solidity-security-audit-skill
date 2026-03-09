@@ -503,3 +503,53 @@ function claim(uint256 amount, bytes32[] calldata proof) external {
 - [ ] `totalAssets` includes all protocol assets
 - [ ] Fees calculated correctly
 - [ ] Losses distributed fairly
+
+---
+
+## MEV Bot Contracts
+
+**Context:** MEV bots are smart contracts that execute arbitrage, sandwich attacks, or
+liquidations. New research (2025) found 1,030/6,554 MEV bot contracts have exploitable
+vulnerabilities, with $2.76M already stolen. MEV bots can appear in audit scope directly
+(as auditable protocol components) or as adjacent infrastructure.
+
+### Asset Management Vulnerabilities
+
+- [ ] Are withdrawal/sweep functions gated by access control?
+  - Many MEV bots expose `withdraw()` or `sweepTokens()` without `onlyOwner`
+  - Classic pattern: `function sweep(address token) external { IERC20(token).transfer(owner, ...) }` — anyone can call if `onlyOwner` missing
+- [ ] Can any external caller trigger a token transfer out of the bot contract?
+- [ ] Is ETH withdrawal restricted? (`receive()` + payable functions without auth)
+- [ ] Are profit-taking functions (claiming arbitrage profits) protected?
+
+### Execution Logic
+
+- [ ] Is the callback/execution entry point restricted to expected callers?
+  - Bots that accept flash loan callbacks must validate `msg.sender == pool`
+- [ ] Can an attacker sandwich the MEV bot itself?
+  - On-chain bots with hardcoded slippage can be front-run
+- [ ] Are slippage tolerances hardcoded vs dynamically computed?
+  - Hardcoded `amountOutMin` values based on past prices can be manipulated
+- [ ] Are all external call return values checked? (failed swaps silently lose funds)
+
+### Flash Loan Exposure
+
+- [ ] If the bot uses flash loans: is repayment validated before any state finalization?
+- [ ] Can the flash loan callback be triggered directly by an external caller?
+- [ ] Is the callback re-entrant? Could a nested callback drain the bot before repayment?
+
+### Access Control
+
+- [ ] Is there an `owner` or `operator` role? Is it set correctly at deployment?
+- [ ] Can `owner` be changed? Is the transfer two-step?
+- [ ] Are there emergency functions that unauthorized callers could exploit?
+
+### MEV Bot-Specific Red Flags
+
+| Pattern | Risk |
+|---------|------|
+| `function sweep(address token) external` without `onlyOwner` | Anyone can drain bot |
+| `amountOutMin` hardcoded to 0 or old constant | Sandwich-able on all swaps |
+| Flash loan callback without `require(msg.sender == pool)` | Callback hijacking |
+| `receive()` with non-trivial logic and no auth | ETH theft via `.call{value:0}` |
+| Missing return value check on swap calls | Silent losses on failed swaps |

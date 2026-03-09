@@ -27,7 +27,11 @@ description: >
   "EIP-7002", "triggerable exit", "execution layer withdrawal", "validator exit",
   "EIP-7251", "MaxEB", "max effective balance", "validator consolidation", "consolidation",
   "EIP-6110", "beacon deposit", "validator deposit", "liquid staking security",
-  "OWASP SC", "OWASP smart contract", "SC01", "SC02".
+  "OWASP SC", "OWASP smart contract", "SC01", "SC02",
+  "ERC-6909", "multi-token", "PoolManager claims", "claim token", "isOperator",
+  "MEV bot", "MEV contract", "arbitrage bot", "sandwich bot", "sweep function",
+  "AI-generated code", "Copilot", "vibe coding", "LLM-generated Solidity",
+  "Wake", "eth-wake", "Ackee Blockchain".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---

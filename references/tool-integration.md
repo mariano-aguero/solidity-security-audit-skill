@@ -1210,6 +1210,129 @@ rules:
 
 ---
 
+## 14. Wake (Static Analysis + Fuzzing)
+
+**Developer**: Ackee Blockchain Security
+**Type**: Python-based static analyzer + property fuzzer
+**Key differentiator**: Deep inter-contract data flow analysis and call graph construction
+that Slither misses; built-in fuzzing engine using Foundry-compatible test syntax
+
+### Installation
+
+```bash
+pip install eth-wake
+
+# Verify
+wake --version
+```
+
+### Core Usage
+
+```bash
+# Run all built-in detectors
+wake detect all
+
+# Run specific detector
+wake detect reentrancy
+wake detect unsafe-delegatecall
+wake detect unchecked-return-value
+wake detect unused-import
+
+# Print call graph (useful for understanding cross-contract flows)
+wake print call-graph
+
+# Print inheritance graph
+wake print inheritance-graph
+
+# Print storage layout
+wake print storage-layout ContractName
+
+# Run fuzz tests (compatible with Foundry test syntax)
+wake test
+
+# Run with coverage
+wake test --coverage
+```
+
+### Key Detectors
+
+| Detector | What it finds |
+|----------|---------------|
+| `reentrancy` | Cross-function and cross-contract reentrancy via data flow |
+| `unsafe-delegatecall` | Delegatecall to user-controlled or non-validated addresses |
+| `unchecked-return-value` | External calls whose return value is ignored |
+| `unused-import` | Unused imports — surface area reduction |
+| `incorrect-interface` | Interface mismatch between contract and expected ABI |
+| `tautology` | Always-true or always-false conditions |
+| `msg-value-nonpayable` | `msg.value` access in non-payable functions |
+
+### Deep Data Flow Analysis
+
+Wake constructs inter-procedural data flow graphs to detect taint propagation.
+This catches patterns that single-function analyzers like Slither miss:
+
+```python
+# Wake Python API — trace all paths from user input to sensitive operation
+from wake.analysis import ...
+
+# Example: find all paths where user-controlled value reaches a transfer call
+# (pseudo-code for Wake's Python scripting API)
+for fn in contract.functions:
+    for param in fn.parameters:
+        if param.is_user_controlled():
+            paths = trace_to_external_calls(param)
+            for path in paths:
+                if path.ends_in_transfer():
+                    report(path, "User-controlled value flows to transfer")
+```
+
+### Writing Fuzz Tests (Wake Syntax)
+
+Wake uses the same `@pytest.mark.parametrize` style but for Solidity invariants:
+
+```python
+# tests/test_invariants.py (Wake fuzzing)
+from wake.testing import *
+
+@chain.connect()
+def test_balance_invariant(chain: Chain):
+    vault = chain.deploy(Vault)
+    user = chain.accounts[1]
+
+    @invariant()
+    def total_assets_ge_shares():
+        # Total assets must always >= total shares value
+        assert vault.totalAssets() >= vault.totalSupply() * vault.pricePerShare() // 10**18
+
+    with may_revert():
+        vault.deposit(10**18, user, from_=user)
+    with may_revert():
+        vault.withdraw(5 * 10**17, user, user, from_=user)
+
+    total_assets_ge_shares()  # Check invariant after each action
+```
+
+### When to Use Wake vs Slither
+
+| Scenario | Use |
+|----------|-----|
+| Fast first-pass scan | Slither (faster) |
+| Deep cross-contract data flow | Wake |
+| Python-scriptable custom analysis | Wake |
+| Invariant fuzzing without writing Solidity | Wake |
+| CI/CD integration with SARIF | Slither or Aderyn |
+| Call graph visualization | Wake `print call-graph` |
+| Storage layout analysis | Wake `print storage-layout` |
+
+### Limitations
+
+- Slower than Slither for large codebases
+- Python ecosystem dependency (pip, venv management)
+- Fuzzing engine less battle-tested than Echidna for complex protocols
+- Some detectors have higher false-positive rate than Slither's high-confidence detectors
+
+---
+
 ## Tool Selection Matrix
 
 Quick reference for choosing the right tool. No single tool covers everything — use them in combination.
