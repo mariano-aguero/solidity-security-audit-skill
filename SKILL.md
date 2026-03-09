@@ -130,6 +130,7 @@ taxonomy in `references/vulnerability-taxonomy.md` systematically:
 - Flash loan attack vectors
 - Proxy/upgrade vulnerabilities (storage collision, uninitialized implementation, UUPS gaps)
 - Unchecked external calls and return values
+- ERC-7702 delegation risks (if EOAs or authorization tuples are present: malicious delegation target, stale authorization replay, nonce race) — see `references/vulnerability-taxonomy.md §17`
 
 **HIGH PRIORITY:**
 - Integer overflow/underflow (pre-0.8.x or unchecked blocks)
