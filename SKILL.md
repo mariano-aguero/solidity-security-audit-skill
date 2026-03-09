@@ -18,7 +18,10 @@ description: >
   "account abstraction", "ERC-4337", "smart account", "paymaster", "bundler", "UserOperation",
   "re-audit", "diff audit", "remediation review", "fix verification", "Uniswap v4 hooks",
   "Chainlink integration", "Aave integration", "flash loan receiver", "ERC-4626 vault",
-  "restaking", "EigenLayer", "severity classification", "severity decision".
+  "restaking", "EigenLayer", "AVS", "severity classification", "severity decision",
+  "perpetual", "perp dex", "GMX", "Synthetix", "funding rate", "liquidation cascade",
+  "intent protocol", "UniswapX", "Permit2", "1inch Fusion", "Dutch auction order",
+  "ZK-VM", "zkSync", "Polygon zkEVM", "ZK proof", "Risc0", "SP1", "Circom", "under-constrained".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---

@@ -547,7 +547,7 @@ function testExploit() public {
 
 ### Sherlock
 
-Findings are markdown files in the contest repo under `findings/`. Strict structure required.
+Findings are submitted to a separate judging repository (`sherlock-audit/[contest]-judging`), not into the contest repo itself. Each finding is a separate markdown file. Strict structure required.
 
 ```markdown
 ## [H-01] Finding Title

@@ -97,7 +97,12 @@ partially invalidated by `invalidateUnorderedNonces(wordPos, mask)` calls.
 
 Dutch auctions decay linearly from `startAmount` to `endAmount` over the decay window.
 
+The naive formula assumes `startAmount > endAmount`. For **output** tokens in Dutch orders
+the direction is reversed (`endAmount > startAmount` — user receives more over time).
+A single direction formula causes an underflow revert in Solidity 0.8+ when used for outputs.
+
 ```solidity
+// Handles both directions (inputs: start > end, outputs: start < end)
 function resolve(
     uint256 startAmount, uint256 endAmount,
     uint256 startTime, uint256 endTime
@@ -105,14 +110,19 @@ function resolve(
     if (block.timestamp <= startTime) return startAmount;
     if (block.timestamp >= endTime) return endAmount;
     uint256 elapsed = block.timestamp - startTime;
-    uint256 duration = endTime - startTime;
-    // Linear interpolation between start and end
-    return startAmount - (startAmount - endAmount) * elapsed / duration;
+    uint256 duration = endTime - startTime; // Must be > 0
+    if (startAmount >= endAmount) {
+        // Input decay: amount decreases over time
+        return startAmount - (startAmount - endAmount) * elapsed / duration;
+    } else {
+        // Output decay: amount increases over time (user gets more if filler waits)
+        return startAmount + (endAmount - startAmount) * elapsed / duration;
+    }
 }
 ```
 
 **Audit checks:**
-- `startAmount > endAmount` for inputs (user pays less over time), opposite for outputs
+- Is the decay function direction-aware? A single-direction formula underflows on output tokens
 - `endTime > startTime` — division by zero if equal
 - Can `block.timestamp` be manipulated by L2 sequencer to get better price?
 - Is there a minimum decay window to prevent instant-floor fills?

@@ -309,7 +309,9 @@ Key references: EigenLayer M2 mainnet contracts, `ServiceManager`, `ECDSAStakeRe
 - [ ] Are `StrategyManager` share values correctly interpreted (shares ≠ underlying tokens 1:1)?
 - [ ] Does the AVS handle the EigenLayer withdrawal delay (7-day queue) in its trust assumptions?
 - [ ] Is the AVS registered in `AVSDirectory`? Are metadata URI updates validated?
-- [ ] Does `ServiceManagerBase.slashOperator()` correctly propagate to `DelegationManager`?
+- [ ] If using post-M2 EigenLayer contracts (Slashing upgrade): does the AVS correctly call `AllocationManager.slashOperator()` with valid parameters?
+- [ ] Is the slashing magnitude bounded per strategy to prevent full stake loss from a single call?
+- [ ] Note: In EigenLayer M2 (mainnet), the `Slasher` contract is a stub — active slashing was introduced in the subsequent Slashing upgrade via `AllocationManager` and Operator Sets.
 
 ### BLS & Signature Security (if using BLSSignatureChecker)
 - [ ] Is the BLS G2 point validation correct? Are zero/invalid G2 points rejected?

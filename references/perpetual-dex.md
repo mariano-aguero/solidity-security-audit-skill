@@ -37,8 +37,12 @@ function getMarkPrice(bytes32 marketId) external view returns (uint256) {
 ```solidity
 function getMarkPrice(bytes32 marketId) external view returns (uint256) {
     uint256 indexPrice = _getValidatedIndexPrice(marketId);
-    uint256 premium = _calculateFundingPremium(marketId);
-    uint256 markPrice = indexPrice + premium;
+    // Premium is signed: positive when longs dominate, negative when shorts dominate
+    int256 premium = _calculateFundingPremium(marketId);
+
+    uint256 markPrice = premium >= 0
+        ? indexPrice + uint256(premium)
+        : indexPrice - uint256(-premium);
 
     // Mark cannot deviate more than MAX_MARK_DEVIATION_BPS from index
     uint256 maxDev = indexPrice * MAX_MARK_DEVIATION_BPS / 10_000;
@@ -172,20 +176,25 @@ function getLPTokenPrice() external view returns (uint256) {
 
 ### 5.1 Precision in PnL Calculation
 
+The classic precision loss pattern: dividing before multiplying.
+For PnL this typically happens when an intermediate ratio or rate is computed first.
+
 ```solidity
-// VULN: Division before multiplication loses precision
+// VULN: Intermediate division truncates before multiplying by size
+function getPnL(Position memory pos) internal view returns (int256) {
+    uint256 markPrice = getMarkPrice(pos.marketId);
+    int256 priceDelta = int256(markPrice) - int256(pos.entryPrice);
+    // BAD: divides priceDelta by PRICE_PRECISION first, then multiplies by size
+    // priceDelta might truncate to 0 if priceDelta < PRICE_PRECISION
+    int256 priceRatio = priceDelta / int256(PRICE_PRECISION);
+    return priceRatio * int256(pos.size);
+}
+
+// SECURE: Multiply by size first, then divide — preserves all significant bits
 function getPnL(Position memory pos) internal view returns (int256) {
     uint256 markPrice = getMarkPrice(pos.marketId);
     int256 priceDelta = int256(markPrice) - int256(pos.entryPrice);
     return priceDelta * int256(pos.size) / int256(PRICE_PRECISION);
-    // Better: multiply first, then divide
-}
-
-// SECURE: Multiply before dividing
-function getPnL(Position memory pos) internal view returns (int256) {
-    uint256 markPrice = getMarkPrice(pos.marketId);
-    int256 priceDelta = int256(markPrice) - int256(pos.entryPrice);
-    return int256(pos.size) * priceDelta / int256(PRICE_PRECISION);
 }
 ```
 
