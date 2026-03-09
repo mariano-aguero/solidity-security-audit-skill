@@ -17,8 +17,8 @@ Each tool serves a different purpose — use them in combination for maximum cov
 | **Foundry (Forge)** | Testing/fuzzing/coverage | Paradigm | Unit tests, fuzz tests, gas reports, fork testing, coverage |
 | **Halmos** | Symbolic testing | a16z | Formal verification of Solidity properties |
 | **Certora Prover** | Formal verification | Certora | Mathematical proof of correctness |
-| **Mythril** | Symbolic execution | Consensys | Automated vulnerability detection |
-| **Manticore** | Symbolic execution | Trail of Bits | Complex multi-tx attacks, full EVM simulation |
+| **Mythril** | Symbolic execution | Consensys | ⚠ DEPRECATED — unmaintained since 2023; use Halmos or Foundry fuzz instead |
+| **Manticore** | Symbolic execution | Trail of Bits | ⚠ DEPRECATED — officially paused 2023; archived repo |
 | **Wake** | Static analyzer + fuzzer | Ackee Blockchain | Python-based, deep data flow, Foundry-style tests |
 | **Semgrep** | Pattern matching | Semgrep Inc. | Fast regex+AST rules, CI integration, custom rules |
 | **4naly3er** | Report generator | Community | Code4rena-style automated finding lists |
@@ -973,6 +973,11 @@ slither . --detect my-detector --sarif custom-findings.sarif
 
 ## 11. Mythril (Symbolic Execution)
 
+> **⚠ DEPRECATED:** Mythril is no longer actively maintained (last meaningful release 2023).
+> Consensys has shifted focus away from it. For symbolic execution use cases, prefer
+> **Halmos** (§6) for property verification or **Foundry fuzz** (§3) for stateful exploration.
+> The section below is retained for reference only.
+
 **What it does**: Performs symbolic execution on EVM bytecode to detect security
 vulnerabilities. Works without source code — analyzes compiled bytecode directly.
 
@@ -1028,6 +1033,11 @@ to catch missed patterns, or for unverified bytecode analysis.
 ---
 
 ## 12. Manticore (Symbolic Execution + EVM Simulation)
+
+> **⚠ DEPRECATED:** Manticore was officially paused by Trail of Bits in 2023 and the repository
+> is archived. Do not use for new audits. For multi-transaction state exploration, use
+> **Medusa** (§5) or **Foundry stateful fuzz** (§3) instead.
+> The section below is retained for reference only.
 
 **What it does**: Full EVM simulation with symbolic execution. Unlike Mythril,
 Manticore can simulate multi-transaction attack sequences and has a programmatic
@@ -1103,6 +1113,99 @@ pip install manticore[native]
 # Or via Trail of Bits Docker toolbox (includes all tools)
 docker pull ghcr.io/trailofbits/eth-security-toolbox:nightly
 ```
+
+---
+
+## 13. Semgrep (Pattern Matching)
+
+**What it detects**: Fast, composable code patterns using a combination of regex and
+AST-aware matching. Ideal for enforcing coding standards across a large codebase,
+detecting known-bad patterns, and running in CI without heavy tooling setup.
+
+Used actively by CertiK, OpenZeppelin, and independent auditors for first-pass scanning.
+
+### Installation
+
+```bash
+pip install semgrep
+# or
+brew install semgrep
+```
+
+### Usage
+
+```bash
+# Run community Solidity rules
+semgrep --config "p/solidity" .
+
+# Run specific rule file
+semgrep --config rules/reentrancy.yaml src/
+
+# Output as JSON for integration
+semgrep --config "p/solidity" . --json -o semgrep-report.json
+
+# Run in CI (fail on findings with severity >= error)
+semgrep --config "p/solidity" . --error
+```
+
+### Key Community Rule Packs
+
+| Pack | Command | Covers |
+|------|---------|--------|
+| Solidity general | `p/solidity` | Reentrancy, tx.origin, unchecked math, floating pragma |
+| Smart contracts | `p/smart-contracts` | DeFi-specific patterns, oracle misuse |
+| Trail of Bits | `p/trailofbits` | ToB's curated Solidity rules |
+
+### Writing Custom Rules
+
+Semgrep rules are YAML. Example — detecting `latestRoundData` without staleness check:
+
+```yaml
+rules:
+  - id: chainlink-stale-price
+    patterns:
+      - pattern: |
+          ($FEED).latestRoundData()
+      - pattern-not: |
+          require($TIMESTAMP + $PERIOD > block.timestamp, ...)
+      - pattern-not: |
+          if ($TIMESTAMP + $PERIOD <= block.timestamp) { ... }
+    message: "Chainlink latestRoundData() called without staleness check"
+    languages: [solidity]
+    severity: WARNING
+    metadata:
+      references:
+        - references/vulnerability-taxonomy.md §4.2
+```
+
+Example — detecting `slot0` used as price oracle:
+
+```yaml
+rules:
+  - id: uniswap-slot0-price-oracle
+    pattern: |
+      ($POOL).slot0()
+    message: "slot0() used — manipulable spot price. Use TWAP via observe() instead."
+    languages: [solidity]
+    severity: ERROR
+```
+
+### When to Use Semgrep vs Slither
+
+| Need | Use |
+|------|-----|
+| Known-bad patterns in your own coding rules | Semgrep |
+| Deep data-flow / taint analysis | Slither |
+| Enforce team style guide in CI | Semgrep |
+| Detect complex multi-contract reentrancy | Slither |
+| Fast first-pass before full audit | Semgrep |
+| Full vulnerability detection report | Slither + Aderyn |
+
+### Limitations
+
+- No semantic understanding of EVM — cannot detect issues requiring execution context
+- False negatives for patterns that span multiple files without cross-file analysis
+- Rule quality depends on the rule pack; community rules may miss protocol-specific issues
 
 ---
 
