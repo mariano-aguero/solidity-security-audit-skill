@@ -210,9 +210,10 @@ function beforeSwap(...) external override {
 }
 
 // SECURE: clamp before calling TickMath
-int24 targetTick = int24(
-    Math.max(TickMath.MIN_TICK, Math.min(TickMath.MAX_TICK, int256(currentTick) + tickOffset))
-);
+int256 t = int256(currentTick) + tickOffset;
+if (t < int256(TickMath.MIN_TICK)) t = int256(TickMath.MIN_TICK);
+if (t > int256(TickMath.MAX_TICK)) t = int256(TickMath.MAX_TICK);
+int24 targetTick = int24(t);
 uint160 sqrtPrice = TickMath.getSqrtPriceAtTick(targetTick);
 ```
 
@@ -281,8 +282,8 @@ IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
 });
 
 // SECURE: set price limit based on current price + tolerance
-uint160 currentSqrtPrice = poolManager.getSlot0(poolId).sqrtPriceX96;
-uint160 priceLimit = uint160(uint256(currentSqrtPrice) * 99 / 100); // 1% max slippage
+(uint160 currentSqrtPrice, , , ) = poolManager.getSlot0(poolId);
+uint160 priceLimit = uint160(uint256(currentSqrtPrice) * 99 / 100); // ~2% price slippage (1% on sqrt price)
 IPoolManager.SwapParams memory params = IPoolManager.SwapParams({
     zeroForOne: true,
     amountSpecified: -int256(rebalanceAmount),
