@@ -389,6 +389,69 @@ the EOA's assets and storage.
 Patterns for EIP-1153 (`tload`/`tstore`) introduced in Solidity 0.8.24 (Cancun).
 Transient storage clears at transaction end but persists across internal calls in the same tx.
 
+### TSTORE Poison Compiler Bug — Vulnerable Compiler Version (CRITICAL)  <!-- #tstore-poison -->
+
+**Description**: Solidity 0.8.28–0.8.33 with `--via-ir` (`viaIR: true`) has a cache key
+collision bug that emits the wrong opcode for `delete` on transient or persistent variables.
+`delete` on a transient variable may emit `sstore` to a persistent slot, and vice versa.
+Consequences: ownership slot corruption, reentrancy guard bypass, approval persistence.
+~500,000 contracts on mainnet may be affected. Fixed in solc 0.8.34.
+
+**Detection Patterns**:
+
+```bash
+# 1. Check foundry.toml for affected compiler version + viaIR
+grep -E "(solc|solc_version|compiler_version)" foundry.toml
+grep -i "viaIR\|via_ir\|via-ir" foundry.toml
+
+# 2. Check hardhat.config for affected versions
+grep -E "solidity|version|viaIR" hardhat.config.ts hardhat.config.js 2>/dev/null
+
+# 3. Check if transient storage is used (tstore/tload in assembly)
+grep -rn "tstore\|tload" src/ contracts/
+
+# 4. Check compiled artifacts for via-ir flag in metadata
+find out/ -name "*.json" | head -5 | xargs grep -l "viaIR" 2>/dev/null
+```
+
+```regex
+# Regex: detect affected solc version range in config files
+(0\.8\.(2[89]|3[0-3]))
+```
+
+**Severity**: Critical if `viaIR: true` + transient storage used
+**Recommendation**:
+1. Upgrade to solc >= 0.8.34 and recompile immediately
+2. If redeployment is not immediate: disable `viaIR` as a temporary fix
+3. Flag any project using solc 0.8.28–0.8.33 + `viaIR: true` regardless of transient storage
+
+---
+
+### `transfer()`/`send()` with Transient Storage (HIGH)  <!-- #transfer-tstore -->
+
+**Description**: `address.transfer()` and `address.send()` forward 2300 gas. This was
+historically sufficient to prevent `SSTORE` (≥5000 gas cold), but TSTORE costs only 100 gas.
+A recipient's `receive()` can clear a transient reentrancy guard within 2300 gas and reenter.
+
+**Detection Pattern**:
+
+```bash
+# Find transfer/send combined with tstore usage in same contract
+grep -rn "\.transfer(\|\.send(" src/ contracts/
+# Then cross-check those contracts for tstore usage
+```
+
+```regex
+# Detect .transfer( or .send( in Solidity files
+\.(transfer|send)\s*\(
+```
+
+**Recommendation**:
+1. Replace all `.transfer()` and `.send()` with `.call{value: ...}("")` + CEI or `nonReentrant`
+2. Solidity 0.8.31 deprecated both — treat any remaining usage as a finding
+
+---
+
 ### Transient Storage Without Cleanup (MEDIUM)  <!-- #transient-storage-cleanup -->
 
 **Description**: Using `tstore` without a corresponding cleanup `tstore(slot, 0)` at the

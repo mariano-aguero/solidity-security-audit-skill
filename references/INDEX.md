@@ -89,6 +89,8 @@ Use this when you know what you're looking for but not which file covers it.
 | ERC-7702 — re-initialization of delegated code | vulnerability-taxonomy.md | §17.4 |
 | Uniswap V4 — hook vulnerabilities | vulnerability-taxonomy.md | §18 |
 | Transient storage — specific issues | vulnerability-taxonomy.md | §19 |
+| Transient storage — TSTORE Poison compiler bug (solc 0.8.28–0.8.33, via-ir) | vulnerability-taxonomy.md | §19.6 |
+| Transient storage — 2300-gas stipend bypass via TSTORE (transfer/send broken) | vulnerability-taxonomy.md | §19.7 |
 | Supply chain & build system attacks | vulnerability-taxonomy.md | §20 |
 | ERC-6909 — dual approval model confusion | vulnerability-taxonomy.md | §21.1 |
 | ERC-6909 — donation / inflation attack (no totalSupply) | vulnerability-taxonomy.md | §21.2 |
