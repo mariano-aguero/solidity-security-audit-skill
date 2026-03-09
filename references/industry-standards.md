@@ -137,7 +137,7 @@ Sherlock's severity model was rewritten in 2025. Key changes from v1:
 | Severity tiers | High / Medium | High / Medium (unchanged) |
 | Duplication | Highest-severity unique finding wins | Lead watson can escalate; dupes grouped by root cause |
 | Low findings | Not rewarded | Still not rewarded in contests |
-| Admin/owner trust | Fully trusted | **Restricted** by default — admin cannot be attack vector unless explicitly in scope |
+| Admin/owner trust | Fully trusted | **Trusted** by default — admin-as-attack-vector is out of scope unless README marks admin as restricted |
 | External integrations | Auditor's discretion | Must be in scope or explicitly broken to count |
 | Watson escalation | None | Lead Watson can escalate Medium → High with judge approval |
 

@@ -777,6 +777,7 @@ function detectSpotPriceUsage(source: string): Array<{ line: number; text: strin
     "getReserves",
     "slot0",
     "getSqrtRatioAtTick",
+    "getSqrtPriceAtTick",
     "getSqrtTwapX96",
   ];
 

@@ -198,6 +198,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Custom Slither detectors | tool-integration.md | §10 Custom Detectors |
 | Mythril — symbolic execution | tool-integration.md | §11 Mythril |
 | Manticore — EVM simulation | tool-integration.md | §12 Manticore |
+| Semgrep — pattern matching | tool-integration.md | §13 Semgrep |
 | Tool selection matrix (when to use which) | tool-integration.md | Tool Selection Matrix |
 | Recommended audit pipeline | tool-integration.md | Recommended Audit Pipeline |
 | Automated scan workflow | automated-detection.md | Automated Scan Workflow |
@@ -271,6 +272,7 @@ Use this when you know what you're looking for but not which file covers it.
 | L2 sequencer feeds (Chainlink) | l2-crosschain.md | L2 Sequencer Feeds |
 | ERC-4337 account architecture | account-abstraction.md | Architecture Overview |
 | UserOperation structure | account-abstraction.md | UserOperation Structure |
+| PackedUserOperation (v0.7 migration) | account-abstraction.md | UserOperation v0.7 |
 | Smart account (wallet) vulnerabilities | account-abstraction.md | Account Vulnerabilities |
 | Paymaster vulnerabilities | account-abstraction.md | Paymaster Vulnerabilities |
 | Factory vulnerabilities (AA) | account-abstraction.md | Factory Vulnerabilities |
