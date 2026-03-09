@@ -4,6 +4,28 @@ Quick reference for vulnerability classification and severity standards used in 
 
 ---
 
+## OWASP Smart Contract Top 10 (2025)
+
+**Source:** OWASP Foundation SC Top 10 — ranked by financial impact and incident frequency
+from SolidityScan Web3HackHub 2025 data. Access control overtook reentrancy as #1 ($953M in 2024).
+
+| Rank | ID | Category | Financial Impact 2024 | Key Patterns |
+|------|-----|----------|-----------------------|--------------|
+| 1 | SC01 | **Access Control Vulnerabilities** | $953M | Missing modifiers, tx.origin, unprotected initializers, role hierarchy errors |
+| 2 | SC02 | **Price Oracle Manipulation** | $850M+ | Spot price usage, stale feeds, single oracle, TWAP bypass |
+| 3 | SC03 | **Logic Errors / Business Rule Violations** | High | Off-by-one, incorrect fee math, wrong state machine transitions |
+| 4 | SC04 | **Lack of Input Validation** | High | Missing zero-address checks, unchecked array bounds, unvalidated amounts |
+| 5 | SC05 | **Reentrancy Vulnerabilities** | High (classic) | Single-fn, cross-fn, cross-contract, read-only, ERC-1155 hook |
+| 6 | SC06 | **Unchecked External Calls** | Medium | Ignored return values, failed calls silently passing, unsafe delegatecall |
+| 7 | SC07 | **Flash Loan Attacks** | High (catalyst) | Oracle + flash loan combos, governance flash attacks, collateral manipulation |
+| 8 | SC08 | **Integer Overflow / Underflow** | Medium | unchecked blocks, pre-0.8.x code, precision loss in division |
+| 9 | SC09 | **Insecure Randomness** | Medium | blockhash, block.timestamp, commit-reveal without entropy |
+| 10 | SC10 | **Denial of Service** | Medium | Unbounded loops, force-send ETH, block gas limit, pull-not-push violations |
+
+**Cross-reference:** SC01 → taxonomy §2, SC02 → taxonomy §4, SC05 → taxonomy §1, SC08 → taxonomy §3
+
+---
+
 ## SWC Registry (Smart Contract Weakness Classification)
 
 **EIP-1470** — Classification scheme for smart contract weaknesses.
@@ -71,6 +93,10 @@ Standard used by Immunefi, Sherlock, and Code4rena for classifying findings.
 | EIP-6780 | SELFDESTRUCT Restriction | Changed selfdestruct behavior post-Cancun |
 | EIP-7201 | Namespaced Storage Layout | Prevents storage collision in upgradeable contracts |
 | EIP-7702 | Set Code for EOAs | EOAs can become smart accounts — delegation and replay risks |
+| EIP-7002 | Execution Layer Triggerable Exits | Withdrawal credentials can force validator exits — new staking attack surface |
+| EIP-7251 | Increase MAX_EFFECTIVE_BALANCE | Up to 2048 ETH per validator — amplified slashing, consolidation race conditions |
+| EIP-6110 | Supply Validator Deposits On-Chain | Deposits visible in EL immediately — deposit front-running, flow changes |
+| ERC-7683 | Cross-Chain Intents Standard | Filler trust model, msg.sender bypass via DestinationSettler, parameter substitution |
 
 ---
 

@@ -1,7 +1,7 @@
 # Intent-Based Protocol Security Reference
 
 Security analysis framework for intent-based order execution systems.
-Covers Permit2, UniswapX, 1inch Fusion, and general intent protocol patterns.
+Covers Permit2, UniswapX, 1inch Fusion, ERC-7683 Cross-Chain Intents, and general intent protocol patterns.
 
 See `defi-integrations.md` for integration checklists.
 See `defi-checklist.md` for protocol-type security checks.
@@ -296,11 +296,292 @@ function test_revertIfCallbackCalledDirectly() public {
 
 ---
 
+## 8. ERC-7683 Cross-Chain Intents Standard
+
+**Status:** Live in production (2025). Deployed on Base + Arbitrum via AcrossOriginSettler.
+**Standard:** Defines a universal API for cross-chain value transfer with standardized order
+structs and settler interfaces, enabling interoperability between different intent protocols.
+
+### 8.1 Architecture
+
+```
+Origin Chain                          Destination Chain
+─────────────────────                 ─────────────────────────
+User signs CrossChainOrder            Filler calls fill(orderId, originData, fillerData)
+      │                                     │
+      ▼                                     ▼
+IOriginSettler.open(order)           IDestinationSettler (validates + transfers)
+      │                                     │
+  emits Open(orderId, resolvedOrder)    emits Filled(orderId, ...)
+      │                                     │
+      └─────── Filler claims input ◄────────┘
+               on origin chain after
+               destination fill confirmed
+```
+
+**Key interfaces:**
+
+```solidity
+// Origin chain — accepts and escrows user order
+interface IOriginSettler {
+    struct CrossChainOrder {
+        address settlementContract; // Origin settler address
+        address swapper;            // User
+        uint256 nonce;
+        uint32 originChainId;
+        uint32 initiateDeadline;    // Must be opened before this
+        uint32 fillDeadline;        // Must be filled on dest before this
+        bytes orderData;            // Protocol-specific extra data
+    }
+
+    struct ResolvedCrossChainOrder {
+        address settlementContract;
+        address swapper;
+        uint256 nonce;
+        uint32 originChainId;
+        uint32 initiateDeadline;
+        uint32 fillDeadline;
+        Input[] minReceived;        // What filler must give user on dest
+        FillInstruction[] fillInstructions; // How to fill on dest
+    }
+
+    function open(CrossChainOrder calldata order, bytes calldata signature) external;
+    function resolve(CrossChainOrder calldata order, bytes calldata fillerData)
+        external view returns (ResolvedCrossChainOrder memory);
+}
+
+// Destination chain — filler calls this to complete the fill
+interface IDestinationSettler {
+    function fill(
+        bytes32 orderId,
+        bytes calldata originData, // CrossChainOrder encoded
+        bytes calldata fillerData  // Filler-provided execution data
+    ) external;
+}
+```
+
+---
+
+### 8.2 Critical: Filler Trust Model
+
+**ERC-7683 explicitly delegates settlement security to fillers.** The standard provides
+no enforced on-chain mechanism to verify that the destination fill matches the origin order.
+Security lives in the filler's off-chain validation and the settler contract's implementation.
+
+```solidity
+// STANDARD PATTERN: DestinationSettler fills on behalf of user
+// msg.sender = filler
+// The settled contract sees DestinationSettler as msg.sender — NOT the original user
+
+// VULN: Target contract authenticates via msg.sender
+contract VaultWithIntents {
+    function deposit(uint256 amount) external {
+        // msg.sender here is DestinationSettler, not the actual user
+        // Any permission check on msg.sender breaks cross-chain intent flows
+        require(whitelist[msg.sender], "Not whitelisted"); // Blocks filler
+    }
+}
+
+// SECURE: Use originData to recover the actual swapper identity
+contract VaultWithIntents {
+    function depositCrossChain(
+        bytes32 orderId,
+        bytes calldata originData,  // Decode to get swapper address
+        bytes calldata fillerData
+    ) external {
+        CrossChainOrder memory order = abi.decode(originData, (CrossChainOrder));
+        // Validate fill parameters before crediting user
+        require(order.fillDeadline >= block.timestamp, "Expired");
+        _creditDeposit(order.swapper, _resolveAmount(order, fillerData));
+    }
+}
+```
+
+**Audit check:** Any contract that accepts cross-chain intents via ERC-7683 must handle
+`msg.sender == DestinationSettler` — not the end user. Access control patterns that
+assume `msg.sender == user` silently break.
+
+---
+
+### 8.3 Cross-Chain Parameter Substitution
+
+The `originData` field passed to `IDestinationSettler.fill()` is provided by the filler.
+If the destination settler does not verify that `originData` matches what was committed
+on the origin chain, a filler can substitute favorable parameters.
+
+```solidity
+// VULN: fill() trusts filler-provided originData without verification
+function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external {
+    CrossChainOrder memory order = abi.decode(originData, (CrossChainOrder));
+    // No verification that order.nonce, order.minReceived, order.swapper
+    // match what was emitted in Open() on the origin chain.
+    _transferToUser(order.swapper, order.minReceived[0].amount); // Filler controls amount
+}
+
+// SECURE: Verify orderId commits to the order content
+function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external {
+    CrossChainOrder memory order = abi.decode(originData, (CrossChainOrder));
+
+    // orderId must be derived deterministically from the order struct
+    bytes32 expectedId = keccak256(abi.encode(
+        order.settlementContract,
+        order.swapper,
+        order.nonce,
+        order.originChainId,
+        order.fillDeadline,
+        order.orderData
+    ));
+    require(orderId == expectedId, "OrderId mismatch");
+
+    // Also check chainId — order for Arbitrum should not fill on Base
+    require(order.originChainId == block.chainid, "Wrong chain");
+    require(order.fillDeadline >= block.timestamp, "Fill expired");
+
+    _transferToUser(order.swapper, _resolveAmount(order, fillerData));
+    emit Filled(orderId, msg.sender, fillerData);
+}
+```
+
+---
+
+### 8.4 Double-Fill / OrderId Collision
+
+Without tracking filled orders, a filler can call `fill()` multiple times for the same
+`orderId`, delivering output multiple times while claiming input only once on origin.
+
+```solidity
+// VULN: No fill tracking
+function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external {
+    // No check if orderId was already filled
+    _transferToUser(...);
+    emit Filled(orderId, msg.sender, fillerData);
+}
+
+// SECURE: Track filled orders
+mapping(bytes32 => bool) public filled;
+
+function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external {
+    require(!filled[orderId], "Already filled");
+    filled[orderId] = true; // Set BEFORE transfers (CEI)
+    _transferToUser(...);
+    emit Filled(orderId, msg.sender, fillerData);
+}
+```
+
+---
+
+### 8.5 Settlement Finality Race
+
+If the filler can claim the origin escrow before destination settlement is final:
+
+- **Optimistic finality risk**: On rollups with reorg risk, a destination fill can be
+  reverted after the filler already claimed on origin
+- **Mitigation**: Origin settler should only release funds after a finality delay
+  matching the destination chain's confirmation window
+
+```solidity
+// VULN: Instant origin release after filler claims
+function releaseFunds(bytes32 orderId, bytes calldata proofData) external {
+    // No delay — filler can claim immediately
+    _releaseToFiller(orderId);
+}
+
+// SECURE: Enforce finality window per destination chain
+mapping(uint32 => uint256) public finalityDelays; // chainId => seconds
+
+function releaseFunds(bytes32 orderId, bytes calldata proofData) external {
+    FillRecord memory record = fillRecords[orderId];
+    uint256 delay = finalityDelays[record.destinationChainId];
+    require(block.timestamp >= record.filledAt + delay, "Not final yet");
+    _releaseToFiller(orderId);
+}
+```
+
+---
+
+### 8.6 Griefing via Exclusive Filler
+
+If the standard supports exclusive fill windows, a malicious exclusive filler can
+deliberately not fill the order, locking user funds in escrow until `fillDeadline`.
+
+**Audit checks:**
+- Is there a maximum exclusive window duration?
+- Can the user cancel and reclaim escrowed funds if the order expires unfilled?
+- Is the cancellation path protected from filler front-running?
+
+---
+
+### 8.7 EIP-7702 + ERC-7683 Combined Attack Surface
+
+When EOAs delegate to wallet contracts (EIP-7702) and use ERC-7683 intents:
+
+1. EOA signs a 7683 order using EIP-712 domain for its delegated code
+2. On destination, `msg.sender` = DestinationSettler, not the EOA
+3. If the delegated wallet contract validates `msg.sender` instead of recovering signer
+   from `originData`, the cross-chain fill is blocked or misdirected
+
+```solidity
+// SECURE: Delegated wallet accepting cross-chain fills
+function handleCrossChainFill(
+    bytes32 orderId,
+    bytes calldata originData
+) external {
+    // msg.sender is DestinationSettler — verify it's trusted
+    require(trustedSettlers[msg.sender], "Untrusted settler");
+
+    // Recover the actual order owner from the signed originData
+    CrossChainOrder memory order = abi.decode(originData, (CrossChainOrder));
+    require(order.swapper == address(this), "Not our order");
+
+    _executeOrder(order);
+}
+```
+
+---
+
+### 8.8 Detection Patterns
+
+```bash
+# Find ERC-7683 settler implementations
+grep -r "IOriginSettler\|IDestinationSettler\|CrossChainOrder\|fillDeadline\|initiateDeadline" src/
+
+# Find orderId tracking
+grep -r "filled\[orderId\]\|usedOrderIds\|orderFilled" src/
+
+# Find finality delay logic
+grep -r "finalityDelay\|confirmationWindow\|releaseFunds" src/
+
+# Find msg.sender auth that could break with DestinationSettler
+grep -r "msg.sender.*whitelist\|whitelist.*msg.sender\|require.*msg.sender" src/
+
+# Find 7702 + 7683 combined patterns
+grep -r "authorization_list\|setCode\|delegatecall.*settler" src/
+```
+
+---
+
+### 8.9 ERC-7683 Security Checklist
+
+- [ ] Does `fill()` verify `orderId` is derived from the committed `originData`?
+- [ ] Is double-fill prevented via a `filled[orderId]` mapping (set before transfers)?
+- [ ] Does the destination settler validate chain ID from `originData`?
+- [ ] Is `fillDeadline` enforced before processing fills?
+- [ ] Can user reclaim escrowed funds if order expires unfilled?
+- [ ] Are contracts that accept cross-chain fills aware that `msg.sender` = settler (not user)?
+- [ ] Is there a finality delay before releasing origin escrow to filler?
+- [ ] Are exclusive filler windows time-bounded to prevent indefinite griefing?
+- [ ] Is the `originData` signature verified against the origin chain's Open event?
+- [ ] Does the settler handle partial fills — are they tracked separately from full fills?
+
+---
+
 ## References
 
 - [Permit2 Source](https://github.com/Uniswap/permit2)
 - [UniswapX Source](https://github.com/Uniswap/UniswapX)
 - [1inch Limit Order Protocol v4](https://github.com/1inch/limit-order-protocol)
+- [ERC-7683 Standard](https://eips.ethereum.org/EIPS/eip-7683)
+- [AcrossOriginSettler (live on Base/Arbitrum)](https://github.com/across-protocol/contracts)
 - [defi-integrations.md](defi-integrations.md) — Integration checklists
 - [defi-checklist.md](defi-checklist.md) — Protocol-type security checks
 - [account-abstraction.md](account-abstraction.md) — Interacts with intent protocols via ERC-4337

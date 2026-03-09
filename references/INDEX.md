@@ -147,6 +147,12 @@ Use this when you know what you're looking for but not which file covers it.
 | Intent protocols — deep reference | intent-protocols.md | (all sections) |
 | Permit2 — nonce bitmap, witness hash | intent-protocols.md | §1 Signature & Nonce Security |
 | UniswapX — Dutch auction, callback auth | intent-protocols.md | §2–3 |
+| ERC-7683 — cross-chain intents (live on Base/Arbitrum) | intent-protocols.md | §8 ERC-7683 |
+| ERC-7683 — filler trust model | intent-protocols.md | §8.2 Filler Trust Model |
+| ERC-7683 — parameter substitution cross-chain | intent-protocols.md | §8.3 Parameter Substitution |
+| ERC-7683 — double-fill / orderId collision | intent-protocols.md | §8.4 Double-Fill |
+| ERC-7683 — settlement finality race | intent-protocols.md | §8.5 Settlement Finality Race |
+| ERC-7683 — security checklist | intent-protocols.md | §8.9 ERC-7683 Checklist |
 | Perpetual DEX — GMX v2, Synthetix Perps | perpetual-dex.md | (all sections) |
 | Perpetual DEX — oracle, liquidation, LP | perpetual-dex.md | §1–4 |
 | Perpetual DEX — PnL precision, leverage | perpetual-dex.md | §5 |
@@ -289,6 +295,16 @@ Use this when you know what you're looking for but not which file covers it.
 | Audit questions by function type | audit-questions.md | (full file) |
 | One-page cheat sheet | quick-reference.md | (full file) |
 | Industry standards (SWC, EIPs, firms) | industry-standards.md | (full file) |
+| OWASP Smart Contract Top 10 (2025) | industry-standards.md | OWASP SC Top 10 |
+| Staking/consensus layer security (Pectra) | staking-consensus.md | (full file) |
+| EIP-7002 — triggerable validator exits | staking-consensus.md | §1 EIP-7002 |
+| EIP-7002 — mass forced exit attack | staking-consensus.md | §1.2.1 |
+| EIP-7002 — partial withdrawal griefing | staking-consensus.md | §1.2.2 |
+| EIP-7251 — MaxEB slashing amplification | staking-consensus.md | §2 EIP-7251 |
+| EIP-7251 — consolidation race conditions | staking-consensus.md | §2.2 |
+| EIP-6110 — validator deposit front-running | staking-consensus.md | §3 EIP-6110 |
+| Pectra combined attack scenarios | staking-consensus.md | §4 Combined Attacks |
+| Post-Pectra staking audit checklist | staking-consensus.md | §5 Checklist |
 
 ---
 
@@ -310,3 +326,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Merkle claim without bitmap | secure-patterns Merkle Airdrop |
 | Clone/minimal proxy factory | secure-patterns EIP-1167, taxonomy §6.2 |
 | `permit()` call that can be front-run | automated-detection Permit Frontrunning, taxonomy §11.3 |
+| ERC-7683 `fill()` without orderId tracking | intent-protocols §8.4 Double-Fill |
+| ERC-7683 `originData` not verified against orderId | intent-protocols §8.3 Parameter Substitution |
+| ERC-7683 contract uses `msg.sender == user` auth | intent-protocols §8.2 Filler Trust Model |
+| Liquid staking with `triggerValidatorExit()` | staking-consensus §1 EIP-7002 |
+| Staking insurance fund sized for 32 ETH max | staking-consensus §2.1 Slashing Amplification |
+| Validator consolidation with BLS not verified | staking-consensus §2.2 Consolidation Race |
+| Two-step deposit (pubkey then credentials separate) | staking-consensus §3.1 Deposit Front-Running |

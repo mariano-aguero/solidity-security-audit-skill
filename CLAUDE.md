@@ -30,9 +30,10 @@ references/
 ├── diff-audit.md               # Re-audit and change review methodology      [v2]
 ├── severity-decision-tree.md   # Structured severity classification trees     [v2]
 ├── defi-integrations.md        # Uniswap v3/v4, Chainlink, Aave, Curve, Bal, intent protocols [v2]
-├── intent-protocols.md         # Permit2, UniswapX, 1inch Fusion deep reference               [v3]
+├── intent-protocols.md         # Permit2, UniswapX, 1inch Fusion, ERC-7683 deep reference      [v3+]
 ├── perpetual-dex.md            # GMX v2, Synthetix Perps, liquidation, LP solvency            [v3]
 ├── zkvm-specific.md            # ZK proof verification, zkSync/zkEVM gaps, circuit bugs       [v3]
+├── staking-consensus.md        # Pectra: EIP-7002/7251/6110, LST/restaking post-Pectra        [v3.1]
 └── INDEX.md                    # Topic → file:section navigation map         [v2]
 ```
 

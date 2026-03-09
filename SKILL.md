@@ -21,7 +21,13 @@ description: >
   "restaking", "EigenLayer", "AVS", "severity classification", "severity decision",
   "perpetual", "perp dex", "GMX", "Synthetix", "funding rate", "liquidation cascade",
   "intent protocol", "UniswapX", "Permit2", "1inch Fusion", "Dutch auction order",
-  "ZK-VM", "zkSync", "Polygon zkEVM", "ZK proof", "Risc0", "SP1", "Circom", "under-constrained".
+  "ZK-VM", "zkSync", "Polygon zkEVM", "ZK proof", "Risc0", "SP1", "Circom", "under-constrained",
+  "ERC-7683", "cross-chain intents", "IOriginSettler", "IDestinationSettler", "CrossChainOrder",
+  "filler protocol", "origin settler", "destination settler", "orderId", "fillDeadline",
+  "EIP-7002", "triggerable exit", "execution layer withdrawal", "validator exit",
+  "EIP-7251", "MaxEB", "max effective balance", "validator consolidation", "consolidation",
+  "EIP-6110", "beacon deposit", "validator deposit", "liquid staking security",
+  "OWASP SC", "OWASP smart contract", "SC01", "SC02".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -249,6 +255,11 @@ patterns, consult these reference files:
 - `references/diff-audit.md` — Re-audit and change review methodology
 - `references/severity-decision-tree.md` — Structured severity classification decision trees
 - `references/defi-integrations.md` — Secure integration patterns: Uniswap v3/v4, Chainlink, Aave, Curve, Balancer
+
+### New in v3
+- `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
+- `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
+- `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
 
 ### Navigation
 - `references/INDEX.md` — Topic → file:section map; use when you know the topic but not which file covers it
