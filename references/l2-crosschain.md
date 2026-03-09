@@ -384,32 +384,38 @@ ZK rollups often have upgradeability for circuit fixes:
 
 ### LayerZero Security
 
+LayerZero V2 (current) uses the OApp framework — V1 `ILayerZeroReceiver` / `lzReceive` is deprecated.
+
 ```solidity
-import {ILayerZeroReceiver} from "@layerzerolabs/contracts/interfaces/ILayerZeroReceiver.sol";
+// LayerZero V2 — OApp framework (lz-evm-oapp-v2)
+import { OApp, Origin, MessagingFee } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/OApp.sol";
 
-contract SecureLayerZeroReceiver is ILayerZeroReceiver {
-    mapping(uint16 => bytes) public trustedRemotes;
+contract SecureOAppReceiver is OApp {
+    constructor(address endpoint, address owner) OApp(endpoint, owner) {}
 
-    function lzReceive(
-        uint16 srcChainId,
-        bytes calldata srcAddress,
-        uint64 nonce,
-        bytes calldata payload
-    ) external override {
-        // Verify source is trusted
-        require(
-            msg.sender == address(lzEndpoint),
-            "Invalid endpoint"
-        );
-        require(
-            keccak256(srcAddress) == keccak256(trustedRemotes[srcChainId]),
-            "Invalid source"
-        );
-
-        // Process payload...
+    function _lzReceive(
+        Origin calldata origin,   // {srcEid: uint32, sender: bytes32, nonce: uint64}
+        bytes32 /*guid*/,
+        bytes calldata message,
+        address /*executor*/,
+        bytes calldata /*extraData*/
+    ) internal override {
+        // Peer validation built into OApp base — _lzReceive is only called
+        // if origin.sender matches the peer set via setPeer(srcEid, bytes32(peerAddress))
+        require(message.length > 0, "empty payload");
+        (address recipient, uint256 amount) = abi.decode(message, (address, uint256));
+        _process(uint32(origin.srcEid), recipient, amount);
     }
+
+    function _process(uint32 srcEid, address recipient, uint256 amount) internal virtual {}
 }
 ```
+
+**V1 → V2 migration checklist:**
+- [ ] Replace `trustedRemotes[uint16]` with `peers[uint32]` (EID, not chain ID)
+- [ ] Replace `lzReceive(uint16, bytes, uint64, bytes)` with `_lzReceive(Origin, bytes32, bytes, address, bytes)`
+- [ ] Peer addresses are `bytes32`-encoded: `bytes32(uint256(uint160(peerAddress)))`
+- [ ] `setPeer()` replaces `setTrustedRemote()` — verify admin access control
 
 ### Chainlink CCIP Security
 

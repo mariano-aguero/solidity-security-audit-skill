@@ -48,7 +48,7 @@ slither . --print contract-summary
 slither . --print function-summary
 
 # Check for upgrade safety
-slither . --print upgradeability-checks
+slither . --print upgradeability-check
 ```
 
 ### Key Detectors by Severity
@@ -201,8 +201,12 @@ function testFuzz_Withdraw(uint256 amount) public {
 ```
 
 ```bash
-# Run with more fuzz iterations
-forge test --fuzz-runs 10000
+# Run with more fuzz iterations — configure in foundry.toml (no CLI flag exists):
+# [fuzz]
+# runs = 10000
+#
+# Or via env var: FOUNDRY_FUZZ_RUNS=10000 forge test
+FOUNDRY_FUZZ_RUNS=10000 forge test
 ```
 
 ### Invariant Testing
@@ -376,10 +380,10 @@ deal(attacker, 100 ether);
 vm.expectRevert("Unauthorized");
 contract.adminFunction();
 
-// Snapshot and revert state
-uint256 snapshot = vm.snapshot();
+// Snapshot and revert state (Foundry >= 0.2.0)
+uint256 snapshot = vm.snapshotState();
 // ... do stuff ...
-vm.revertTo(snapshot);
+vm.revertToState(snapshot);
 ```
 
 ---
@@ -474,7 +478,7 @@ Proves properties hold for ALL possible inputs, not just random ones.
 halmos --contract MyTest
 
 # With specific solver timeout
-halmos --contract MyTest --solver-timeout-assertion 600
+halmos --contract MyTest --solver-timeout 600
 ```
 
 ### Writing Symbolic Tests
@@ -945,8 +949,8 @@ pip install -e ./my-detectors/
 # Run with custom detector
 slither . --detect my-detector,spot-price,missing-slippage
 
-# Run all detectors including custom
-slither . --detect all
+# Run all detectors (default — omit --detect to run everything)
+slither .
 
 # Output as SARIF (for CI integration)
 slither . --detect my-detector --sarif custom-findings.sarif
