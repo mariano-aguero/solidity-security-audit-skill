@@ -18,7 +18,7 @@ Each tool serves a different purpose — use them in combination for maximum cov
 | **Halmos** | Symbolic testing | a16z | Formal verification of Solidity properties |
 | **Certora Prover** | Formal verification | Certora | Mathematical proof of correctness |
 | **Mythril** | Symbolic execution | Consensys | ⚠ DEPRECATED — unmaintained since 2023; use Halmos or Foundry fuzz instead |
-| **Manticore** | Symbolic execution | Trail of Bits | ⚠ DEPRECATED — officially paused 2023; archived repo |
+| **Manticore** | Symbolic execution | Trail of Bits | ⚠ DEPRECATED — officially paused 2023; use Medusa or Foundry fuzz instead |
 | **Wake** | Static analyzer + fuzzer | Ackee Blockchain | Python-based, deep data flow, Foundry-style tests |
 | **Semgrep** | Pattern matching | Semgrep Inc. | Fast regex+AST rules, CI integration, custom rules |
 | **4naly3er** | Report generator | Community | Code4rena-style automated finding lists |
