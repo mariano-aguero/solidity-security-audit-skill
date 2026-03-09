@@ -107,3 +107,90 @@ Immunefi Critical pays for:
 - Permanent freezing of funds
 - Protocol insolvency
 - Governance takeover
+
+---
+
+## Contest & Bounty Platform Rules (2025)
+
+### Code4rena — Current Format
+
+Code4rena uses **QA Reports** to consolidate Low and Informational findings:
+
+| Submission Type | Severity | Notes |
+|-----------------|----------|-------|
+| Individual finding | Critical / High / Medium | Scored per finding, per warden |
+| QA Report | Low + Informational combined | Single report, graded A/B/C; max score replaces per-finding count |
+| Gas Report | Gas optimization | Optional, separate scoring pool |
+
+**Practical impact for auditors:**
+- Do **not** submit Low findings individually — they must go into the QA report
+- A single QA report covers all Low and Info findings for the contest
+- QA report grade (A = full score, B = partial, C = minimal) determines payout
+- Critical and High findings are still submitted individually with PoC required
+
+### Sherlock v2 — Severity Rules (2025)
+
+Sherlock's severity model was rewritten in 2025. Key changes from v1:
+
+| Rule | v1 | v2 |
+|------|----|----|
+| Severity tiers | High / Medium | High / Medium (unchanged) |
+| Duplication | Highest-severity unique finding wins | Lead watson can escalate; dupes grouped by root cause |
+| Low findings | Not rewarded | Still not rewarded in contests |
+| Admin/owner trust | Fully trusted | **Restricted** by default — admin cannot be attack vector unless explicitly in scope |
+| External integrations | Auditor's discretion | Must be in scope or explicitly broken to count |
+| Watson escalation | None | Lead Watson can escalate Medium → High with judge approval |
+
+**Restricted vs. Trusted admin (Sherlock v2):**
+
+```solidity
+// This is NOT a valid finding under Sherlock v2 default rules:
+// "Admin can call setFeeRate(10000) and drain protocol"
+// Reason: admin is trusted by default
+
+// This IS valid if scope says "admin is restricted":
+// "Any user can call setFeeRate due to missing onlyOwner modifier"
+```
+
+**Practical impact:**
+- Before filing a finding that depends on admin behavior, check the contest README for trust assumptions
+- "Admin can rugpull" is never a finding unless protocol explicitly marks admin as restricted
+- External protocol failure (e.g., Chainlink goes down) is only valid if the contest README lists it as in scope
+
+### Immunefi — Boost & Attackathon Format
+
+Immunefi runs two distinct programs beyond classic bug bounty:
+
+| Format | How it works | Payout model |
+|--------|-------------|--------------|
+| **Classic Bug Bounty** | Continuous, private submission | Fixed table by severity (Critical up to $X) |
+| **Boost** | Time-boxed (1–4 weeks), semi-public | Fixed pool split among valid findings by severity weight |
+| **Attackathon** | Fully public competitive audit | Fixed pool, all wardens compete, graded like Code4rena |
+
+**Boost / Attackathon severity weights (typical):**
+
+| Severity | Weight |
+|----------|--------|
+| Critical | 9 |
+| High | 3 |
+| Medium | 1 |
+| Low | 0 (informational only, no payout) |
+
+**Immunefi v2.3 out-of-scope rules:**
+The following are **never** valid Immunefi findings regardless of program:
+- Issues requiring compromised private keys / admin keys (unless explicitly in scope)
+- Theoretical attacks with no demonstrated economic profitability
+- UI/UX bugs without on-chain impact
+- Duplicate reports (first-submission wins)
+- Issues already acknowledged in previous audits (unless fixed and reintroduced)
+
+### Severity Escalation Across Platforms
+
+| Scenario | Immunefi | Sherlock | Code4rena |
+|----------|----------|----------|-----------|
+| Requires specific block timing | Medium | Medium | Medium |
+| Requires admin cooperation | Out of scope | Out of scope (default) | Depends on README |
+| DoS without fund loss | Medium max | Medium max | Medium max |
+| Loss of yield (not principal) | Medium | Medium | Medium |
+| Complete loss of user funds | Critical | High | Critical |
+| Governance takeover | Critical | High | Critical |
