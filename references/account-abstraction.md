@@ -52,6 +52,83 @@ struct UserOperation {
 
 ---
 
+### UserOperation v0.7 — PackedUserOperation
+
+EntryPoint v0.7 (address `0x0000000071727De22E5E9d8BAf0edAc6f37da032`) uses a
+**packed struct** that merges several fields to reduce calldata cost:
+
+```solidity
+struct PackedUserOperation {
+    address sender;
+    uint256 nonce;
+    bytes initCode;           // factory ++ factoryData (ABI packed, not encoded)
+    bytes callData;
+    bytes32 accountGasLimits; // verificationGasLimit (128 bits) ++ callGasLimit (128 bits)
+    uint256 preVerificationGas;
+    bytes32 gasFees;          // maxPriorityFeePerGas (128 bits) ++ maxFeePerGas (128 bits)
+    bytes paymasterAndData;   // paymaster (20 bytes) ++ paymasterVerificationGasLimit (16 bytes)
+                              //   ++ paymasterPostOpGasLimit (16 bytes) ++ paymasterData
+    bytes signature;
+}
+```
+
+**Key differences from v0.6 → v0.7:**
+
+| Field | v0.6 | v0.7 |
+|-------|------|------|
+| Gas fields | 3 separate uint256 | Packed into 2 bytes32 |
+| Paymaster gas | Not explicit | Two separate gas limits in paymasterAndData |
+| initCode | factory ++ initData | Same packing, same risk |
+| Validation return | `uint256` (sigFail bit + time range) | Same format, but new helper `_packValidationData()` |
+
+**Security implications of packed fields:**
+
+```solidity
+// CORRECT bit extraction from accountGasLimits
+uint128 verifGas = uint128(userOp.accountGasLimits >> 128);
+uint128 callGas  = uint128(userOp.accountGasLimits);
+
+// VULNERABLE: assuming field layout without checking EP version
+// If your contract reads v0.6 struct fields from a v0.7 UserOp, all values will be wrong
+
+// SECURE: use the EP's own helpers
+(uint256 verif, uint256 call) = UserOperationLib.unpackAccountGasLimits(userOp.accountGasLimits);
+```
+
+**Paymaster gas decoding (v0.7 only):**
+
+```solidity
+// paymasterAndData layout (v0.7):
+// [0:20]   paymaster address
+// [20:36]  paymasterVerificationGasLimit (uint128)
+// [36:52]  paymasterPostOpGasLimit (uint128)
+// [52:]    paymasterData (arbitrary)
+
+function _parsePaymasterData(bytes calldata paymasterAndData)
+    internal pure returns (
+        address paymaster,
+        uint128 verificationGasLimit,
+        uint128 postOpGasLimit,
+        bytes calldata data
+    )
+{
+    paymaster = address(bytes20(paymasterAndData[:20]));
+    verificationGasLimit = uint128(bytes16(paymasterAndData[20:36]));
+    postOpGasLimit = uint128(bytes16(paymasterAndData[36:52]));
+    data = paymasterAndData[52:];
+}
+```
+
+**Migration audit checklist (v0.6 → v0.7):**
+- [ ] Contract imports `IEntryPoint` from `@account-abstraction/contracts@0.7.x`
+- [ ] Uses `PackedUserOperation` not `UserOperation`
+- [ ] Gas limits extracted with `UserOperationLib` helpers, not hardcoded offsets
+- [ ] Paymaster validates both `paymasterVerificationGasLimit` and `paymasterPostOpGasLimit`
+- [ ] No hardcoded EntryPoint address — uses a configurable/constructor parameter
+- [ ] Test suite forks against v0.7 EntryPoint address, not v0.6
+
+---
+
 ## Account (Wallet) Vulnerabilities
 
 ### 1. Signature Validation Bypass
@@ -600,6 +677,13 @@ function validateUserOp(
 - [ ] Gas limits are reasonable
 - [ ] Chain ID included in signatures
 - [ ] Handles Entry Point upgrades gracefully
+
+### EntryPoint Version
+
+- [ ] Identify which EntryPoint version the protocol targets (v0.6 = `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`, v0.7 = `0x0000000071727De22E5E9d8BAf0edAc6f37da032`)
+- [ ] If v0.7: verify `PackedUserOperation` is used, not `UserOperation`
+- [ ] If v0.7: verify paymaster parses the 3-field prefix of `paymasterAndData` correctly
+- [ ] No contract hardcodes EntryPoint address as a constant without upgrade path
 
 ---
 
