@@ -18,6 +18,7 @@ Quick reference for vulnerability classification and severity standards used in 
 | SWC-106 | Unprotected SELFDESTRUCT | Critical |
 | SWC-107 | Reentrancy | Critical |
 | SWC-109 | Uninitialized Storage Pointer | High |
+| SWC-110 | Assert Violation | Medium |
 | SWC-112 | Delegatecall to Untrusted Callee | Critical |
 | SWC-113 | DoS with Failed Call | Medium |
 | SWC-114 | Transaction Order Dependence | Medium |

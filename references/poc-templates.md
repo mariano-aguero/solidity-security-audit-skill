@@ -454,19 +454,29 @@ pragma solidity ^0.8.24;
 import "forge-std/Test.sol";
 
 // Minimal V4 interfaces for PoC
+// NOTE: Actual V4 PoolKey is a struct: {Currency currency0, Currency currency1, uint24 fee, int24 tickSpacing, IHooks hooks}
+// Currency is a value type wrapping address. SwapParams = {bool zeroForOne, int256 amountSpecified, uint160 sqrtPriceLimitX96}
+// BalanceDelta is a value type: int256 packing (amount0, amount1) as (int128, int128).
+// This PoC uses simplified types sufficient to demonstrate the vulnerability concept.
+// For a compilable PoC against real V4 contracts, import from:
+// https://github.com/Uniswap/v4-core/tree/main/src/interfaces
 interface IPoolManager {
     function unlock(bytes calldata data) external returns (bytes memory);
+    // Real signature: take(Currency currency, address to, uint256 amount)
+    // Currency is address-equivalent: cast with Currency.wrap(address) / Currency.unwrap(currency)
     function take(address currency, address to, uint256 amount) external;
     function settle() external payable returns (uint256);
     function sync(address currency) external;
 }
 
+// Simplified interface for PoC purposes — see note above for actual signature
+// Real afterSwap: (address sender, PoolKey calldata key, SwapParams calldata params, BalanceDelta delta, bytes calldata hookData)
 interface IHook {
     function afterSwap(
         address sender,
-        bytes32 poolId,
-        bool zeroForOne,
-        int256 amountSpecified,
+        address poolKey,    // simplified: actual type is PoolKey struct
+        bytes calldata swapParams, // simplified: actual type is SwapParams struct
+        int256 delta,       // simplified: actual type is BalanceDelta value type
         bytes calldata hookData
     ) external returns (bytes4, int128);
 }
@@ -477,10 +487,11 @@ contract VulnerableHook {
 
     constructor(address _pm) { poolManager = IPoolManager(_pm); }
 
+    // Simplified signature for PoC — real V4 signature uses PoolKey struct + SwapParams + BalanceDelta
     function afterSwap(
         address,
-        bytes32,
-        bool,
+        address,    // poolKey (simplified)
+        bytes calldata,
         int256,
         bytes calldata hookData
     ) external returns (bytes4, int128) {

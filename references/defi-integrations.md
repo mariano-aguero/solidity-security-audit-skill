@@ -119,7 +119,7 @@ function swapSafe(uint256 amountIn, uint256 minAmountOut, uint256 deadline) exte
 [ ] amountOutMinimum is set and validated in all swap calls
 [ ] deadline is set and validated (not block.timestamp for user-facing)
 [ ] sqrtPriceLimitX96 used when needed to bound price impact
-[ ] Token approval reset to 0 after use (or use safeApprove workflow)
+[ ] Token approval reset to 0 after use (OZ 5.x: use forceApprove — safeApprove was removed)
 [ ] reentrancy guard on any callback function (uniswapV3Callback)
 [ ] Callback validates msg.sender is the expected pool address
 [ ] Pool key (token0, token1, fee) validated — not user-supplied without check
@@ -497,7 +497,7 @@ function supplyCollateral(address comet, address asset, uint256 amount) external
     IComet.AssetInfo memory info = IComet(comet).getAssetInfoByAddress(asset);
     require(info.asset == asset, "asset not supported");
 
-    IERC20(asset).safeApprove(comet, amount);
+    IERC20(asset).forceApprove(comet, amount); // safeApprove deprecated in OZ 5.x — use forceApprove
     IComet(comet).supply(asset, amount);
 }
 ```

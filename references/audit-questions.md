@@ -191,7 +191,7 @@ function approve(address spender, uint256 amount) external { ... }
 
 ### Questions
 - [ ] Is there approve race condition?
-- [ ] Should increaseAllowance/decreaseAllowance be used instead?
+- [ ] Is allowance set to 0 before new value to prevent race condition? Use `SafeERC20.forceApprove()` (OZ 5.x) — `increaseAllowance`/`decreaseAllowance` were removed in OZ 5.x
 - [ ] Can infinite approval (type(uint256).max) cause issues?
 - [ ] Can approving zero address cause issues?
 

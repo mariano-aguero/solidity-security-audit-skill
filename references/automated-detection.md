@@ -307,9 +307,9 @@ require(addr != address(0), "Zero address");
 ```
 
 **Recommendation**:
-1. Approve only exact amount needed
-2. Use increaseAllowance/decreaseAllowance
-3. Implement approval reset mechanisms
+1. Approve only exact amount needed, reset to 0 after use
+2. Use `SafeERC20.forceApprove()` (OZ 5.x) for tokens that require non-zero-to-non-zero approval
+3. Note: `increaseAllowance`/`decreaseAllowance` were removed from OZ 5.x ERC20
 
 ---
 
@@ -389,7 +389,7 @@ the EOA's assets and storage.
 Patterns for EIP-1153 (`tload`/`tstore`) introduced in Solidity 0.8.24 (Cancun).
 Transient storage clears at transaction end but persists across internal calls in the same tx.
 
-### Transient Storage Without Cleanup (MEDIUM)
+### Transient Storage Without Cleanup (MEDIUM)  <!-- #transient-storage-cleanup -->
 
 **Description**: Using `tstore` without a corresponding cleanup `tstore(slot, 0)` at the
 end of a function can leak state across internal calls or composable interactions within
@@ -428,6 +428,8 @@ function lockOperation() internal {
 3. Prefer OpenZeppelin's `ReentrancyGuardTransient` over manual `tstore` for locks
 
 ---
+
+## ERC-20 / Permit Patterns
 
 ### Permit Frontrunning (MEDIUM)
 
@@ -472,10 +474,11 @@ function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r,
 See `industry-standards.md` for the complete SWC Registry reference table.
 
 **Quick severity guide for triage:**
-- **Critical**: SWC-105, SWC-106, SWC-112, SWC-124, SWC-135
-- **High**: SWC-101, SWC-104, SWC-107, SWC-115, SWC-120
+- **Critical**: SWC-105, SWC-106, SWC-112, SWC-124
+- **High**: SWC-101, SWC-104, SWC-107, SWC-109, SWC-115, SWC-120
 - **Medium**: SWC-100, SWC-110, SWC-113, SWC-114, SWC-117, SWC-128, SWC-133
 - **Low**: SWC-103, SWC-108, SWC-116, SWC-129, SWC-134
+- **Informational**: SWC-131, SWC-135, SWC-136
 
 ---
 
@@ -499,7 +502,7 @@ grep -rn "delegatecall\|selfdestruct" src/
 
 ### Severity-Based Triage
 
-1. **Critical First**: SWC-105, SWC-106, SWC-112, SWC-124, SWC-135
+1. **Critical First**: SWC-105, SWC-106, SWC-112, SWC-124
 2. **High Priority**: SWC-101, SWC-104, SWC-107, SWC-115, SWC-120
 3. **Medium Review**: DeFi-specific patterns, SWC-100, SWC-113, SWC-117
 4. **Low/Info**: Code quality, gas optimizations, style issues

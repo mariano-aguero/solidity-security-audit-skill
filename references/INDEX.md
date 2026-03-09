@@ -208,7 +208,7 @@ Use this when you know what you're looking for but not which file covers it.
 | ERC-7702 nonce replay | automated-detection.md | ERC-7702 → Nonce Replay |
 | ERC-7702 delegation phishing | automated-detection.md | ERC-7702 → Phishing |
 | Transient storage without cleanup | automated-detection.md | Transient Storage → No Cleanup |
-| Permit frontrunning | automated-detection.md | Transient Storage → Permit Frontrunning |
+| Permit frontrunning | automated-detection.md | ERC-20 / Permit Patterns → Permit Frontrunning |
 | Hardcoded addresses | automated-detection.md | Web3 General → Hardcoded Addresses |
 | Console.log in production | automated-detection.md | Web3 General → Console.log |
 | Floating pragma | automated-detection.md | Web3 General → Floating Pragma |

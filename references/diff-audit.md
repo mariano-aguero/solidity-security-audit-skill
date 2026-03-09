@@ -249,10 +249,14 @@ forge inspect NewImplementation storage-layout --json > new_layout.json
 // Before:  slot 0: owner, slot 1: balance
 // After:   slot 0: owner, slot 1: newFee, slot 2: balance  ✗
 
-// UNSAFE: gap array incorrectly reduced
+// UNSAFE: gap not reduced after adding variable
 // Before:  uint256[50] __gap;  // reserves slots 10-59
-// After:   uint256[49] __gap;  // added variable but gap not reduced → collision  ✗
-// Correct: uint256[49] __gap;  // with new variable added BEFORE gap in same slot range ✓
+// After:   uint256[50] __gap;  // new variable added but gap UNCHANGED → collision ✗
+
+// CORRECT: reduce gap by 1 for each new variable added above it
+// Before:  uint256[50] __gap;
+// After:   uint256 newFee;     // new variable appended after existing state
+//          uint256[49] __gap;  // gap reduced from 50 → 49 to compensate ✓
 ```
 
 ---
