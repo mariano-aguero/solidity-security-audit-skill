@@ -68,6 +68,9 @@ Use this when you know what you're looking for but not which file covers it.
 | Gas — immutable and constant | vulnerability-taxonomy.md | §13.4 |
 | Gas — unchecked arithmetic for safe ops | vulnerability-taxonomy.md | §13.5 |
 | Gas — custom errors | vulnerability-taxonomy.md | §13.6 |
+| Arithmetic — overflow sentinel value in custom math libs (Cetus pattern) | vulnerability-taxonomy.md | §3.4 |
+| Proxy — OZ v4→v5 storage slot migration break (ERC-7201 namespace change) | vulnerability-taxonomy.md | §6.6 |
+| Logic — phantom collateral via failed external call (Abracadabra pattern) | vulnerability-taxonomy.md | §12.6 |
 | Solidity — floating pragma | vulnerability-taxonomy.md | §14.1 |
 | Solidity — shadowed variables | vulnerability-taxonomy.md | §14.2 |
 | Solidity — incorrect inheritance order | vulnerability-taxonomy.md | §14.3 |
@@ -75,6 +78,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Solidity — selfdestruct risks | vulnerability-taxonomy.md | §14.5 |
 | Solidity — block properties as randomness | vulnerability-taxonomy.md | §14.6 |
 | Solidity — MCOPY opcode misuse (EIP-5656, 0.8.25+) | vulnerability-taxonomy.md | §14.7 |
+| EVM EOF — gas observability removed (GAS opcode) | vulnerability-taxonomy.md | §22.1 |
+| EVM EOF — code observability removed (EXTCODESIZE breaks EOA check) | vulnerability-taxonomy.md | §22.2 |
+| EVM EOF — EXTDELEGATECALL cannot target legacy contracts | vulnerability-taxonomy.md | §22.3 |
+| EVM EOF — deploy-time validation breaks metaprogramming | vulnerability-taxonomy.md | §22.4 |
 | Governance — flash loan attack | vulnerability-taxonomy.md | §15.1 |
 | Governance — low quorum exploitation | vulnerability-taxonomy.md | §15.2 |
 | Governance — timelock bypass | vulnerability-taxonomy.md | §15.3 |
