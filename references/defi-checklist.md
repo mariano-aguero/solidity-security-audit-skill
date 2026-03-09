@@ -266,6 +266,30 @@ for other services (AVSs). LRT protocols wrap restaked positions into liquid tok
 - [ ] If LSTs (stETH, rETH) are used as inputs, is their de-peg handled?
 - [ ] Are there circuit breakers if the LRT/ETH peg deviates by more than X%?
 
+### Karak & Symbiotic (Alternative Restaking Protocols)
+
+Karak uses a DSS (Distributed Secure Services) gateway model with a two-step
+slash flow (`requestSlashDSS` → `finalizeSlashDSS`). Symbiotic uses permissionless
+vaults with configurable resolvers that can veto slashing within a resolution window.
+
+**Karak-specific:**
+- [ ] Is the two-step slash (`requestSlashDSS` / `finalizeSlashDSS`) properly gated? Can finalization be front-run by an operator withdrawing stake?
+- [ ] Are DSS registration messages protected against nonce reuse and cross-chain replay?
+- [ ] Is the vault's `stakedAssets` mapping correctly updated after slash events? Can it underflow if multiple slashes arrive in one block?
+- [ ] Can a DSS be paused or removed by the Karak core while user funds remain staked in it — and is there a safe withdrawal path?
+- [ ] Does the vault enforce a minimum stake threshold that prevents dust-amount operators from blocking slash quorum?
+
+**Symbiotic-specific:**
+- [ ] Are vault resolvers correctly permissioned? Can an unauthorized address register as a resolver and veto legitimate slashes?
+- [ ] Is slash resolution bounded in time? Can an unresolved slash (resolver inaction) freeze vault withdrawals indefinitely?
+- [ ] Does the network middleware correctly snapshot operator stake before computing slash amounts? Can stale snapshots be exploited?
+- [ ] Are collateral types validated on vault creation? Can an attacker register a vault with a fee-on-transfer or rebasing ERC20 that inflates `totalStake`?
+- [ ] Is the slash veto window short enough that an operator cannot withdraw between `requestSlash` and `executeSlash`?
+
+**Both protocols:**
+- [ ] If the same ETH/LST stake is simultaneously restaked in both EigenLayer and Karak/Symbiotic, can double-restaking of the same collateral occur?
+- [ ] Are operator registration signatures (if used) protected against replay across deployment chains?
+
 ---
 
 ## EigenLayer AVS Contracts

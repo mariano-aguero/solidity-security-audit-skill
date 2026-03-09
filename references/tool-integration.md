@@ -1333,6 +1333,102 @@ def test_balance_invariant(chain: Chain):
 
 ---
 
+## 15. Kontrol (Formal Verification via K Framework)
+
+**Source**: Runtime Verification | **Language**: K Framework + Foundry integration
+**Best for**: EVM-precise formal proofs; cases where Certora/Halmos approximations
+are insufficient due to low-level bytecode or storage semantics.
+
+### Overview
+
+Kontrol bridges Foundry tests and KEVM (K Semantics of the EVM) — a byte-level
+complete formal model of the EVM. It lifts cheatcode-aware Foundry property tests
+into K specifications and proves them over the full EVM execution model with no
+approximations. Complements Halmos (fast, bounded) and Certora (spec language, cloud).
+
+```bash
+# Install
+pip install kontrol
+
+# Build K specs from current Foundry project
+kontrol build
+
+# Prove a single test function
+kontrol prove --test MyContract.testInvariant
+
+# Prove all functions matching a pattern
+kontrol prove --test 'test*Invariant*'
+
+# Resume an interrupted proof session
+kontrol prove --test MyContract.testInvariant --reinit
+
+# View proof results
+kontrol show MyContract.testInvariant
+```
+
+### When to Use Kontrol vs Other Formal Tools
+
+| Need | Best Tool |
+|------|-----------|
+| Fast bounded symbolic execution | **Halmos** |
+| High-assurance with dedicated spec language (CVL) | **Certora** |
+| EVM-precise bytecode semantics proofs | **Kontrol** |
+| Low-level opcode/storage slot correctness | **Kontrol** |
+| Reuse existing Foundry tests as formal specs | **Kontrol** |
+| Cross-contract invariants with complex state | **Certora** |
+
+### Writing Kontrol-Compatible Tests
+
+Kontrol works with standard Foundry tests — no new language required. Any test
+using `vm.assume` for preconditions and `assert*` for postconditions can be lifted:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+
+import {Test} from "forge-std/Test.sol";
+import {MyToken} from "../src/MyToken.sol";
+
+contract MyTokenFormalTest is Test {
+    MyToken token;
+
+    function setUp() public {
+        token = new MyToken(1_000_000e18);
+    }
+
+    // Kontrol proves this for ALL symbolic values of amount and to
+    function testTransferPreservesTotalSupply(uint256 amount, address to) public {
+        vm.assume(to != address(0));
+        vm.assume(to != address(this));
+        vm.assume(amount <= token.balanceOf(address(this)));
+
+        uint256 totalBefore = token.totalSupply();
+        token.transfer(to, amount);
+
+        // Formally proven: transfer never changes totalSupply
+        assertEq(token.totalSupply(), totalBefore);
+    }
+
+    // Prove storage layout is not corrupted by any sequence of calls
+    function testNoStorageCorruption(uint256 slot) public view {
+        vm.assume(slot > 10); // skip known contract slots
+        bytes32 val;
+        assembly { val := sload(slot) }
+        assertEq(val, bytes32(0)); // all unknown slots must remain zero
+    }
+}
+```
+
+### Limitations
+
+- Slower than Halmos for simple properties (K Framework compilation is heavyweight)
+- Proof time can exceed hours for non-trivial control flow
+- Requires understanding of K semantics to debug failed proofs
+- Less tooling support than Certora (no cloud, no dashboard)
+- Best used as final high-assurance step, not primary fuzzing tool
+
+---
+
 ## Tool Selection Matrix
 
 Quick reference for choosing the right tool. No single tool covers everything — use them in combination.
@@ -1349,6 +1445,7 @@ Quick reference for choosing the right tool. No single tool covers everything �
 | **Medusa** | | ✓ | | | Fast | Low | Parallel fuzzing, large codebases |
 | **Halmos** | | | ✓ | | Slow | Very Low | Prove properties for ALL inputs, no fuzzing luck |
 | **Certora** | | | ✓ | | Slow | Very Low | Mathematical proofs, high-value protocol guarantees |
+| **Kontrol** | | | ✓ | | Slowest | Very Low | EVM-precise formal proofs, bytecode semantics |
 | **Mythril** | | | ✓ | ✓ | Slow | Medium | Bytecode-only analysis, unverified contracts |
 | **Manticore** | | | ✓ | | Slowest | Low | Multi-tx custom analysis, Python scripting |
 | **Slang** | ✓ | | | ✓ | Fast | N/A | Custom AST queries, IDE integration, no-compile |
@@ -1358,7 +1455,8 @@ Quick reference for choosing the right tool. No single tool covers everything �
 ```
 Starting an audit      → Slither + Aderyn (fast, catch low-hanging fruit)
 Invariant testing      → Foundry (quick) → Echidna (thorough) → Medusa (parallel)
-Proving correctness    → Halmos (bounded) → Certora (unbounded, expensive)
+Proving correctness    → Halmos (bounded) → Certora (unbounded, expensive) → Kontrol (EVM-precise)
+EVM bytecode proofs    → Kontrol (K Framework, highest assurance, slowest)
 Custom patterns        → Slither detector (Python) | Semgrep (YAML) | Slang (TypeScript AST)
 Unverified bytecode    → Mythril
 Competition prep       → 4naly3er for automated findings list

@@ -74,6 +74,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Solidity — uninitialized storage pointers | vulnerability-taxonomy.md | §14.4 |
 | Solidity — selfdestruct risks | vulnerability-taxonomy.md | §14.5 |
 | Solidity — block properties as randomness | vulnerability-taxonomy.md | §14.6 |
+| Solidity — MCOPY opcode misuse (EIP-5656, 0.8.25+) | vulnerability-taxonomy.md | §14.7 |
 | Governance — flash loan attack | vulnerability-taxonomy.md | §15.1 |
 | Governance — low quorum exploitation | vulnerability-taxonomy.md | §15.2 |
 | Governance — timelock bypass | vulnerability-taxonomy.md | §15.3 |
@@ -145,6 +146,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Staking — checklist | defi-checklist.md | Staking Protocols |
 | NFT marketplace — checklist | defi-checklist.md | NFT Protocols |
 | Restaking / LRT (EigenLayer) — checklist | defi-checklist.md | Restaking & LRT |
+| Restaking — Karak DSS & Symbiotic resolvers | defi-checklist.md | Restaking & LRT → Karak & Symbiotic |
 | EigenLayer AVS contracts — checklist | defi-checklist.md | EigenLayer AVS Contracts |
 | Intent protocols (Permit2, UniswapX) — checklist | defi-integrations.md | Intent-Based Protocols |
 | Intent protocols — deep reference | intent-protocols.md | (all sections) |
@@ -209,6 +211,7 @@ Use this when you know what you're looking for but not which file covers it.
 | Manticore — EVM simulation | tool-integration.md | §12 Manticore |
 | Semgrep — pattern matching | tool-integration.md | §13 Semgrep |
 | Wake — data flow analysis + fuzzing | tool-integration.md | §14 Wake |
+| Kontrol — K Framework EVM-precise formal proofs | tool-integration.md | §15 Kontrol |
 | Tool selection matrix (when to use which) | tool-integration.md | Tool Selection Matrix |
 | Recommended audit pipeline | tool-integration.md | Recommended Audit Pipeline |
 | Automated scan workflow | automated-detection.md | Automated Scan Workflow |
