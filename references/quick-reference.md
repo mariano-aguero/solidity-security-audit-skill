@@ -17,10 +17,12 @@ block.timestamp       → Miner manipulation
 block.number          → Timing dependency
 ecrecover(            → Signature issues
 abi.encodePacked(     → Hash collision (if 2+ dynamic types)
-transfer(             → 2300 gas limit issues
+transfer(             → 2300 gas limit: no longer blocks reentrancy if callee uses TSTORE (§19.7)
 send(                 → Silent failure risk
 onERC1155Received(    → Reentrancy hook (like ERC-777)
 IERC7702Delegation(   → EOA-as-contract risks (Pectra)
+tstore(               → TSTORE Poison: solc 0.8.28–0.8.33 + --via-ir corrupts slot (§19.6)
+EXTDELEGATECALL(      → EOF only — legacy contracts blocked; check deployment target (§22)
 ```
 
 ---
@@ -190,6 +192,20 @@ healthFactor >= 1 for non-liquidatable
 // AMM
 k_after >= k_before (constant product)
 ```
+
+---
+
+## Compiler & Toolchain Checks (v3.2.0)
+
+Always check before reviewing transient storage or via-ir builds:
+
+| Check | Risk | Action |
+|-------|------|--------|
+| `solc 0.8.28–0.8.33` + `--via-ir` + `tstore` | TSTORE Poison — slot corruption | Upgrade to 0.8.34+; see `vulnerability-taxonomy.md §19.6` |
+| `transfer()`/`send()` as reentrancy guard | 2300-gas no longer blocks TSTORE callee | Replace with `nonReentrant`; see §19.7 |
+| EOF-targeted deploy (EIP-7692/Fusaka) | `EXTDELEGATECALL` breaks legacy contracts | Full EOF checklist at §22 |
+| OZ v4→v5 upgrade without migration | Storage slot collision | Run `@openzeppelin/upgrade-safe-checker`; see §6.6 |
+| Custom math with bit-shift overflow guard | Sentinel value off-by-one (Cetus $223M) | Verify boundary: see §3.4 |
 
 ---
 

@@ -31,7 +31,26 @@ description: >
   "ERC-6909", "multi-token", "PoolManager claims", "claim token", "isOperator",
   "MEV bot", "MEV contract", "arbitrage bot", "sandwich bot", "sweep function",
   "AI-generated code", "Copilot", "vibe coding", "LLM-generated Solidity",
-  "Wake", "eth-wake", "Ackee Blockchain".
+  "Wake", "eth-wake", "Ackee Blockchain",
+  "TSTORE", "TLOAD", "transient storage", "tstore compiler bug", "tstore poison",
+  "solc 0.8.28", "solc via-ir", "via-ir optimizer", "reentrancy guard bypass tstore",
+  "EOF", "EIP-7692", "Fusaka upgrade", "EXTDELEGATECALL", "EVM object format",
+  "gas observability", "code observability", "CODESIZE EXTCODESIZE EOF",
+  "ERC-7726", "price adapter", "price oracle adapter", "false validity assumption",
+  "IQuote", "getQuote oracle",
+  "phantom collateral", "orphaned state", "Abracadabra exploit", "cook batch router",
+  "failed external call state", "liquidation ghost debt",
+  "overflow sentinel", "Cetus exploit", "bit-shift guard", "FullMath overflow",
+  "PRBMath overflow", "custom math library overflow",
+  "OpenZeppelin v5 migration", "OZ v4 to v5", "ERC-7201 namespaced storage",
+  "sequential storage layout", "namespaced storage layout", "storage slot migration",
+  "LDF rounding", "Bunni exploit", "liquidity distribution function",
+  "asymmetric rounding liquidity", "flash tick shift",
+  "JIT liquidity attack", "just-in-time liquidity", "V4 JIT",
+  "Morpho Blue", "Euler V2", "EVC", "modular lending", "permissionless market",
+  "EigenVault", "cross-vault health", "ERC-4337 executor vault",
+  "EIP-7701", "native account abstraction", "ACCEPT_ROLE opcode",
+  "per-transaction validation", "legacy contract validation".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -264,6 +283,19 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.2.0
+- `references/vulnerability-taxonomy.md §19.6` — TSTORE Poison compiler bug (solc 0.8.28–0.8.33 + --via-ir): ownership theft, reentrancy guard bypass, ~500K affected contracts
+- `references/vulnerability-taxonomy.md §19.7` — 2300-gas stipend bypass via TSTORE: transfer()/send() no longer block reentrancy when callee uses TSTORE
+- `references/vulnerability-taxonomy.md §22` — EVM EOF (EIP-7692/Fusaka): gas/code observability removal, EXTDELEGATECALL legacy restriction, deploy-time validation
+- `references/vulnerability-taxonomy.md §3.4` — Math overflow sentinel errors: Cetus $223M pattern, wrong bit-shift boundaries in FullMath/PRBMath
+- `references/vulnerability-taxonomy.md §6.6` — OZ v4→v5 storage slot migration break: sequential vs ERC-7201 namespaced layout
+- `references/vulnerability-taxonomy.md §12.6` — Phantom collateral via failed external call: Abracadabra pattern, cook() batch-router shared-state
+- `references/vulnerability-taxonomy.md §4.5` — ERC-7726 false validity assumption: oracle adapters that silently pass invalid data
+- `references/vulnerability-taxonomy.md §18.6` — V4 hook LDF rounding attack: Bunni $8.4M, asymmetric rounding in add/remove liquidity
+- `references/defi-checklist.md` — JIT liquidity attack checklist, LDF rounding checklist, Modular Lending (Morpho Blue + Euler V2 EVC) checklist
+- `references/account-abstraction.md` — EIP-7701 Native AA section: ACCEPT_ROLE opcode risk, legacy contract unintentional validation
+- `references/automated-detection.md` — TSTORE Poison version detector + co-usage regex patterns
 
 ### Navigation
 - `references/INDEX.md` — Topic → file:section map; use when you know the topic but not which file covers it

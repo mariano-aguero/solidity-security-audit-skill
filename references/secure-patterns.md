@@ -768,3 +768,118 @@ Security checks:
 - `initialize()` **must** be guarded by `initializer` modifier — prevents re-initialization
 - For non-upgradeable clones, `initialize()` replaces the constructor entirely
 - Clone storage is isolated per instance — state changes in one clone do not affect others
+
+---
+
+## Safe Transient Storage (TSTORE/TLOAD)
+
+**Context**: Transient storage (`tstore`/`tload`, EIP-1153) is cheap (100 gas) and
+clears every transaction. A compiler bug in solc 0.8.28–0.8.33 with `--via-ir`
+can corrupt the wrong storage slot. See `vulnerability-taxonomy.md §19.6` for the full bug.
+
+### Rules for Safe TSTORE Usage
+
+1. **Use solc 0.8.34+** — the TSTORE Poison bug is patched in 0.8.34
+2. **Never use slot 0 for a transient lock** when slot 0 holds critical state (owner, paused, etc.)
+3. **Prefer OZ `ReentrancyGuardTransient`** over raw assembly tstore (requires 0.8.34+)
+4. **Avoid `--via-ir`** on affected compiler versions if you use `tstore`
+5. **transfer()/send() are not reentrancy guards** — TSTORE costs 100 gas, well below the 2300 stipend
+
+```solidity
+// VULNERABLE: slot collision + affected compiler range
+// compiled with solc 0.8.28 --via-ir
+contract BadTstore {
+    address public owner;  // slot 0
+    // ...
+    modifier locked() {
+        assembly { tstore(0, 1) }  // BUG: may overwrite owner on affected builds
+        _;
+        assembly { tstore(0, 0) }
+    }
+}
+
+// SECURE: use a dedicated high slot + solc 0.8.34+
+// solc 0.8.34+ (TSTORE Poison patched)
+contract SafeTstore {
+    address public owner;  // slot 0
+
+    // Use a keccak-derived slot far from storage variables
+    uint256 private constant _TLOCK_SLOT =
+        uint256(keccak256("SafeTstore.transientLock")) - 1;
+
+    modifier nonReentrantTransient() {
+        assembly { tstore(_TLOCK_SLOT, 1) }
+        _;
+        assembly { tstore(_TLOCK_SLOT, 0) }
+    }
+}
+
+// RECOMMENDED: OpenZeppelin ReentrancyGuardTransient (solc 0.8.34+)
+import {ReentrancyGuardTransient} from "@openzeppelin/contracts/utils/ReentrancyGuardTransient.sol";
+
+contract BestPracticeTstore is ReentrancyGuardTransient {
+    function withdraw(uint256 amount) external nonReentrant {
+        // Safe: OZ handles slot selection and compiler version requirements
+        _transfer(msg.sender, amount);
+    }
+}
+```
+
+Security checks:
+- Confirm solc version is 0.8.34+ when `tstore` is used anywhere in scope
+- Check `foundry.toml` / `hardhat.config` for `viaIR: true` — cross-reference with solc version
+- Grep for raw `tstore` assembly; prefer OZ `ReentrancyGuardTransient`
+- Never rely on `transfer()` or `send()` as the sole reentrancy protection (§19.7)
+- Transient storage clears per-transaction, not per-call — multi-call scenarios need extra care
+
+---
+
+## OpenZeppelin v4→v5 Storage Migration
+
+**Context**: OZ v5 switched to ERC-7201 namespaced storage for all upgradeable contracts.
+Upgrading an existing v4 proxy to v5 without a migration function breaks storage layout.
+See `vulnerability-taxonomy.md §6.6` for the full breakdown.
+
+```solidity
+// OZ v4: sequential storage layout (collision-prone)
+// slot 0: _initialized, _initializing
+// slot 1: _owner
+// slot 2: _paused
+// ... etc.
+
+// OZ v5: ERC-7201 namespaced storage
+// OwnableUpgradeable stores _owner at:
+// keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Ownable")) - 1)) & ~bytes32(uint256(0xff))
+
+// VULNERABLE: direct upgrade from v4 → v5 without migration
+contract BadUpgrade is OwnableUpgradeable {
+    function initialize(address owner) external initializer {
+        __Ownable_init(owner);  // v5 writes to namespaced slot
+        // But v4 proxy has _owner at slot 1 — now inaccessible
+    }
+}
+
+// SECURE: migration function reads old slot, writes to new location
+contract SafeUpgrade is OwnableUpgradeable {
+    // One-time migration called during upgrade
+    function migrateFromV4() external reinitializer(2) {
+        // Read legacy slot 1 (_owner in OZ v4)
+        address legacyOwner;
+        assembly { legacyOwner := sload(1) }
+
+        require(legacyOwner != address(0), "no legacy owner found");
+
+        // Write to OZ v5 namespaced slot
+        _transferOwnership(legacyOwner);
+
+        // Zero out legacy slot to avoid confusion
+        assembly { sstore(1, 0) }
+    }
+}
+```
+
+Security checks:
+- Run `@openzeppelin/upgrades-core` storage layout check before upgrade
+- Verify `reinitializer(N)` version is incremented for any migration function
+- Check that all OZ base contracts used (Ownable, Pausable, AccessControl, etc.) have a migration step
+- After upgrade, call `migrateFromV4()` atomically in the same tx as the upgrade (via ProxyAdmin)
