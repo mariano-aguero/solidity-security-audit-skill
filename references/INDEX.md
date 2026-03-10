@@ -70,9 +70,16 @@ Use this when you know what you're looking for but not which file covers it.
 | Gas — custom errors | vulnerability-taxonomy.md | §13.6 |
 | Arithmetic — overflow sentinel value in custom math libs (Cetus pattern) | vulnerability-taxonomy.md | §3.4 |
 | Oracle — ERC-7726 false validity assumption (standard provides no data guarantees) | vulnerability-taxonomy.md | §4.5 |
+| Oracle — chain complexity for restaking assets (Moonwell pattern) | vulnerability-taxonomy.md | §4.6 |
+| Oracle — price hardcoding as contagion amplifier (xUSD/Stream Finance $285M) | vulnerability-taxonomy.md | §4.7 |
 | Proxy — OZ v4→v5 storage slot migration break (ERC-7201 namespace change) | vulnerability-taxonomy.md | §6.6 |
+| Proxy / Storage — custom layout collisions (solc 0.8.29, --via-ir, multiple inheritance) | vulnerability-taxonomy.md | §6.7 |
+| Front-running — cross-chain sandwich via source-chain event leakage (21.4% profit rate) | vulnerability-taxonomy.md | §9.5 |
 | Logic — phantom collateral via failed external call (Abracadabra pattern) | vulnerability-taxonomy.md | §12.6 |
+| Logic — multi-action router security flag reset (cook() bypass pattern) | vulnerability-taxonomy.md | §12.7 |
 | Uniswap V4 — LDF rounding attack (Bunni $8.4M pattern) | vulnerability-taxonomy.md | §18.6 |
+| ERC-7702 — sweeper campaigns and tx.origin guard bypass (post-Pectra, $2.5M+) | vulnerability-taxonomy.md | §17.6 |
+| Transient storage — `delete` emits wrong opcode (TransientStorageClearingHelperCollision, 0.8.28–0.8.33) | vulnerability-taxonomy.md | §19.8 |
 | Solidity — floating pragma | vulnerability-taxonomy.md | §14.1 |
 | Solidity — shadowed variables | vulnerability-taxonomy.md | §14.2 |
 | Solidity — incorrect inheritance order | vulnerability-taxonomy.md | §14.3 |
@@ -154,6 +161,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Uniswap V4 math layer (TickMath, SqrtPriceMath, FullMath) | defi-integrations.md | V4 Math Layer Pitfalls |
 | Modular lending — Morpho Blue permissionless markets | defi-checklist.md | Modular Lending Protocols |
 | Modular lending — Euler V2 EVC cross-vault health | defi-checklist.md | Modular Lending Protocols → EVC |
+| CeDeFi & Recursive Leverage — checklist | defi-checklist.md | CeDeFi & Recursive Leverage |
+| V4 hook `onlyPoolManager` requirement (Cork Protocol $11M) | defi-checklist.md | Uniswap V4 Hooks → Callback Security |
+| Airdrop — `sweepUnclaimed()` access control | defi-checklist.md | Points & Airdrop Protocols → Merkle-Based |
+| Perpetual DEX — vault as liquidation absorber (Hyperliquid pattern) | perpetual-dex.md | §9 |
 | Vault / ERC-4626 — checklist | defi-checklist.md | Vaults & Yield Aggregators |
 | ERC-4626 vault integration | defi-integrations.md | ERC-4626 Vault Integration |
 | Bridge / cross-chain — checklist | defi-checklist.md | Bridges & Cross-Chain |
@@ -213,11 +224,11 @@ Use this when you know what you're looking for but not which file covers it.
 | Tool | File | Section |
 |------|------|---------|
 | Slither — static analysis | tool-integration.md | §1 Slither |
-| Aderyn — Rust-based static analysis | tool-integration.md | §2 Aderyn |
+| Aderyn v0.6 — LSP server, VS Code extension, CI integration | tool-integration.md | §2 Aderyn |
 | Foundry Forge — testing & fuzzing | tool-integration.md | §3 Foundry |
-| Echidna — property-based fuzzing | tool-integration.md | §4 Echidna |
+| Echidna 2025 — verification mode, multi-solver, Foundry reproducer | tool-integration.md | §4 Echidna |
 | Medusa — parallel fuzzing | tool-integration.md | §5 Medusa |
-| Halmos — symbolic testing | tool-integration.md | §6 Halmos |
+| Halmos + Recon — auto-reproducer generation (2025) | tool-integration.md | §6 Halmos |
 | Certora Prover — formal verification | tool-integration.md | §7 Certora |
 | Gas benchmarking (Foundry) | tool-integration.md | §8 Gas Benchmarking |
 | Slang — AST-based analysis | tool-integration.md | §9 Slang |
@@ -298,6 +309,9 @@ Use this when you know what you're looking for but not which file covers it.
 | EIP-4844 (blobs) security | l2-crosschain.md | EIP-4844 |
 | L2 precompile security | l2-crosschain.md | L2 Precompile Security |
 | L2 sequencer feeds (Chainlink) | l2-crosschain.md | L2 Sequencer Feeds |
+| Cross-chain sandwich attack via source-chain event leakage (21.4% profit) | l2-crosschain.md | Cross-Chain Sandwich Attacks |
+| Fusaka upgrade security — EIP-7825 per-tx gas cap (16.78M) | l2-crosschain.md | Fusaka Upgrade Security Implications |
+| App-chain fork risk — inherited bugs (Berachain pattern) | l2-crosschain.md | App-Chain Fork Risk |
 | ERC-4337 account architecture | account-abstraction.md | Architecture Overview |
 | UserOperation structure | account-abstraction.md | UserOperation Structure |
 | PackedUserOperation (v0.7 migration) | account-abstraction.md | UserOperation v0.7 |
@@ -308,6 +322,11 @@ Use this when you know what you're looking for but not which file covers it.
 | Bundler considerations | account-abstraction.md | Bundler Considerations |
 | Session keys | account-abstraction.md | Session Keys |
 | EIP-7579 modular smart accounts | account-abstraction.md | EIP-7579 |
+| ERC-7579 — module poisoning via `onUninstall` revert | account-abstraction.md | EIP-7579 → Module Poisoning via onUninstall Revert |
+| ERC-7579 — stale state after module reinstallation | account-abstraction.md | EIP-7579 → Stale State After Module Reinstallation |
+| ERC-7579 — executor module `delegatecall` abuse | account-abstraction.md | EIP-7579 → Executor Module delegatecall Abuse |
+| ERC-7484 — module registry attestation | account-abstraction.md | EIP-7579 → ERC-7484 Module Registry |
+| ERC-7821 — minimal batch executor for EIP-7702 delegation | account-abstraction.md | ERC-7821 |
 | EIP-7701 native AA — ACCEPT_ROLE opcode risk | account-abstraction.md | EIP-7701 Native AA |
 | AA checklist | account-abstraction.md | Checklist: Account Abstraction |
 | Re-audit / diff audit methodology | diff-audit.md | (full file) |
@@ -360,3 +379,13 @@ Use this when you know what you're looking for but not which file covers it.
 | ERC-6909 with V4 PoolManager claim tokens | taxonomy §21.3 |
 | MEV bot without `onlyOwner` on sweep | defi-checklist MEV Bot Contracts |
 | AI-generated code — missing `nonReentrant`, CEI violations | audit-questions AI-Generated Code |
+| V4 hook with no `msg.sender == poolManager` check | defi-checklist V4 Hooks, taxonomy §18, case-studies Cork Protocol |
+| Batch router boolean flag that can be reset to `false` | taxonomy §12.7 (Abracadabra cook() pattern) |
+| Collateral price hardcoded at `$1.00` | taxonomy §4.7 (xUSD/Stream Finance), defi-checklist CeDeFi |
+| ERC-7579 module installation — `onUninstall` revert risk | account-abstraction EIP-7579 → Module Poisoning |
+| Community vault absorbing liquidations | perpetual-dex §9 (Hyperliquid HLP pattern) |
+| `delete` on transient variable (compiler 0.8.28–0.8.33 + via-ir) | taxonomy §19.8 (TransientStorageClearingHelperCollision) |
+| EIP-7702 sweeper delegation / `tx.origin == msg.sender` bypass | taxonomy §17.6, automated-detection ERC-7702 |
+| `sweepUnclaimed()` without timelock or access control | defi-checklist Points & Airdrop → Merkle-Based |
+| Cross-chain swap with minAmountOut in source-chain event | taxonomy §9.5, l2-crosschain Cross-Chain Sandwich |
+| Oracle chain with multiple adapters (restaking assets) | taxonomy §4.6 (Moonwell pattern) |

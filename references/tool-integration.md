@@ -128,38 +128,82 @@ It cannot detect business logic errors or economic attack vectors.
 
 ---
 
-## 2. Aderyn (Static Analysis)
+## 2. Aderyn
 
-**What it detects**: Solidity-specific patterns with Rust-based speed.
-Focuses on AST analysis and produces markdown reports.
+**Aderyn** is a Rust-based static analyzer by Cyfrin, purpose-built for Solidity security.
+As of v0.6 (2025), it ships 100+ detectors and features an LSP server for IDE integration.
 
-### Usage
+### Installation
 
 ```bash
-# Basic run (scans current directory)
-aderyn .
+# Latest version via Cargo
+cargo install aderyn
 
-# Specify source directory
-aderyn src/
-
-# Output to specific file
-aderyn . -o report.md
+# Or via Cyfrin's installer
+curl -L https://install.aderyn.dev | bash
 ```
 
-### Key Detectors
+### Basic Usage
 
-- Centralization risks (single owner patterns)
-- Unsafe ERC20 operations (missing SafeERC20)
-- Reentrancy patterns
-- Unprotected initializers
-- Missing zero-address checks
-- Storage variable shadowing
-- Dead code detection
+```bash
+# Analyze entire project
+aderyn .
 
-### When to use over Slither
+# Output formats
+aderyn . --output report.md          # Markdown (default)
+aderyn . --output report.json        # JSON for CI/CD
+aderyn . --output report.sarif       # SARIF for GitHub Code Scanning
 
-Aderyn is faster on large codebases and produces cleaner markdown reports.
-Good as a first-pass complementary to Slither.
+# Exit code based on severity (useful in CI)
+aderyn . --exit-code-severity high   # Exit 1 if any High+ findings
+aderyn . --exit-code-severity medium # Exit 1 if any Medium+ findings
+
+# Scope control
+aderyn . --src src/                  # Only analyze src/
+aderyn . --exclude test/,mock/       # Skip test and mock files
+```
+
+### Key Detectors (v0.6, 100+ total)
+
+| Category | Detectors |
+|----------|-----------|
+| Reentrancy | ETH reentrancy, ERC20 reentrancy, cross-function reentrancy |
+| Access Control | Missing modifiers, unprotected initializers, public state-changing functions |
+| Arithmetic | Unchecked arithmetic, division before multiplication, truncation |
+| ERC Standards | ERC20/ERC721 compliance, unsafe transfers, missing return values |
+| Proxy/Upgrade | Storage collisions, uninitialized proxy, UUPS authorization |
+| Gas | Inefficient loops, redundant storage reads, state variables in loops |
+
+### v0.6 New Features (2025)
+
+```bash
+# LSP server mode — real-time analysis in VS Code / Neovim
+aderyn lsp
+
+# VS Code extension: search "Aderyn" in marketplace
+# Provides inline squiggles on vulnerable lines as you type
+```
+
+### CI/CD Integration
+
+```yaml
+# .github/workflows/audit.yml
+- name: Run Aderyn
+  run: aderyn . --exit-code-severity high --output aderyn-report.sarif
+
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: aderyn-report.sarif
+```
+
+### Decision Guide
+
+Use Aderyn when:
+- You want a security-focused Solidity analyzer (vs Slither's general purpose)
+- CI/CD pipeline needs clean severity-gated exit codes
+- Team uses VS Code and wants inline vulnerability feedback
+- You need SARIF output for GitHub Code Scanning integration
 
 ---
 
@@ -439,6 +483,40 @@ corpusDir: "echidna-corpus"
 - Finding edge cases in mathematical operations
 - Testing across many random inputs and call sequences
 
+### Echidna 2025 — Verification Mode and New Features
+
+**Echidna 2.2.x (2025)** introduced several major improvements:
+
+**Verification Mode (Symbolic Echidna)**:
+```bash
+# Run Echidna in symbolic/verification mode
+echidna . --contract MyContract --test-mode assertion --solver bitwuzla
+
+# Multi-solver support (Bitwuzla, cvc5, Z3)
+echidna . --test-mode property --solver cvc5 --solver-timeout 30
+```
+
+**Foundry Test Reproducer Auto-Generation**:
+When Echidna finds a counterexample, it auto-generates a Foundry test that reproduces it:
+```bash
+# After Echidna finds a bug, it outputs a Foundry-compatible PoC:
+# test/EchidnaReproducer.t.sol is auto-generated
+forge test --match-test testEchidnaReproducer -vvvv
+```
+
+**Docker Bundle**:
+```bash
+# Official Docker image with all solvers included
+docker run -v .:/code ghcr.io/crytic/echidna:latest \
+  echidna /code --contract MyContract --test-mode property
+```
+
+**HTML Coverage Reports**:
+```bash
+echidna . --contract MyContract --corpus-dir corpus/ --coverage
+# Open corpus/coverage/index.html in browser
+```
+
 ---
 
 ## 5. Medusa (Parallel Fuzzing)
@@ -501,6 +579,29 @@ function check_withdrawNeverExceedsBalance(uint256 amount) public {
 - Token accounting invariants
 - Access control completeness proofs
 - When fuzzing hasn't found issues but confidence is needed
+
+### Halmos + Recon: Auto-Reproducer Generation (2025)
+
+The **Recon** extension for Halmos automatically generates CryticToFoundry-compatible
+reproducers when Halmos finds a counterexample:
+
+```bash
+# Install Recon
+pip install halmos-recon
+
+# Run Halmos with Recon
+halmos --contract MyContract --solver-timeout 60 --recon
+
+# When counterexample found, Recon generates:
+# test/HalmosReproducer.t.sol — Foundry test that reproduces the bug
+forge test --match-test check_myInvariant_reproducer -vvvv
+```
+
+**Combining Halmos + Echidna workflow**:
+1. Use Halmos for precise symbolic execution on critical functions
+2. Use Echidna for broader fuzzing across the full state space
+3. Both tools now generate Foundry reproducers — unified debugging workflow
+4. Add reproducers to your test suite as regression tests
 
 ---
 

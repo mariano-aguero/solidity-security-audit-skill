@@ -813,3 +813,141 @@ function checkSequencer() internal view {
     if (block.timestamp - startedAt < GRACE_PERIOD) revert GracePeriod();
 }
 ```
+
+---
+
+## Cross-Chain Sandwich Attacks (Source-Chain Event Leakage)
+
+**First documented**: arXiv paper, November 2025
+**Measured profit rate**: 21.4% average across cross-chain swaps
+
+When a user initiates a cross-chain swap, the source-chain transaction is publicly visible
+before the destination chain executes. Attackers monitoring source-chain events can
+front-run the destination execution, creating a cross-chain sandwich.
+
+**Attack flow:**
+1. User broadcasts `bridgeAndSwap(USDC → ETH, minOut=0.99 ETH)` on Arbitrum (source)
+2. Attacker reads the Arbitrum event with all swap parameters (amount, minOut, recipient)
+3. Attacker front-runs on Ethereum (destination): buys ETH, inflating the spot price
+4. User's destination swap executes at the inflated price, barely hitting `minOut`
+5. Attacker back-runs: sells ETH into the user's price impact for profit
+
+Standard L2 slippage defenses are insufficient because the price impact window spans two chains.
+
+```solidity
+// VULNERABLE: all swap parameters revealed in source-chain event
+function bridgeAndSwap(
+    uint256 amountIn,
+    uint256 minAmountOut,  // Attacker reads this — knows exact acceptable price range
+    address recipient,
+    uint16 destChain
+) external {
+    emit SwapInitiated(msg.sender, amountIn, minAmountOut, destChain); // Fully public
+    bridge.sendMessage(destChain, abi.encode(amountIn, minAmountOut, recipient));
+}
+
+// MITIGATION 1 — Commit-reveal: hash the minAmountOut on source, reveal on destination
+function bridgeAndSwapCommit(
+    uint256 amountIn,
+    bytes32 minAmountOutCommit,  // keccak256(abi.encode(minAmountOut, salt))
+    uint16 destChain
+) external {
+    // Attacker can't read minAmountOut from the event — only the hash
+    bridge.sendMessage(destChain, abi.encode(amountIn, minAmountOutCommit));
+}
+// MITIGATION 2 — Dynamic slippage: calculate minAmountOut from TWAP at destination execution time
+// MITIGATION 3 — Batch execution: aggregate multiple swaps in a single destination tx
+// MITIGATION 4 — Private mempool: use threshold encryption or trusted relayers
+```
+
+**Audit checklist:**
+- [ ] Does the source-chain event expose `minAmountOut` or equivalent slippage parameters?
+- [ ] Is `minAmountOut` calculated at source (exploitable) or destination (safer)?
+- [ ] Is there a commit-reveal or encrypted intent scheme for sensitive parameters?
+- [ ] Review cross-chain intent protocols (see `intent-protocols.md §8`) for leakage
+- [ ] Does the protocol have any monitoring/circuit breakers for sandwich patterns?
+
+---
+
+## Fusaka Upgrade Security Implications (December 2025)
+
+### EIP-7825 — Per-Transaction Gas Limit (16.78M)
+
+Fusaka (December 2025) introduced EIP-7825, capping execution gas per transaction at
+16,777,216 (2^24) regardless of block gas limit. This affects:
+
+- **Batch operations**: Any loop-based batch that could previously use ~30M gas must now
+  be split into multiple transactions if it exceeds 16.78M
+- **DoS via gas limit**: Contracts that assumed they could consume arbitrary gas in one
+  tx may fail on post-Fusaka chains
+- **Migration scripts**: Deployment/migration scripts that process large arrays must be
+  updated to chunk operations
+
+```solidity
+// VULNERABLE: batch may exceed 16.78M gas cap post-Fusaka
+function migrateAllUsers(address[] calldata users) external {
+    for (uint256 i; i < users.length; i++) {
+        _migrateUser(users[i]);  // If users.length is large, exceeds 16.78M cap
+    }
+}
+
+// SECURE: chunked batches with explicit gas checking
+function migrateUsersBatch(address[] calldata users) external {
+    uint256 gasPerUser = 50_000;  // Estimated
+    require(users.length * gasPerUser < 14_000_000, "Would exceed gas cap");
+    for (uint256 i; i < users.length; i++) {
+        _migrateUser(users[i]);
+    }
+}
+```
+
+### EIP-7594 — PeerDAS Blob Proof Format Change
+
+Fusaka changes blob proof formats for EIP-4844 blobs. Contracts that verify blob proofs
+on-chain (e.g., data availability bridges) must be updated to handle the new cell-proof format.
+
+**Audit checklist:**
+- [ ] Does the protocol have any single-tx batch operations? Check gas consumption vs 16.78M cap
+- [ ] Are there migration scripts or admin functions that process unbounded arrays?
+- [ ] Does the contract verify EIP-4844 blob proofs? Must be updated for PeerDAS format
+- [ ] Review `block.gaslimit` assumptions — capped at 16.78M for tx gas, not block gas
+
+---
+
+## App-Chain Fork Risk (Berachain Pattern)
+
+**Incident**: Berachain emergency hard fork, Q4 2025
+
+When a new L1/app-chain forks an established codebase (Ethereum, Optimism, etc.),
+it inherits ALL existing bugs in that codebase — including ones that may not yet be
+publicly disclosed. The Berachain emergency hard fork was triggered by a critical
+vulnerability in the forked consensus/execution layer.
+
+**Key risks for forked protocols:**
+- Pre-disclosure bugs: EIP vulnerabilities known to core devs but not public
+- Chain-specific invariant breaks: assumptions from the original chain that don't hold on the fork
+- Diverged security patches: the fork may lag behind mainnet security patches
+- Bridging assumptions: contracts assuming `block.chainid` is stable may break post-fork
+
+```solidity
+// RISK: chain ID assumptions after a hard fork
+contract CrossChainBridge {
+    uint256 immutable CHAIN_ID;
+
+    constructor() {
+        CHAIN_ID = block.chainid;  // If chain forks and changes chainid, signatures become invalid
+    }
+
+    function verifySignature(bytes32 hash, bytes calldata sig) internal view {
+        bytes32 domainHash = keccak256(abi.encode(DOMAIN_TYPEHASH, CHAIN_ID, address(this)));
+        // Post-fork: CHAIN_ID is stale — valid pre-fork signatures may be replayed
+    }
+}
+```
+
+**Audit checklist for app-chain deployments:**
+- [ ] Is this a fork of an existing codebase? Audit the original for known-but-unpatched bugs
+- [ ] Review the chain's divergence from mainnet — what security patches have been missed?
+- [ ] Check all `block.chainid` usage — are signatures protected against chain splits?
+- [ ] Verify bridge contracts handle potential chain ID changes in emergency forks
+- [ ] Review consensus layer assumptions (finality time, block time, validator set size)

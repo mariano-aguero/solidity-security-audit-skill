@@ -50,7 +50,23 @@ description: >
   "Morpho Blue", "Euler V2", "EVC", "modular lending", "permissionless market",
   "EigenVault", "cross-vault health", "ERC-4337 executor vault",
   "EIP-7701", "native account abstraction", "ACCEPT_ROLE opcode",
-  "per-transaction validation", "legacy contract validation".
+  "per-transaction validation", "legacy contract validation",
+  "Cork Protocol", "V4 hook drain", "onlyPoolManager hook", "missing onlyPoolManager",
+  "TransientStorageClearingHelperCollision", "delete transient storage", "delete tstore bug",
+  "ERC-7579 module poisoning", "module onUninstall revert", "stale module state",
+  "executor delegatecall module", "ERC-7484", "module registry attestation",
+  "ERC-7821", "minimal batch executor", "EIP-7821",
+  "sweeper delegation campaign", "tx.origin bypass Pectra", "EIP-7702 sweeper",
+  "cross-chain sandwich", "source chain event leakage",
+  "CeDeFi", "recursive leverage collapse", "oracle price hardcoding", "hardcoded collateral price",
+  "cook() flag bypass", "batch router flag reset", "deferred solvency check bypass",
+  "oracle chain complexity", "restaking oracle chain", "chained price adapter",
+  "Hyperliquid exploit", "vault liquidation absorber", "HLP vault manipulation",
+  "Fusaka gas cap", "EIP-7825", "per-transaction gas limit",
+  "app chain fork", "Berachain fork", "forked L1 inherited bugs",
+  "Aderyn v0.6", "Aderyn LSP server", "echidna verification mode", "halmos recon reproducer",
+  "Solidity 0.9.0", "transfer deprecated", "send deprecated solidity",
+  "ePBS", "EIP-7732", "block access lists", "EIP-7928", "Glamsterdam".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -283,6 +299,24 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.3.0
+- `references/vulnerability-taxonomy.md §4.6` — Oracle chain complexity for restaking assets (Moonwell pattern): staleness propagation across chained adapters
+- `references/vulnerability-taxonomy.md §4.7` — Oracle price hardcoding as contagion amplifier (xUSD/Stream Finance $285M, Nov 2025): recursive leverage via `$1.00` collateral price
+- `references/vulnerability-taxonomy.md §6.7` — Custom storage layout collisions (solc 0.8.29, multiple inheritance + --via-ir)
+- `references/vulnerability-taxonomy.md §9.5` — Cross-chain sandwich via source-chain event leakage (arXiv Nov 2025, 21.4% profit rate)
+- `references/vulnerability-taxonomy.md §12.7` — Multi-action router security flag reset (Abracadabra cook() $1.8M, Oct 2025): OR-accumulation vs direct assignment
+- `references/vulnerability-taxonomy.md §17.6` — EIP-7702 sweeper campaigns + tx.origin guard bypass post-Pectra ($2.5M+, May 2025)
+- `references/vulnerability-taxonomy.md §19.8` — TransientStorageClearingHelperCollision: `delete` on transient var emits `sstore` (solc 0.8.28–0.8.33 + --via-ir, distinct from §19.6)
+- `references/exploit-case-studies.md` — Cork Protocol V4 hook exploit ($11M, May 2025): first major production V4 hook exploit, missing `onlyPoolManager`
+- `references/defi-checklist.md` — `onlyPoolManager` requirement for all V4 callbacks (Cork Protocol pattern), CeDeFi & Recursive Leverage section, `sweepUnclaimed()` access control
+- `references/account-abstraction.md` — ERC-7579: module poisoning via `onUninstall` revert, stale state after reinstallation, executor delegatecall abuse, ERC-7484 registry
+- `references/account-abstraction.md` — ERC-7821 minimal batch executor: full EIP-712 replay protection checklist
+- `references/l2-crosschain.md` — Cross-chain sandwich attacks, Fusaka EIP-7825 gas cap (16.78M), app-chain fork risk (Berachain pattern)
+- `references/perpetual-dex.md §9` — Liquidity vault as liquidation absorber: Hyperliquid HLP structural manipulation, oracle centralization risk
+- `references/tool-integration.md` — Aderyn v0.6 rewrite (LSP, CI, 100+ detectors), Echidna 2025 verification mode + Foundry reproducer, Halmos + Recon auto-reproducer
+- `references/audit-questions.md` — AI-assisted exploit development considerations (Balancer V2 console.log evidence)
+- `references/industry-standards.md` — Solidity deprecation timeline (transfer/send/ABI v1 → removed in 0.9.0), Glamsterdam upgrade (ePBS, BALs)
 
 ### New in v3.2.0
 - `references/vulnerability-taxonomy.md §19.6` — TSTORE Poison compiler bug (solc 0.8.28–0.8.33 + --via-ir): ownership theft, reentrancy guard bypass, ~500K affected contracts

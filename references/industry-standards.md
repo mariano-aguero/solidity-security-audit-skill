@@ -220,3 +220,69 @@ The following are **never** valid Immunefi findings regardless of program:
 | Loss of yield (not principal) | Medium | Medium | Medium |
 | Complete loss of user funds | Critical | High | Critical |
 | Governance takeover | Critical | High | Critical |
+
+---
+
+## Solidity Compiler Deprecation Timeline
+
+Solidity 0.8.31 (2025) officially marked several features for removal in 0.9.0:
+
+| Feature | Status | Finding Severity | Notes |
+|---------|--------|-----------------|-------|
+| `transfer()` / `send()` | Deprecated → removed in 0.9.0 | Medium | Use `call{value:}("")` with CEI |
+| ABI coder v1 (`pragma abicoder v1`) | Deprecated → removed in 0.9.0 | Low | ABI coder v2 is default since 0.8.0 |
+| `var` keyword | Removed in 0.8.0 | N/A | Historical reference |
+| Inline assembly `jump`/`jumpi` | Removed in 0.8.0 | N/A | Use structured control flow |
+
+**Audit guidance:**
+- Any use of `transfer()` or `send()` in a codebase targeting 0.9.0 compatibility is a **Medium** finding
+- `transfer()`/`send()` also have the 2300 gas limitation (§19.7) — double reason to flag
+- ABI coder v1 usage (`pragma abicoder v1`) should be flagged as **Low** / informational
+- Projects should set a migration timeline for 0.9.0 breaking changes
+
+```bash
+# Check for deprecated patterns
+grep -r "\.transfer(" src/ --include="*.sol"
+grep -r "\.send(" src/ --include="*.sol"
+grep -r "abicoder v1" src/ --include="*.sol"
+```
+
+---
+
+## Glamsterdam Upgrade (2026)
+
+Glamsterdam is the planned 2026 Ethereum upgrade (after Fusaka/Dec 2025). Key EIPs in scope:
+
+### EIP-7732 — ePBS (Enshrined Proposer-Builder Separation)
+
+Separates block proposing from block building at the protocol level:
+
+- **MEV dynamics change**: builders compete in an on-chain auction rather than off-chain
+- **PBS slashing**: new slashing conditions for builders who propose invalid payloads
+- **Relay trust reduction**: ePBS removes the need for trusted MEV-Boost relays
+- **Smart contract impact**: no direct contract changes required, but MEV bot strategies must adapt
+
+**Audit consideration**: Protocols relying on specific MEV assumptions (e.g., guaranteed liquidation ordering) should re-evaluate after ePBS.
+
+### EIP-7928 — Block-Level Access Lists (BALs)
+
+BALs allow transactions to pre-declare all storage slots and accounts they will access,
+enabling parallel execution within a block:
+
+- **Parallel execution**: correctly declared txs can run concurrently — sequencing assumptions may change
+- **Gas pricing**: incorrect/missing access list declarations incur gas penalties
+- **Front-running changes**: parallel execution limits certain sequencing attacks
+
+**Audit consideration**: Check if contracts assume sequential execution ordering within a block.
+
+### Gas Repricing
+
+Several Glamsterdam EIPs adjust gas costs for specific opcodes. This affects:
+- Contracts with hardcoded gas stipends (e.g., `call{gas: 21000}`)
+- Gas limit calculations in batch operations
+- Profitability thresholds for MEV bots
+
+**Audit guidance for Glamsterdam-targeted deployments:**
+- [ ] Does the contract use hardcoded gas values that may break with opcode repricing?
+- [ ] Does the protocol's MEV strategy rely on pre-ePBS relayer trust assumptions?
+- [ ] Will the contract be broken by BAL parallel execution semantics?

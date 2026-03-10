@@ -1,6 +1,6 @@
 {
   "name": "@mariano-aguero/solidity-security-audit-skill",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Professional-grade Solidity smart contract security audit skill for AI agents. Based on methodologies from Trail of Bits, OpenZeppelin, Sherlock, Cyfrin, Cantina, and other leading Web3 security firms.",
   "license": "MIT",
   "repository": {

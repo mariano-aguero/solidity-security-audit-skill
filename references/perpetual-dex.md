@@ -280,6 +280,113 @@ function test_lpPriceDecreasesOnTraderProfit() public {
 
 ---
 
+## 9. Liquidity Vault as Liquidation Absorber — Structural Manipulation
+
+### The Pattern
+
+Some perpetual DEX protocols use a community liquidity vault (e.g., Hyperliquid's HLP vault)
+as the **counterparty of last resort** for liquidations. When a position cannot be liquidated
+at market price, the vault absorbs the loss. This creates a structural attack target:
+an attacker can intentionally create large positions designed to be liquidated into the vault
+at unfavorable prices.
+
+### The Hyperliquid HLP Pattern (Three Incidents, 2025)
+
+**Incident 1 (March 2025)**: Attacker opened a 50x long ETH position ($300M notional),
+moved price via off-exchange activity, then allowed the position to be liquidated.
+The HLP vault was forced to absorb the liquidation at a price far below market.
+
+**Root Cause Analysis:**
+1. **Oracle controlled by single EOA**: price oracle updateable by a single address
+2. **No position size caps relative to vault TVL**: attacker's position exceeded HLP's capacity
+3. **Liquidation price ≠ oracle price**: different pricing for liquidation vs risk calculations
+4. **No circuit breaker**: no pause mechanism for extreme position concentrations
+
+```solidity
+// VULNERABLE: vault as unconditional liquidation absorber
+contract HLPVault {
+    function absorbLiquidation(
+        address trader,
+        int256 pnl,
+        uint256 positionSize
+    ) external onlyLiquidationEngine {
+        // Vault MUST absorb regardless of size — no check against vault TVL
+        if (pnl < 0) {
+            _deductFromVault(uint256(-pnl));  // Unconditional deduction
+        }
+    }
+}
+
+// SECURE: position size caps + circuit breakers
+contract SecureVault {
+    uint256 public constant MAX_POSITION_TVL_RATIO = 10;  // Max 10% of TVL
+    uint256 public lastLargeAbsorption;
+    uint256 public constant CIRCUIT_BREAKER_COOLDOWN = 1 hours;
+
+    function absorbLiquidation(address trader, int256 pnl, uint256 positionSize) external {
+        require(
+            positionSize <= totalValueLocked() / MAX_POSITION_TVL_RATIO,
+            "Position exceeds vault capacity"
+        );
+        require(
+            block.timestamp >= lastLargeAbsorption + CIRCUIT_BREAKER_COOLDOWN,
+            "Circuit breaker active"
+        );
+        if (uint256(positionSize) > totalValueLocked() / 20) {
+            lastLargeAbsorption = block.timestamp;
+        }
+        if (pnl < 0) {
+            _deductFromVault(uint256(-pnl));
+        }
+    }
+}
+```
+
+### Oracle Centralization Risk
+
+When a single EOA controls price oracle updates, an attacker who compromises that key
+can move prices to trigger favorable liquidations.
+
+```solidity
+// VULNERABLE: single EOA oracle
+contract CentralizedOracle {
+    address public oracleUpdater;  // Single key = single point of failure
+
+    function updatePrice(address asset, uint256 price) external {
+        require(msg.sender == oracleUpdater, "Not oracle");
+        prices[asset] = price;  // No TWAP, no deviation check, no delay
+    }
+}
+
+// SECURE: multi-sig oracle with deviation bounds
+contract DecentralizedOracle {
+    uint256 public constant MAX_DEVIATION = 500;  // 5% max per-update
+
+    function updatePrice(address asset, uint256 newPrice, bytes[] calldata sigs) external {
+        require(_verifyMultisig(sigs, keccak256(abi.encode(asset, newPrice))), "Invalid sigs");
+        uint256 current = prices[asset];
+        uint256 deviation = newPrice > current
+            ? (newPrice - current) * 10000 / current
+            : (current - newPrice) * 10000 / current;
+        require(deviation <= MAX_DEVIATION, "Price deviation too large");
+        prices[asset] = newPrice;
+    }
+}
+```
+
+### Audit Checklist
+
+- [ ] **Vault as liquidation absorber**: Is there a cap on how much a single liquidation can drain from the vault (e.g., max 10% TVL)?
+- [ ] **Oracle control**: How many keys control oracle price updates? Is it a multisig? Is there an on-chain dispute mechanism?
+- [ ] **Position concentration**: Can a single trader's position exceed the vault's absorption capacity?
+- [ ] **Liquidation pricing**: Is the price used for liquidations the same as the oracle price used for risk calculations?
+- [ ] **Circuit breakers**: Is there a mechanism to pause trading/liquidations if vault TVL drops rapidly?
+- [ ] **Insurance fund sequencing**: What is the order of loss absorption (position margin → insurance fund → vault → socialized loss)?
+- [ ] **Front-running liquidations**: Can liquidators extract MEV by seeing pending liquidations before executing?
+- [ ] **Funding rate manipulation**: Can an attacker hold a large position to skew funding rates against LPs?
+
+---
+
 ## References
 
 - [GMX v2 Contracts (gmx-synthetics)](https://github.com/gmx-io/gmx-synthetics)

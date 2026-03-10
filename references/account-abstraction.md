@@ -821,6 +821,205 @@ shared module affects ALL accounts using it.
 [ ] Uninstalling a module fully clears its per-account state
 ```
 
+### Module Poisoning via `onUninstall` Revert
+
+A malicious module can make itself **permanently impossible to uninstall** by reverting
+in its `onUninstall` callback. Once installed, the module is trapped in the account forever,
+maintaining whatever privileges it was granted.
+
+```solidity
+// MALICIOUS MODULE: reverts on uninstall, trapping itself permanently
+contract PoisonedModule {
+    function onInstall(bytes calldata) external {}
+
+    function onUninstall(bytes calldata) external pure {
+        revert("you can't remove me");
+        // Account is now permanently compromised — this module stays forever
+    }
+}
+
+// VULNERABLE ACCOUNT: uninstallModule reverts → module remains installed
+// The account has no recovery path; the module retains execution rights indefinitely
+
+// SECURE ACCOUNT: wrap onUninstall in try/catch, forcibly remove on revert
+function uninstallModule(uint256 moduleType, address module, bytes calldata deInitData)
+    external onlyEntryPointOrSelf
+{
+    _modules[moduleType].remove(module);  // Remove from registry FIRST
+    try IModule(module).onUninstall(deInitData) {} catch {
+        // Log the failure but proceed — registry is already updated
+        emit ModuleForceUninstalled(module, moduleType);
+    }
+}
+```
+
+**Checklist:**
+- [ ] Does `uninstallModule` use try/catch around `onUninstall` calls?
+- [ ] Is the module removed from the account's registry BEFORE calling `onUninstall`?
+- [ ] Is there a governance/recovery path if a module cannot be uninstalled?
+
+### Stale State After Module Reinstallation
+
+When a module is uninstalled and reinstalled, residual state from the previous installation
+may persist. A malicious or buggy module can exploit this to regain elevated privileges.
+
+```solidity
+// VULNERABLE: module stores state in account's storage, not cleaned on uninstall
+contract StatefulModule {
+    bytes32 constant ADMIN_SLOT = keccak256("module.admin");
+
+    function onInstall(bytes calldata data) external {
+        // Sets admin in account storage — but doesn't zero out first
+        address newAdmin = abi.decode(data, (address));
+        assembly { sstore(ADMIN_SLOT, newAdmin) }
+    }
+
+    function onUninstall(bytes calldata) external {
+        // Forgets to clean up ADMIN_SLOT → stale state persists after uninstall
+    }
+}
+
+// SECURE: always initialize to clean state on install; zero out on uninstall
+function onInstall(bytes calldata data) external {
+    assembly { sstore(ADMIN_SLOT, 0) }  // Zero out before setting new value
+    address newAdmin = abi.decode(data, (address));
+    assembly { sstore(ADMIN_SLOT, newAdmin) }
+}
+
+function onUninstall(bytes calldata) external {
+    assembly { sstore(ADMIN_SLOT, 0) }  // Explicitly clean up all state
+}
+```
+
+### Executor Module `delegatecall` Abuse
+
+Executor modules that perform `delegatecall` on behalf of the account can call any function
+in the account's own code or storage. A malicious executor can upgrade the account, drain
+funds, or change ownership.
+
+```solidity
+// VULNERABLE: executor module with unrestricted delegatecall target
+contract ExecutorModule {
+    function execute(address account, address target, bytes calldata data) external {
+        // Attacker can set target = account itself, calling privileged internal functions
+        // Or target = upgrade contract to replace account implementation
+        IAccount(account).execute(target, 0, data);  // No target allowlist
+    }
+}
+
+// SECURE: executor modules must have an allowlist of permitted call targets
+contract SecureExecutorModule {
+    mapping(address => bool) public allowedTargets;
+
+    function execute(address account, address target, bytes calldata data) external {
+        require(allowedTargets[target], "Target not allowed");
+        require(target != account, "Cannot call self");
+        IAccount(account).execute(target, 0, data);
+    }
+}
+```
+
+### ERC-7484 Module Registry
+
+The ERC-7484 Module Registry provides on-chain attestation for smart account modules.
+Accounts should verify module attestations before installation to reduce risk.
+
+```solidity
+// Using ERC-7484 registry to verify module before installation
+interface IERC7484Registry {
+    function checkForAccount(
+        address smartAccount,
+        address module,
+        uint256 moduleType
+    ) external view;  // Reverts if attestation is invalid
+}
+
+contract SecureAccount {
+    IERC7484Registry immutable registry;
+
+    function installModule(uint256 moduleType, address module, bytes calldata initData)
+        external onlyEntryPointOrSelf
+    {
+        // Verify attestation before installing
+        registry.checkForAccount(address(this), module, moduleType);
+        _modules[moduleType].add(module);
+        IModule(module).onInstall(initData);
+    }
+}
+```
+
+**ERC-7484 Checklist:**
+- [ ] Does the account integrate with ERC-7484 registry for module attestation?
+- [ ] Are module types (validator=1, executor=2, fallback=3, hook=4) properly segregated?
+- [ ] Can users configure trusted attesters for the registry?
+
+---
+
+## ERC-7821 — Minimal Batch Executor (EIP-7702 Delegation)
+
+ERC-7821 defines a minimal `execute(bytes32 mode, bytes calldata executionData)` interface
+for batch execution, designed to work as an EIP-7702 delegation target. The key security
+requirement is **full EIP-712 replay protection** — without it, signed batch transactions
+can be replayed across chains or after nonce reuse.
+
+```solidity
+interface IERC7821 {
+    function execute(bytes32 mode, bytes calldata executionData) external payable;
+    function supportsExecutionMode(bytes32 mode) external view returns (bool);
+}
+
+// VULNERABLE: no replay protection on execute calls
+contract MinimalExecutor is IERC7821 {
+    function execute(bytes32 mode, bytes calldata executionData) external payable {
+        // Any caller can execute arbitrary calls — no signature check, no nonce
+        Call[] memory calls = abi.decode(executionData, (Call[]));
+        for (uint256 i; i < calls.length; i++) {
+            (bool success,) = calls[i].target.call{value: calls[i].value}(calls[i].data);
+            if (!success) revert CallFailed(i);
+        }
+    }
+}
+
+// SECURE: EIP-712 signed batch with full replay protection
+contract SecureERC7821 is IERC7821 {
+    bytes32 private immutable DOMAIN_SEPARATOR;
+    mapping(bytes32 => uint256) public nonces;  // Per-key nonce mapping
+
+    bytes32 constant BATCH_TYPEHASH = keccak256(
+        "Batch(Call[] calls,bytes32 nonce,uint256 deadline)"
+        "Call(address target,uint256 value,bytes data)"
+    );
+
+    function execute(bytes32 mode, bytes calldata executionData) external payable {
+        (Call[] memory calls, bytes32 nonce, uint256 deadline, bytes memory sig) =
+            abi.decode(executionData, (Call[], bytes32, uint256, bytes));
+
+        require(block.timestamp <= deadline, "Expired");
+        require(nonces[nonce] == 0, "Nonce used");
+        nonces[nonce] = 1;  // Replay protection
+
+        bytes32 hash = _hashBatch(calls, nonce, deadline);
+        address signer = ECDSA.recover(hash, sig);
+        require(signer == address(this) || _isAuthorized(signer), "Unauthorized");
+
+        for (uint256 i; i < calls.length; i++) {
+            (bool success,) = calls[i].target.call{value: calls[i].value}(calls[i].data);
+            if (!success) revert CallFailed(i);
+        }
+    }
+}
+```
+
+**Security Checklist for ERC-7821 Implementations:**
+- [ ] All `execute()` calls require valid signature from the account owner/delegate
+- [ ] EIP-712 structured hash includes: chain ID (in domain separator), nonce, deadline
+- [ ] Nonces are per-key (not global) to support key rotation without invalidating other keys
+- [ ] `deadline` prevents long-lived signature validity
+- [ ] Cross-chain replay: domain separator includes `block.chainid` (not hardcoded at deploy)
+- [ ] Batch mode codes are validated — unknown modes should revert, not silently no-op
+- [ ] `supportsExecutionMode()` returns accurate mode support (no false positives)
+- [ ] EIP-7702 delegation target: verify the delegated-to contract's `execute()` is safe before signing
+
 ---
 
 ## Entry Point Interaction

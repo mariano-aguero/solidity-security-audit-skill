@@ -401,6 +401,33 @@ an estimated 30-40% of code4rena/Sherlock contest submissions include AI-generat
 - [ ] Are there functions that should be `view` but are not marked as such?
 - [ ] Are there `public` functions that should be `external` (no internal calls)?
 
+### AI-Assisted Exploit Development Considerations
+
+As of 2025, attackers are using AI tools to generate exploit code. The Balancer V2
+$128M exploit was the first confirmed AI-assisted attack (evidenced by `console.log`
+statements left in the deployed attack contract). Auditors should now consider:
+
+**Signs of AI-generated exploit code in a suspicious contract:**
+- `console.log` / `emit Debug()` statements in a deployed attack contract
+- Unusual comments like "this should work", "TODO: remove before deploy"
+- Structurally correct but semantically strange logic that "feels generated"
+- Flash loan patterns that are perfectly templated but miss edge cases
+
+**What this means for defensive auditing:**
+```
+When reviewing protocol contracts, ask:
+1. Does this vulnerability require multi-step exploitation? AI lowers the barrier.
+2. Is the exploit template available on GitHub or audit reports? If so, AI can find it.
+3. Are there any commented-out security checks? AI may have generated the insecure version.
+4. Does the contract interaction pattern match known exploit templates (Curve, Compound, etc.)?
+```
+
+**Audit questions to add when AI-generated exploits are a concern:**
+- [ ] Are there debug statements, TODOs, or AI artifacts in any suspicious contracts?
+- [ ] Does the protocol implement a pattern from a previously exploited protocol?
+- [ ] Could the vulnerability have been found by querying "how to exploit [protocol type]" in an LLM?
+- [ ] Is there unusually sophisticated exploit logic for an otherwise unsophisticated codebase?
+
 ---
 
 ## Quick Reference: Red Flags

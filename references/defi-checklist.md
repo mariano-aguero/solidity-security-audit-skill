@@ -365,6 +365,8 @@ beyond standard AMM security.
 - [ ] Can the hook be replaced or upgraded after pools are initialized with it?
 
 ### Callback Security
+- [ ] **All hook callbacks (`beforeSwap`, `afterSwap`, `beforeAddLiquidity`, `afterAddLiquidity`, `beforeRemoveLiquidity`, `afterRemoveLiquidity`, `beforeInitialize`, `afterInitialize`, `beforeDonate`, `afterDonate`) restrict `msg.sender == address(poolManager)`** (Cork Protocol $11M: missing `onlyPoolManager`)
+- [ ] Hook factory/`createMarket()` functions have appropriate access control or governance — external market creation must be permissioned
 - [ ] Are `beforeSwap`/`afterSwap` callbacks nonReentrant?
 - [ ] Does the hook validate `msg.sender == address(poolManager)` in all callbacks?
 - [ ] Is `hookData` validated — not blindly decoded as user-controlled input?
@@ -466,6 +468,9 @@ or on-chain points for future airdrop allocation. Common in 2024-2025 DeFi.
 ### Merkle-Based Airdrop Claims
 - [ ] Is the Merkle root set by a trusted admin with no timelock? (rug risk)
 - [ ] Is there a deadline for claims? What happens to unclaimed tokens?
+- [ ] **`sweepUnclaimed()` / `recoverTokens()` has strict access control** — only owner/multisig with timelock, not arbitrary callers (zkSync airdrop $4M: missing access control on sweep)
+- [ ] Sweep function cannot be called while the claim window is still open
+- [ ] Sweep destination address is hardcoded or requires governance approval (not a constructor parameter that can be socially-engineered)
 - [ ] Can the Merkle root be updated after claims start (retroactive exclusion)?
 - [ ] Is there protection against claiming on behalf of another address without consent?
 - [ ] Are claimed tokens tracked to prevent double-claiming?
@@ -639,3 +644,27 @@ vulnerabilities, with $2.76M already stolen. MEV bots can appear in audit scope 
 | Flash loan callback without `require(msg.sender == pool)` | Callback hijacking |
 | `receive()` with non-trivial logic and no auth | ETH theft via `.call{value:0}` |
 | Missing return value check on swap calls | Silent losses on failed swaps |
+
+---
+
+## CeDeFi & Recursive Leverage
+
+Protocols that mix centralized stablecoin issuance with on-chain borrowing can create
+recursive leverage amplifiers when collateral prices are hardcoded.
+
+**Key risks:**
+- Stablecoin collateral priced at hardcoded $1.00 instead of live oracle
+- High LTV ratios enable 7–8x recursive leverage in just a few deposit-borrow cycles
+- Cascade liquidations when peg breaks, contagion to external protocols
+
+**Audit checklist:**
+- [ ] Verify no collateral asset has a hardcoded price (search for `1e18`, `1e8` used as return values in price functions)
+- [ ] Calculate maximum achievable recursive leverage: `1 / (1 - LTV)` iterations
+- [ ] Check that stablecoin price feeds have depeg circuit breakers (e.g., revert if price < $0.98)
+- [ ] Review liquidation cascade: if largest positions liquidate simultaneously, can the protocol absorb bad debt?
+- [ ] Check position size caps — single positions should not be large enough to destabilize the protocol
+- [ ] Verify that the protocol does not accept its own issued token as collateral (recursive self-collateralization)
+- [ ] Test oracle failure path: if feed is stale, does borrowing halt or continue with last price?
+
+**Reference**: xUSD/Stream Finance ($285M contagion, Nov 2025) — 7.6x recursive leverage via `$1.00` hardcoded stablecoin price.
+See `vulnerability-taxonomy.md §4.7` for code examples.
