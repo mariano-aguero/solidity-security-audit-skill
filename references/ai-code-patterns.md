@@ -97,8 +97,9 @@ contract VaultV2 is UUPSUpgradeable, OwnableUpgradeable {
     // Missing: implementation can be initialized directly → ownership takeover
     // Should add: constructor() { _disableInitializers(); }
 
-    // Missing onlyProxy check — anyone can call this on the implementation directly
     function _authorizeUpgrade(address newImpl) internal override onlyOwner {}
+    // Note: _authorizeUpgrade is internal — not externally callable.
+    // The real risk above is the missing _disableInitializers() in the constructor.
 }
 ```
 
@@ -123,7 +124,7 @@ contract VaultV2 is UUPSUpgradeable, OwnableUpgradeable {
 ```
 
 **Audit check:** For every upgradeable contract: `_disableInitializers()` in constructor,
-`onlyProxy` or equivalent on `_authorizeUpgrade`, zero-address checks on `initialize` params.
+`onlyOwner` or `onlyRole` access control on `_authorizeUpgrade`, zero-address checks on `initialize` params.
 
 ### 2.3 Hallucinated Interface Functions
 
@@ -138,11 +139,11 @@ token.safeTransfer(recipient, amount); // CompileError if IERC20, not ERC20Safe
 // Chainlink — wrong function name
 (,int256 price,,) = feed.getLastestRoundData(); // typo: correct is latestRoundData
 
-// Uniswap V3 — stale API (V2 syntax on V3 interface)
-pool.swap(recipient, zeroForOne, amountSpecified, sqrtPriceLimitX96); // wrong sig
+// Uniswap V3 — missing required 5th parameter (bytes calldata data)
+pool.swap(recipient, zeroForOne, amountSpecified, sqrtPriceLimitX96); // wrong sig — missing 5th param: bytes calldata data (swap callback)
 
 // OZ v5 — renamed from v4
-token.safeIncreaseAllowance(spender, amount); // removed in OZ v5, use forceApprove
+token.safeApprove(spender, amount); // removed in OZ v5; use forceApprove() instead
 ```
 
 **Audit check:** For every external call, verify the function signature against the
@@ -165,17 +166,18 @@ contract Vault is ReentrancyGuard {
 
 **Pattern B — Guard on internal helper instead of external entry point:**
 ```solidity
-// OZ ReentrancyGuard only protects via _status across the call stack.
-// Adding nonReentrant to an internal function does not prevent cross-function reentrancy
-// because the external entry point is the actual re-entry target.
+// Placing nonReentrant on an internal function is fragile when multiple external entry points
+// exist: a second unguarded external function sharing state is not protected.
 function _processWithdrawal(uint256 amount) internal nonReentrant { ... }
-function withdraw(uint256 amount) external { _processWithdrawal(amount); } // unguarded entry
+function withdraw(uint256 amount) external { _processWithdrawal(amount); } // OK if only entry
+function harvest(uint256 amount) external { _processWithdrawal(amount); } // also guarded via nonReentrant on internal — but new state-sharing functions added later may not be
+// Prefer: put nonReentrant on every external entry point explicitly
 ```
 
 **Pattern C — Custom guard with storage collision in upgradeable contract:**
 ```solidity
 // AI copies a simple lock variable, forgetting ERC-7201 namespaced storage
-bool private _locked; // Slot 0 — may collide with proxy admin slot
+bool private _locked; // Slot 0 — collides with implementation storage layout on upgrade; use ReentrancyGuardUpgradeable (ERC-7201 namespaced)
 modifier nonReentrant() {
     require(!_locked, "Reentrant");
     _locked = true;
