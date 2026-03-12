@@ -631,7 +631,7 @@ to cross-margin to socialize the forthcoming bad debt:
 
 ```solidity
 // No timelock: attacker switches from isolated to cross just before liquidation
-function switchToChross(uint256 positionId) external {
+function switchToCross(uint256 positionId) external {
     require(msg.sender == positions[positionId].trader, "Not owner");
     // Missing: check that position is above maintenance margin before allowing switch
     // Missing: timelock between mode switches
