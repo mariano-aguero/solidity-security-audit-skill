@@ -100,6 +100,24 @@ Execute audits in this order. Each phase builds on the previous one.
 
 ### Phase 0 — Threat Modeling
 
+**Audit by Protocol Type — Quick Routing**
+
+| Protocol Type | Primary Reference | DeFi Checklist Section | Key Case Studies |
+|---|---|---|---|
+| AMM / DEX | `defi-integrations.md §Uniswap` | `defi-checklist.md §AMM` | Curve, Cork Protocol |
+| Lending / Borrowing | `defi-integrations.md §Aave` | `defi-checklist.md §Lending` | Euler, Abracadabra |
+| Vault / Yield (ERC-4626) | `defi-integrations.md §ERC-4626` | `defi-checklist.md §Vault` | — |
+| Bridge / Messaging | `l2-crosschain.md` | `defi-checklist.md §Bridge` | Nomad, Wormhole |
+| Governance / DAO | `vulnerability-taxonomy.md §15` | `defi-checklist.md §Governance` | Beanstalk, Compound |
+| Perpetual DEX | `perpetual-dex.md` | `defi-checklist.md §Perp` | Hyperliquid HLP |
+| LST / Restaking | `staking-consensus.md` | `defi-checklist.md §Restaking` | Bybit |
+| Uniswap V4 Hook | `defi-integrations.md §V4-Hooks` | `defi-checklist.md §V4-Hooks` | Cork Protocol |
+| ZK / Rollup | `zkvm-specific.md` | `l2-crosschain.md §ZK` | — |
+| Account Abstraction | `account-abstraction.md` | `audit-questions.md §AA` | — |
+| AI-Generated Code | `ai-code-patterns.md` | `audit-questions.md §AI` | Bybit (supply chain) |
+| Intent / Solver | `intent-protocols.md` | `defi-checklist.md §Intents` | — |
+| CeDeFi / Synthetic | `vulnerability-taxonomy.md §4.7` | `defi-checklist.md §CeDeFi` | xUSD ($285M) |
+
 Before touching code, build a mental model of what the protocol does and what
 can go wrong economically. This shapes where you spend time in Phase 3.
 
