@@ -111,6 +111,12 @@ Use this when you know what you're looking for but not which file covers it.
 | ERC-6909 — dual approval model confusion | vulnerability-taxonomy.md | §21.1 |
 | ERC-6909 — donation / inflation attack (no totalSupply) | vulnerability-taxonomy.md | §21.2 |
 | ERC-6909 — Uniswap V4 claim token misuse | vulnerability-taxonomy.md | §21.3 |
+| AI-generated code — CEI violation | ai-code-patterns.md | §2.1 |
+| AI-generated code — incomplete access control | ai-code-patterns.md | §2.2 |
+| AI-generated code — hallucinated interfaces | ai-code-patterns.md | §2.3 |
+| AI-generated code — broken reentrancy guard | ai-code-patterns.md | §2.4 |
+| AI-generated code — EIP-712 missing nonce | ai-code-patterns.md | §2.5 |
+| AI-generated code — detection red flags | ai-code-patterns.md | §1 |
 
 ---
 
@@ -389,3 +395,16 @@ Use this when you know what you're looking for but not which file covers it.
 | `sweepUnclaimed()` without timelock or access control | defi-checklist Points & Airdrop → Merkle-Based |
 | Cross-chain swap with minAmountOut in source-chain event | taxonomy §9.5, l2-crosschain Cross-Chain Sandwich |
 | Oracle chain with multiple adapters (restaking assets) | taxonomy §4.6 (Moonwell pattern) |
+| dYdX v4 — off-chain CLOB trust model | perpetual-dex.md | §10 |
+| Gains Network — DAI vault counterparty | perpetual-dex.md | §11 |
+| Funding rate — skew manipulation | perpetual-dex.md | §12 |
+| Insurance fund drain attacks | perpetual-dex.md | §13 |
+| Cross-margin contagion / isolated-to-cross | perpetual-dex.md | §14 |
+| Noir — unconstrained function risks | zkvm-specific.md | §7 |
+| SP1 — cycle limit DoS + output integrity | zkvm-specific.md | §8 |
+| Polygon CDK — sequencer + LxLy bridge | zkvm-specific.md | §9 |
+| Folding schemes (Nova, SuperNova, HyperNova) | zkvm-specific.md | §10 |
+| EIP-7732 ePBS — payload withholding | glamsterdam.md | §1 |
+| EIP-7928 BALs — MEV transparency | glamsterdam.md | §2 |
+| xUSD / Stream Finance exploit analysis | exploit-case-studies.md | #15 |
+| Hyperliquid HLP exploit analysis | exploit-case-studies.md | #16 |
