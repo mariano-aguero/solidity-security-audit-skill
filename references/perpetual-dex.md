@@ -395,3 +395,252 @@ contract DecentralizedOracle {
 - [defi-integrations.md](defi-integrations.md) — Chainlink, Uniswap integration patterns
 - [defi-checklist.md](defi-checklist.md) — General DeFi security checks
 - [exploit-case-studies.md](exploit-case-studies.md) — Real perp protocol exploits
+
+---
+
+## 10. dYdX v4 — Cosmos App-Chain Risks
+
+dYdX v4 runs on its own Cosmos SDK chain with an off-chain clob (Central Limit
+Order Book) and on-chain settlement. This introduces risks absent from EVM-native perp DEXes.
+
+### 10.1 Off-Chain Order Book Trust Assumptions
+
+Validators maintain the CLOB off-chain via consensus. A malicious validator set can:
+- Reorder fills to frontrun large orders before the oracle settles the price
+- Selectively delay order inclusion (MEV without on-chain evidence)
+- Collude to execute orders at stale prices just before an oracle update
+
+**Audit checks:**
+- [ ] Are fills price-validated on-chain against the oracle at time of settlement?
+- [ ] Is there a maximum acceptable spread between fill price and oracle price at settlement?
+- [ ] Are order timestamps validated to prevent stale order execution?
+
+### 10.2 Cosmos Validator Set Compromise
+
+Unlike Ethereum, dYdX v4 security depends entirely on dYdX's own validator set.
+A 33%+ Byzantine fault halts the chain; a 67%+ fault allows equivocation and double-spending.
+
+**Bridge and custody implications:**
+- Funds bridged from Ethereum to dYdX v4 depend on IBC bridge validators
+- A chain halt freezes all user funds until validator coordination recovers
+- No equivalent of Ethereum social consensus for contentious fork resolution
+- Insurance funds held on-chain become inaccessible during a halt
+
+**Audit checks:**
+- [ ] Is the L1 bridge IBC light-client-based or multisig-based?
+- [ ] What is the validator set decentralization? (count, stake distribution, geographic spread)
+- [ ] Are there emergency withdrawal mechanisms that bypass chain liveness requirements?
+
+### 10.3 CometBFT Block Proposer MEV
+
+dYdX v4 uses CometBFT (formerly Tendermint) consensus. Block proposers can reorder
+transactions within their proposal window, analogous to Ethereum block proposers.
+
+**Attack pattern:**
+```
+// Validator acts as block proposer:
+// Step 1: Validator's own buy order → included first → price moves up
+// Step 2: User's large buy order → included second → fills at worse price
+// Step 3: Validator sells → profit without on-chain evidence
+```
+
+**Audit checks:**
+- [ ] Does the protocol use TWAP-based fills to mitigate single-block price manipulation?
+- [ ] Are large orders time-weighted or split to reduce sandwiching profitability?
+- [ ] Are there commitments to order sequencing before the block is proposed?
+
+---
+
+## 11. Gains Network (gTrade) — Synthetic Asset Risks
+
+gTrade uses a single DAI vault as the sole counterparty for all synthetic perpetuals.
+No real underlying assets are held — only DAI collateral for both traders and the vault.
+
+### 11.1 Vault Solvency (DAI Vault as Counterparty)
+
+The DAI vault pays out winning traders and absorbs losses from losers.
+If the vault is underfunded relative to outstanding profitable exposure, it cannot pay.
+
+**Vulnerability scenario:**
+```
+Vault balance: 10M DAI
+All open longs are profitable at current price:
+  → Aggregate unrealized PnL owed to traders: 12M DAI
+  → Vault cannot cover → forced position closures or haircuts
+```
+
+**Audit checks:**
+- [ ] Is there a maximum open interest cap relative to total vault TVL?
+- [ ] Is vault utilization enforced at position open, at PnL accumulation, or both?
+- [ ] What is the mechanism when vault drops below minimum solvency? (pause, forced deleveraging, haircut?)
+- [ ] Are there circuit breakers that halt new position opens when utilization exceeds a threshold?
+
+### 11.2 Single-Oracle Dependency Across All Markets
+
+gTrade uses Chainlink + custom price aggregation. A single feed failure
+or manipulation simultaneously affects all synthetic markets.
+
+**Audit checks:**
+- [ ] Is there a price deviation circuit breaker comparing feeds across sources?
+- [ ] Can a single Chainlink feed being stale halt the entire protocol?
+- [ ] Is there a per-market fallback oracle?
+- [ ] Are all markets paused when any single feed fails, or only the affected market?
+
+### 11.3 Governance Collateral Factor Manipulation
+
+Since gTrade has no real underlying assets, all risk parameters are governance-controlled.
+A malicious governance action can inflate collateral factors to allow undercollateralized positions.
+
+**Audit checks:**
+- [ ] Are collateral factor changes timelocked (minimum 24–72 hours)?
+- [ ] Is there a maximum single-action change limit on collateral factors?
+- [ ] Who can execute parameter changes — multisig, DAO vote, or single EOA?
+
+---
+
+## 12. Advanced Funding Rate Manipulation
+
+### 12.1 Skew-Based Funding Manipulation
+
+Protocols that set funding rates proportional to long/short skew can be manipulated
+by a whale that dominates one side to extract funding from the other.
+
+**Attack flow:**
+1. Attacker opens a massive long position (dominates the long side → funding rate at max positive)
+2. Short holders pay maximum funding to attacker each funding epoch
+3. Attacker's funding income exceeds position cost if oracle price is stable
+
+**Vulnerable pattern:**
+```solidity
+function getFundingRate(bytes32 marketId) public view returns (int256) {
+    int256 skew = int256(longOI[marketId]) - int256(shortOI[marketId]);
+    // Linear: unbounded funding rate if skew is extreme
+    return (skew * FUNDING_RATE_MULTIPLIER) / int256(totalOI[marketId]);
+    // A whale with 99% of OI on one side → near-max funding drain
+}
+```
+
+**Mitigations to check:**
+- [ ] Is there a maximum funding rate cap regardless of skew level?
+- [ ] Is there a minimum delay between a skew change and the resulting funding rate update?
+- [ ] Is there a maximum position size per address or per block for a single market?
+
+### 12.2 Time-Weighted Funding Rate Gaming
+
+If funding snapshots occur at predictable intervals, attackers can:
+1. Open a large skew-dominating position just before the snapshot
+2. Close immediately after the snapshot
+3. Net receive one epoch of funding at minimal holding cost
+
+**Audit checks:**
+- [ ] Is the funding rate computed on a TWAP basis (minutes or hours, not 1 block)?
+- [ ] Are funding snapshots at randomized or unpredictable intervals?
+- [ ] Are there minimum holding periods before a position accumulates funding?
+
+### 12.3 Funding Rate Oracle Manipulation
+
+Some protocols use an external index rate (e.g., from a CEX) to anchor their funding rate.
+Manipulation of that index affects on-chain funding across all positions.
+
+**Audit checks:**
+- [ ] Is the funding rate index sourced from a single CEX or multiple sources?
+- [ ] Is there a maximum single-epoch change cap on the funding rate?
+- [ ] Can the funding rate index be manipulated via Chainlink or a TWAP oracle?
+
+---
+
+## 13. Insurance Fund Attacks
+
+### 13.1 Cascading Liquidations to Drain Insurance Fund
+
+The insurance fund absorbs bad debt when liquidations cannot fully close an underwater
+position. A coordinated attack exhausts it:
+
+1. Attacker opens a max-leverage long in an illiquid market
+2. Attacker (with a second wallet) rapidly dumps the asset
+3. Liquidators cannot act fast enough → position goes deeply negative
+4. Insurance fund absorbs bad debt
+
+**Vulnerable pattern:**
+```solidity
+function absorbBadDebt(bytes32 marketId, address trader) internal {
+    int256 badDebt = getUnrealizedLoss(marketId, trader);
+    if (badDebt < 0 && insuranceFund >= uint256(-badDebt)) {
+        insuranceFund -= uint256(-badDebt); // No cap — fund can be drained to zero
+        _closePosition(marketId, trader);
+    }
+}
+```
+
+**Audit checks:**
+- [ ] Is there an open interest cap for illiquid markets scaled to insurance fund size?
+- [ ] Is maximum leverage reduced for markets with thin order books?
+- [ ] What is the maximum single-position bad debt vs. insurance fund balance?
+- [ ] Is there a per-epoch cap on total bad debt absorption?
+
+### 13.2 Insurance Fund → Socialized Loss Griefing
+
+When the insurance fund is exhausted, some protocols socialize losses across all
+open profitable positions. An attacker can use this to target specific winners:
+
+1. Drain insurance fund via cascading liquidations (see §13.1)
+2. Wait until a target trader has a large profitable position
+3. Trigger socialized loss → the target's realized PnL is clawed back
+
+**Audit checks:**
+- [ ] Is the socialization mechanism capped per epoch (not unlimited clawback)?
+- [ ] Can socialized loss be triggered permissionlessly or is it gated?
+- [ ] Are users notified before their PnL is socialized?
+
+---
+
+## 14. Cross-Margin vs. Isolated Margin Security
+
+### 14.1 Cross-Margin Contagion
+
+In cross-margin mode, a loss in one market reduces margin available for all others,
+potentially triggering cascading liquidations across multiple positions.
+
+**Vulnerable pattern:**
+```solidity
+function getAccountHealth(address trader) public view returns (int256) {
+    int256 totalPnL = 0;
+    for (uint256 i = 0; i < openMarkets[trader].length; i++) {
+        totalPnL += getUnrealizedPnL(trader, openMarkets[i]); // All markets share margin
+    }
+    return int256(collateral[trader]) + totalPnL;
+    // A loss in market A drains margin for markets B, C, D simultaneously
+}
+```
+
+**Attack vector:**
+- Open a profitable position in market A (long) using cross-margin
+- Open a large leveraged position in market B (cross-margin subsidizes the margin)
+- Manipulate market B's oracle → market B position triggers liquidation
+- Market A profits are seized to cover market B's shortfall
+
+**Audit checks:**
+- [ ] Is there a maximum cross-margin exposure ratio per market?
+- [ ] Can cross-margin be disabled per market to contain contagion?
+- [ ] Is there a minimum cross-margin health factor enforced separately per market?
+
+### 14.2 Isolated to Cross-Margin Switch Timing Attack
+
+An attacker whose isolated margin position is about to be liquidated can switch
+to cross-margin to socialize the forthcoming bad debt:
+
+```solidity
+// No timelock: attacker switches from isolated to cross just before liquidation
+function switchToChross(uint256 positionId) external {
+    require(msg.sender == positions[positionId].trader, "Not owner");
+    // Missing: check that position is above maintenance margin before allowing switch
+    // Missing: timelock between mode switches
+    positions[positionId].marginMode = MarginMode.Cross;
+    // Now the upcoming bad debt becomes cross-margin bad debt — socialized to all cross users
+}
+```
+
+**Audit checks:**
+- [ ] Is there a timelock (≥ 1 epoch) between switching margin modes?
+- [ ] Is the mode switch blocked if the position is below maintenance margin?
+- [ ] Are cross-margin losses capped to prevent socialization of unlimited bad debt?
