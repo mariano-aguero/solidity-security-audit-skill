@@ -34,7 +34,9 @@ references/
 ├── perpetual-dex.md            # GMX v2, Synthetix Perps, liquidation, LP solvency            [v3]
 ├── zkvm-specific.md            # ZK proof verification, zkSync/zkEVM gaps, circuit bugs       [v3]
 ├── staking-consensus.md        # Pectra: EIP-7002/7251/6110, LST/restaking post-Pectra        [v3.1]
-└── INDEX.md                    # Topic → file:section navigation map         [v2]
+├── INDEX.md                    # Topic → file:section navigation map         [v2]
+├── ai-code-patterns.md         # LLM-specific anti-patterns, vibe-coding checklist [v3.4]
+└── glamsterdam.md              # EIP-7732 ePBS + EIP-7928 BALs               [v3.4]
 ```
 
 **References** are loaded on-demand based on audit context. Files cross-reference each other to avoid duplication.
