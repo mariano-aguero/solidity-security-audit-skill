@@ -66,7 +66,22 @@ description: >
   "app chain fork", "Berachain fork", "forked L1 inherited bugs",
   "Aderyn v0.6", "Aderyn LSP server", "echidna verification mode", "halmos recon reproducer",
   "Solidity 0.9.0", "transfer deprecated", "send deprecated solidity",
-  "ePBS", "EIP-7732", "block access lists", "EIP-7928", "Glamsterdam".
+  "ePBS", "EIP-7732", "block access lists", "EIP-7928", "Glamsterdam",
+  "AI-generated code audit", "vibe coding security", "LLM contract review", "copilot Solidity",
+  "hallucinated interface", "broken reentrancy guard AI", "incomplete access control AI",
+  "EIP-7732", "enshrined PBS", "ePBS", "proposer builder separation consensus",
+  "Block Access Lists", "BALs EIP-7928", "EIP-7928", "payload withholding attack",
+  "preconfirmation timing", "preconf security",
+  "Noir circuit", "unconstrained Noir", "pub input Noir", "Noir language audit",
+  "SP1 zkVM", "SP1 Succinct", "SP1 cycle limit", "SP1 precompile security",
+  "Polygon CDK", "CDK chain audit", "LxLy bridge", "AggLayer security",
+  "folding scheme", "Nova IVC", "SuperNova folding", "HyperNova", "ProtoStar IVC",
+  "dYdX v4", "dYdX Cosmos chain", "CLOB trust model", "CometBFT MEV",
+  "Gains Network", "gTrade", "DAI vault counterparty", "synthetic perp solvency",
+  "skew manipulation funding", "funding rate oracle", "insurance fund drain",
+  "cross-margin contagion", "isolated to cross margin switch",
+  "xUSD exploit", "Stream Finance exploit", "hardcoded oracle dollar",
+  "Hyperliquid HLP exploit", "HLP liquidation absorber", "dual role vault".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -317,6 +332,15 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.4.0
+- `references/ai-code-patterns.md` — LLM-specific Solidity anti-patterns: CEI violations, broken reentrancy guards, hallucinated interfaces, incomplete access control, EIP-712 missing nonce/chainId; red flags for AI-generated code; full audit checklist for vibe-coded contracts
+- `references/glamsterdam.md` — Glamsterdam upgrade security: EIP-7732 ePBS payload withholding + preconfirmation timing attacks; EIP-7928 BALs MEV transparency and parallelization race conditions; audit checklists for both EIPs
+- `references/exploit-case-studies.md #15` — xUSD/Stream Finance $285M (Nov 2025): hardcoded oracle adapter ($1.00) feeding recursive leverage loop; why `pure` oracle adapters evade static analysis
+- `references/exploit-case-studies.md #16` — Hyperliquid HLP: vault dual-role as market maker + bad debt absorber; proprietary oracle centralization; low-liquidity market exploitation (JELLY incident)
+- `references/perpetual-dex.md §10-§14` — dYdX v4 (Cosmos CLOB, CometBFT MEV), Gains Network (DAI vault solvency), advanced funding rate manipulation (skew-based + time-weighted), insurance fund drain attacks, cross-margin contagion and isolated-to-cross timing attack
+- `references/zkvm-specific.md §7-§10` — Noir `unconstrained` function risks + public/private input confusion, SP1 cycle DoS + committed output integrity, Polygon CDK sequencer centralization + LxLy bridge replay, folding schemes (Nova/SuperNova/HyperNova IVC)
+- `SKILL.md Phase 0` — "Audit by Protocol Type" quick routing table: 13 protocol types mapped to primary reference, checklist section, and key case studies
 
 ### New in v3.3.0
 - `references/vulnerability-taxonomy.md §4.6` — Oracle chain complexity for restaking assets (Moonwell pattern): staleness propagation across chained adapters
