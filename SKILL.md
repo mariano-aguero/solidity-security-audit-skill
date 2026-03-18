@@ -66,6 +66,12 @@ description: >
   "app chain fork", "Berachain fork", "forked L1 inherited bugs",
   "Aderyn v0.6", "Aderyn LSP server", "echidna verification mode", "halmos recon reproducer",
   "Solidity 0.9.0", "transfer deprecated", "send deprecated solidity",
+  "transfer removed 0.9", "send removed 0.9", "migrate from transfer call",
+  "PUSH0 cross-chain", "PUSH0 opcode incompatible", "evm-version paris", "evmVersion paris",
+  "shanghai fork compatibility", "non-shanghai chain", "PUSH0 zkSync", "EIP-3855",
+  "ERC-1967 slot corruption", "proxy storage slot", "implementation slot overwrite",
+  "UUPS brick attack", "upgradeTo interface check", "proxiableUUID missing",
+  "storage layout migration", "proxy slot collision", "delegatecall slot overwrite",
   "ePBS", "EIP-7732", "enshrined PBS", "proposer builder separation consensus",
   "block access lists", "Block Access Lists", "BALs EIP-7928", "EIP-7928", "Glamsterdam",
   "payload withholding attack", "preconfirmation timing", "preconf security",
@@ -445,6 +451,12 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.6.0
+- `references/vulnerability-taxonomy.md §23` — Solidity 0.9.0 breaking changes: `transfer()`/`send()` removal, new reentrancy surface on migration to `.call{}()`, unchecked return value pattern
+- `references/vulnerability-taxonomy.md §24` — PUSH0 opcode cross-chain compatibility: EIP-3855 (Shanghai, April 2023), Solidity 0.8.20+ default evmVersion, non-Shanghai chain deployment failures, per-chain compatibility table
+- `references/vulnerability-taxonomy.md §25` — ERC-1967 proxy storage slot corruption: assembly slot collision, UUPS brick attack (missing `proxiableUUID` check), `delegatecall` slot overwrite, storage layout migration break
+- **CLAUDE.md fix**: audit modes count corrected to 5 (Contest Mode added in v3.5.0 was not reflected)
 
 ### New in v3.5.0
 - **Contest Mode** — New audit mode for competitive platforms: Code4rena, Sherlock, Immunefi, Cantina, CodeHawks; platform routing table, contest ROI strategy, validity pre-check, per-platform rules (admin trust, pre-conditions, escalation)

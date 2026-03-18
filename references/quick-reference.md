@@ -203,6 +203,10 @@ Always check before reviewing transient storage or via-ir builds:
 |-------|------|--------|
 | `solc 0.8.28–0.8.33` + `--via-ir` + `tstore` | TSTORE Poison — slot corruption | Upgrade to 0.8.34+; see `vulnerability-taxonomy.md §19.6` |
 | `transfer()`/`send()` as reentrancy guard | 2300-gas no longer blocks TSTORE callee | Replace with `nonReentrant`; see §19.7 |
+| `payable(addr).transfer()` or `.send()` in codebase | Won't compile under Solidity 0.9.0; migration to `.call()` opens reentrancy | Migrate with CEI + `nonReentrant`; see §23 |
+| Solidity 0.8.20+ without explicit `evmVersion` | Emits PUSH0 (EIP-3855) — fails on non-Shanghai chains | Set `evm_version = "paris"` for cross-chain; see §24 |
+| `upgradeTo(newImpl)` without `proxiableUUID()` check | UUPS brick attack — proxy permanently stuck | Use OZ `_upgradeToAndCallUUPS`; see §25.3 |
+| Raw `sstore` near ERC-1967 slot values in implementation | Overwrites proxy implementation pointer | Audit all assembly slots vs §25.1 constants |
 | EOF-targeted deploy (EIP-7692/Fusaka) | `EXTDELEGATECALL` breaks legacy contracts | Full EOF checklist at §22 |
 | OZ v4→v5 upgrade without migration | Storage slot collision | Run `@openzeppelin/upgrade-safe-checker`; see §6.6 |
 | Custom math with bit-shift overflow guard | Sentinel value off-by-one (Cetus $223M) | Verify boundary: see §3.4 |

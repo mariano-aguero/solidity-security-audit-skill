@@ -111,6 +111,14 @@ Use this when you know what you're looking for but not which file covers it.
 | ERC-6909 — dual approval model confusion | vulnerability-taxonomy.md | §21.1 |
 | ERC-6909 — donation / inflation attack (no totalSupply) | vulnerability-taxonomy.md | §21.2 |
 | ERC-6909 — Uniswap V4 claim token misuse | vulnerability-taxonomy.md | §21.3 |
+| Solidity 0.9.0 — transfer()/send() removed, reentrancy surface on migration | vulnerability-taxonomy.md | §23 |
+| Solidity 0.9.0 — send() silent failure migrated to unchecked call() | vulnerability-taxonomy.md | §23.3 |
+| PUSH0 opcode — cross-chain incompatibility (non-Shanghai chains) | vulnerability-taxonomy.md | §24 |
+| PUSH0 opcode — evmVersion misconfiguration in foundry.toml / hardhat | vulnerability-taxonomy.md | §24.2 |
+| ERC-1967 — proxy storage slot corruption via assembly | vulnerability-taxonomy.md | §25.2 |
+| ERC-1967 — UUPS upgradeTo() without interface check (brick attack) | vulnerability-taxonomy.md | §25.3 |
+| ERC-1967 — delegatecall to untrusted contract overwrites proxy slots | vulnerability-taxonomy.md | §25.4 |
+| ERC-1967 — storage layout migration risk (insert/remove breaks layout) | vulnerability-taxonomy.md | §25.5 |
 | AI-generated code — CEI violation | ai-code-patterns.md | §2.1 |
 | AI-generated code — incomplete access control | ai-code-patterns.md | §2.2 |
 | AI-generated code — hallucinated interfaces | ai-code-patterns.md | §2.3 |
@@ -412,3 +420,8 @@ Use this when you know what you're looking for but not which file covers it.
 | Hyperliquid HLP exploit analysis | exploit-case-studies.md | #16 |
 | Ronin Bridge — validator threshold + stale permissions ($625M) | exploit-case-studies.md | #17 |
 | Mango Markets — self-trading oracle manipulation ($117M) | exploit-case-studies.md | #18 |
+| `payable(addr).transfer()` or `.send()` found | taxonomy §23 (Solidity 0.9.0 removal + reentrancy surface) |
+| Solidity 0.8.20+ deployed on non-Ethereum chain without evmVersion lock | taxonomy §24 (PUSH0 cross-chain) |
+| `upgradeTo()` without proxiableUUID check / UUPS proxy | taxonomy §25.3 (brick attack) |
+| Raw `sstore` with hardcoded large slot value in implementation | taxonomy §25.2 (ERC-1967 collision) |
+| Storage variables reordered between V1 and V2 upgrade | taxonomy §25.5 (layout migration) |
