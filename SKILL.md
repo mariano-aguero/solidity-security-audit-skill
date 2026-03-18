@@ -446,6 +446,13 @@ patterns, consult these reference files:
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
 
+### New in v3.5.0
+- **Contest Mode** — New audit mode for competitive platforms: Code4rena, Sherlock, Immunefi, Cantina, CodeHawks; platform routing table, contest ROI strategy, validity pre-check, per-platform rules (admin trust, pre-conditions, escalation)
+- `references/report-template.md` — Added Immunefi bug bounty submission format; responsible disclosure rules
+- `references/exploit-case-studies.md #17` — Ronin Bridge $625M (Mar 2022): 5/9 validator threshold + stale temporary permission; checklist for bridge validator trust models
+- `references/exploit-case-studies.md #18` — Mango Markets $117M (Oct 2022): self-trading oracle manipulation; two-wallet strategy; hardened oracle design with Chainlink + 30-min TWAP + circuit breaker
+- **Bug fixes**: taxonomy ToC adds §21/§22; SKILL.md deduplicates triggers; `Info`→`Informational` label; Quick Scan output defined; ERC-7702 `tx.origin` check in Universal DeFi Access Control
+
 ### New in v3.4.0
 - `references/ai-code-patterns.md` — LLM-specific Solidity anti-patterns: CEI violations, broken reentrancy guards, hallucinated interfaces, incomplete access control, EIP-712 missing nonce/chainId; red flags for AI-generated code; full audit checklist for vibe-coded contracts
 - `references/glamsterdam.md` — Glamsterdam upgrade security: EIP-7732 ePBS payload withholding + preconfirmation timing attacks; EIP-7928 BALs MEV transparency and parallelization race conditions; audit checklists for both EIPs
