@@ -121,6 +121,63 @@ Perform professional-grade smart contract security audits following methodologie
 established by the world's leading Web3 security firms. Produce actionable,
 severity-classified findings with remediation guidance.
 
+## Context Gathering — When Code Arrives Without Scope
+
+**Trigger:** User pastes Solidity code (one function, one file, or a repo link) with no
+additional context — no chain, no Solidity version, no stated scope, no prior audit info.
+
+Do NOT start auditing immediately. Missing context causes wrong severity ratings,
+irrelevant findings (e.g., flagging L2 issues on mainnet-only code), and wasted effort.
+Ask the following questions **in a single message** before proceeding.
+
+### Required Context (block until answered)
+
+Ask these as a short numbered list — not a form, not a table:
+
+```
+Before I start the audit, I need a few details:
+
+1. **Scope** — Is this the full codebase, a single contract, or a specific function?
+   (Full codebase = I'll check cross-contract interactions; single function = focused review)
+
+2. **Solidity version** — What compiler version are you targeting?
+   (Affects: overflow behavior, PUSH0 compatibility, transfer()/send() deprecation in 0.9.0)
+
+3. **Target chain(s)** — Where will this deploy?
+   (Mainnet, L2 like Arbitrum/Base/zkSync, multi-chain, or unknown)
+
+4. **Previous audits** — Has this code been audited before? Any known issues or recent changes?
+   (If yes → Re-audit mode; if no → Full Audit)
+
+5. **Protocol type** — What does this protocol do?
+   (e.g., lending, AMM, vault, bridge, governance — determines which checklist to load)
+```
+
+### Defaults If User Cannot Answer
+
+If the user says "just check it" or provides no answers, assume these safe defaults
+and **state them explicitly** at the start of the audit:
+
+| Question | Default | Risk |
+|----------|---------|------|
+| Scope | Single contract/function provided | May miss cross-contract issues |
+| Solidity version | Latest stable (`^0.8.x`) | May miss version-specific bugs |
+| Target chain | Ethereum mainnet | May miss L2-specific issues |
+| Previous audits | None — first review | Full Audit mode |
+| Protocol type | General DeFi | Use Universal DeFi Checks from `defi-checklist.md` |
+
+### Fast Path — Single Function Paste
+
+When a user pastes only one function (≤30 lines, no imports, no state variables), skip
+the context questions and do a **Quick Scan** directly. State:
+
+> "Reviewing this function in isolation. For a full audit including state variables,
+> access control, and cross-contract interactions, share the full contract."
+
+Then output: severity-tagged bullet list (Critical/High only unless none found, then include Medium).
+
+---
+
 ## Audit Mode Selection
 
 Before starting, identify the audit mode:
