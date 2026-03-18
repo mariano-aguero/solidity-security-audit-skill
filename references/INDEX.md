@@ -390,6 +390,8 @@ Use this when you know what you're looking for but not which file covers it.
 | Collateral price hardcoded at `$1.00` | taxonomy §4.7 (xUSD/Stream Finance), defi-checklist CeDeFi |
 | ERC-7579 module installation — `onUninstall` revert risk | account-abstraction EIP-7579 → Module Poisoning |
 | Community vault absorbing liquidations | perpetual-dex §9 (Hyperliquid HLP pattern) |
+| Bridge validator threshold ≤ 5/9 or stale temporary validator grant | exploit-case-studies #17 (Ronin), l2-crosschain Bridge Security |
+| Lending protocol prices collateral from its own internal DEX spot market | exploit-case-studies #18 (Mango), taxonomy §4.1 + §4.3 |
 | `delete` on transient variable (compiler 0.8.28–0.8.33 + via-ir) | taxonomy §19.8 (TransientStorageClearingHelperCollision) |
 | EIP-7702 sweeper delegation / `tx.origin == msg.sender` bypass | taxonomy §17.6, automated-detection ERC-7702 |
 | `sweepUnclaimed()` without timelock or access control | defi-checklist Points & Airdrop → Merkle-Based |
@@ -408,3 +410,5 @@ Use this when you know what you're looking for but not which file covers it.
 | EIP-7928 BALs — MEV transparency | glamsterdam.md | §2 |
 | xUSD / Stream Finance exploit analysis | exploit-case-studies.md | #15 |
 | Hyperliquid HLP exploit analysis | exploit-case-studies.md | #16 |
+| Ronin Bridge — validator threshold + stale permissions ($625M) | exploit-case-studies.md | #17 |
+| Mango Markets — self-trading oracle manipulation ($117M) | exploit-case-studies.md | #18 |
