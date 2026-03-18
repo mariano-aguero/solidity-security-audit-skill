@@ -16,17 +16,18 @@ This skill transforms your AI agent into a comprehensive smart contract security
 
 | Category | Content |
 |----------|---------|
-| **Vulnerability Patterns** | 50+ vulnerability types with code examples (incl. ERC-7702, V4 hooks, transient storage) |
-| **Protocol Checklists** | Lending, AMM, Vaults, Bridges, Governance, Staking, NFT, **Restaking/LRT**, **V4 Hooks**, **Airdrop** |
+| **Vulnerability Patterns** | 25 sections, 100+ vulnerability types with code examples (incl. ERC-7702, V4 hooks, transient storage, PUSH0, ERC-1967) |
+| **Protocol Checklists** | Lending, AMM, Vaults, Bridges, Governance, Staking, NFT, Restaking/LRT, V4 Hooks, Airdrop |
 | **Token Standards** | ERC-20, ERC-721, ERC-1155, ERC-4626 security checks |
-| **Tool Integration** | Slither (SARIF), Foundry (coverage), Echidna, Aderyn, Halmos, Certora, **Slang AST** |
-| **PoC Templates** | Foundry templates incl. **V4 hook drain**, **transient storage bypass**, **ERC-7702 abuse** |
-| **Real Exploits** | The DAO, Beanstalk, Euler, Curve, Nomad, Wormhole |
-| **L2 Security** | Sequencer, bridges, **Blast rebasing**, **zkEVM specifics**, **EIP-4844**, **precompiles** |
-| **Account Abstraction** | ERC-4337 accounts, paymasters, bundlers |
-| **DeFi Integrations** | Uniswap v3/v4, Chainlink, Aave, Curve, Balancer secure integration patterns |
+| **Tool Integration** | Slither (SARIF), Foundry (coverage), Echidna, Aderyn, Halmos, Certora, Slang AST |
+| **PoC Templates** | Foundry templates incl. V4 hook drain, transient storage bypass, ERC-7702 abuse |
+| **Real Exploits** | 20 case studies: The DAO → Bybit ($1.5B), Ronin ($625M), Mango, BNB Chain, Multichain |
+| **L2 Security** | Sequencer, bridges, Blast rebasing, zkEVM specifics, EIP-4844, precompiles |
+| **Account Abstraction** | ERC-4337 accounts, paymasters, bundlers, ERC-7702, ERC-7579 modules |
+| **DeFi Integrations** | Uniswap v3/v4, Chainlink, Aave, Curve, Balancer, intent protocols (Permit2, ERC-7683) |
 | **Severity Decision Trees** | Impact×Likelihood matrix, per-vuln decision trees, escalation factors |
 | **Diff/Re-audit** | Change review workflow, remediation verification, storage layout diff |
+| **Contest Mode** | Platform routing for Code4rena, Sherlock, Immunefi, Cantina, CodeHawks; ROI strategy, validity rules |
 
 ## Installation
 
