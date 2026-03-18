@@ -87,6 +87,17 @@ description: >
   "cross-margin contagion", "isolated to cross margin switch",
   "xUSD exploit", "Stream Finance exploit", "hardcoded oracle dollar",
   "Hyperliquid HLP exploit", "HLP liquidation absorber", "dual role vault",
+  "RWA protocol", "real world asset", "tokenized asset", "NAV manipulation", "pool manager trust",
+  "senior tranche", "junior tranche", "epoch redemption", "KYC transfer restriction", "ERC-1400", "ERC-3643",
+  "Centrifuge audit", "Maple Finance audit", "Goldfinch audit", "TrueFi audit",
+  "options protocol", "options settlement oracle", "implied volatility manipulation", "IV oracle",
+  "options expiry manipulation", "covered call vault", "put selling vault", "Ribbon Finance audit",
+  "Dopex audit", "Lyra audit", "Opyn audit", "Hegic audit", "option strike manipulation",
+  "prediction market", "prediction market oracle", "resolver manipulation", "conditional token",
+  "CTF conditional", "Gnosis CTF", "LMSR AMM", "market resolution bribe", "Polymarket audit",
+  "Gnosis Safe module", "Safe module audit", "Safe guard", "Safe fallback handler",
+  "enableModule security", "Safe storage collision", "delegatecall Safe", "Zodiac module",
+  "Safe recovery module", "social recovery Safe", "module threshold bypass",
   "BNB Chain bridge exploit", "BSC bridge Merkle proof", "iavl library bug", "forged Merkle proof bridge",
   "Multichain exploit", "MPC key centralization", "TSS bridge centralization", "MPC bridge audit",
   "bridge operator jurisdiction", "single point of failure bridge", "MPC key rotation",
@@ -255,6 +266,10 @@ Execute audits in this order. Each phase builds on the previous one.
 | AI-Generated Code | `ai-code-patterns.md` | `audit-questions.md §AI` | Bybit (supply chain) |
 | Intent / Solver | `intent-protocols.md` | `defi-checklist.md §Intents` | — |
 | CeDeFi / Synthetic | `vulnerability-taxonomy.md §4.7` | `defi-checklist.md §CeDeFi` | xUSD ($285M) |
+| RWA / Tokenized Assets | `vulnerability-taxonomy.md §16` | `defi-checklist.md §RWA` | — |
+| Options / Structured Products | `vulnerability-taxonomy.md §4` | `defi-checklist.md §Options` | — |
+| Prediction Markets | `vulnerability-taxonomy.md §4.1` | `defi-checklist.md §Prediction` | — |
+| Multisig / Safe Modules | `vulnerability-taxonomy.md §25` | `defi-checklist.md §Safe` | Radiant Capital |
 
 Before touching code, build a mental model of what the protocol does and what
 can go wrong economically. This shapes where you spend time in Phase 3.
@@ -455,6 +470,13 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.8.0
+- `references/defi-checklist.md §RWA` — Real World Assets: NAV manipulation, senior/junior tranche accounting, epoch-based redemption timing, pool manager trust, KYC transfer restriction bypass, default/liquidation off-chain trust
+- `references/defi-checklist.md §Options` — Options & Structured Products: settlement oracle manipulation at expiry, IV manipulation, undercollateralized option writing, automated vault strike selection, multi-leg payoff bugs
+- `references/defi-checklist.md §Prediction` — Prediction Markets: resolver/oracle bribe attacks, CTF conditional token merge attacks, AMM price bounds, market creation spam, insider MEV at resolution
+- `references/defi-checklist.md §Safe` — Gnosis Safe Modules & Guards: `delegatecall` storage collisions (with slot map), `enableModule()` time-lock, fallback handler exploitation, guard bypass via `execTransactionFromModule()`, Zodiac role escalation, social recovery grief
+- `SKILL.md` Phase 0 routing table: 4 new protocol types (RWA, Options, Prediction Markets, Safe Modules) — 13 → 17 total
 
 ### New in v3.7.0
 - `references/exploit-case-studies.md #19` — BNB Chain Bridge $570M (Oct 2022): Merkle proof forgery via iavl Go library bug; off-chain verification attack surface; defense-in-depth with transfer caps and time-locks; audit checklist for off-chain proof libraries

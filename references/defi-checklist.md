@@ -670,3 +670,249 @@ recursive leverage amplifiers when collateral prices are hardcoded.
 
 **Reference**: xUSD/Stream Finance ($285M contagion, Nov 2025) — 7.6x recursive leverage via `$1.00` hardcoded stablecoin price.
 See `vulnerability-taxonomy.md §4.7` for code examples.
+
+---
+
+## Real World Assets (RWA) Protocols (Centrifuge, Maple, Goldfinch, TrueFi-style)
+
+RWA protocols tokenize off-chain assets — loans, invoices, real estate, treasury bills.
+Their core security challenge is the **trust bridge between on-chain code and off-chain legal reality**.
+The smart contract cannot seize collateral or enforce repayment; it relies on legal structures
+and trusted admins to report accurate state. This creates a fundamentally different threat
+model from purely on-chain DeFi.
+
+### Off-Chain Trust and NAV Reporting
+
+- [ ] Who sets the Net Asset Value (NAV) of the pool? Is it an admin, an oracle, or computed on-chain?
+- [ ] Can the NAV reporter (pool manager / admin) manipulate NAV to enable over-borrowing or prevent redemptions?
+- [ ] Is there a time delay or multi-sig requirement before a NAV update takes effect?
+- [ ] Are there circuit breakers that halt redemptions if NAV drops more than X% in a single update?
+- [ ] Does the protocol use a Chainlink-style price feed for liquid RWA (T-bills, money market funds), or a centralized admin price?
+
+### Senior/Junior Tranche Accounting
+
+Many RWA protocols split capital into tranches: junior absorbs losses first, senior gets
+priority redemption. Miscounting tranche sizes or loss absorption order is a critical bug.
+
+- [ ] Is the loss absorption order (junior → senior) enforced on-chain, or off-chain by the pool manager?
+- [ ] Can the pool manager redirect losses away from junior tranche unfairly?
+- [ ] Is there a minimum junior tranche ratio enforced? (Without it, senior LPs bear unpriced risk)
+- [ ] Can the junior tranche be drained via strategic deposit/withdraw timing relative to a default event?
+- [ ] If multiple tranches share a single ERC-4626 vault, is the conversion rate correctly calculated per tranche?
+
+### Epoch-Based Redemption Windows
+
+- [ ] Are redemption requests accumulated per epoch and executed at epoch end?
+- [ ] Can an attacker submit a large redemption request then front-run the epoch closing to cancel it?
+- [ ] Is there a minimum lock-up period preventing same-block deposit-and-redeem?
+- [ ] What happens to redemption requests that cannot be filled in an epoch? Do they roll over or expire?
+- [ ] Can a whitelisted address drain the liquidity reserve before other redemptions are processed?
+
+### Pool Manager / Admin Trust
+
+- [ ] What can the pool manager do unilaterally without time-lock or multi-sig?
+  - Pause redemptions
+  - Change NAV
+  - Whitelist / blacklist token holders
+  - Draw down borrower credit lines
+  - Write off defaulted loans
+- [ ] Is there a maximum drawdown per epoch or per time window to limit admin abuse?
+- [ ] Can the pool manager add themselves as a borrower?
+- [ ] Is pool manager compensation (fees) taken from the protocol before investor returns?
+
+### KYC / Transfer Restrictions
+
+- [ ] Do RWA tokens enforce transfer restrictions (ERC-1400, ERC-3643, or custom whitelist)?
+- [ ] Can a non-KYC'd address receive tokens via a DEX swap or secondary market?
+- [ ] Does the whitelist check apply to `transferFrom()` as well as `transfer()`?
+- [ ] If whitelist is managed off-chain, can a user remain whitelisted after KYC status revokes?
+- [ ] Are there jurisdiction-specific transfer blocklists that could be used to freeze any investor?
+
+### Default and Liquidation
+
+- [ ] What on-chain mechanism exists to handle borrower default?
+- [ ] If collateral is off-chain (real estate, invoices), who controls the legal enforcement process?
+- [ ] Can a defaulted loan be marked as "recovered" without actual repayment, inflating NAV?
+- [ ] Is there a grace period that an attacker (borrower) can exploit to time withdrawals before default declaration?
+
+---
+
+## Options & Structured Products (Dopex, Lyra, Opyn/Gamma, Ribbon Finance-style)
+
+Options protocols price, underwrite, and settle derivative contracts on-chain.
+Their core risk is that pricing correctness depends on **implied volatility (IV)** — which
+is nearly impossible to source trustlessly — and **settlement oracle integrity** at expiry,
+which is highly susceptible to flash-loan manipulation.
+
+### Settlement Oracle Manipulation
+
+The most critical attack vector: manipulate the spot price at the exact block where options settle.
+
+- [ ] What oracle is used to determine the settlement price? Is it a spot price, TWAP, or Chainlink?
+- [ ] If spot price: can a flash loan or large spot trade manipulate the price at the settlement block?
+- [ ] Is the settlement price the price at a specific block timestamp, or an average over a window?
+- [ ] Can the settlement be triggered by anyone (griefable if block-specific oracle)?
+- [ ] Is there a circuit breaker preventing settlement if the oracle price deviates >X% from the 1h TWAP?
+
+### Implied Volatility (IV) and Pricing
+
+- [ ] Who sets the IV used for option pricing? Is it a privileged admin, an on-chain model, or external feed?
+- [ ] Can IV be set to an extreme value (near-zero or very high) to misprice options in favor of the protocol or a buyer?
+- [ ] Is there a bound on how much IV can change per update?
+- [ ] If an AMM prices options dynamically (e.g., CLAMM), can LP positions be drained by trading against stale IV?
+- [ ] Are options priced correctly when the underlying asset has very low liquidity?
+
+### Collateral and Writing Options
+
+- [ ] Are options fully collateralized at writing time (no undercollateralized writing)?
+- [ ] If partially collateralized (margin model): is the margin updated as the underlying price moves?
+- [ ] Can a writer withdraw collateral while the option is in-the-money (ITM)?
+- [ ] For cash-settled options: is the payout calculated correctly using the settlement oracle?
+- [ ] For physically settled options: is the asset transfer atomic with the premium receipt?
+
+### Automated Vaults (Ribbon/Thetanuts-style covered call/put vaults)
+
+- [ ] Who sets the strike price for each epoch? Can it be set adversarially close to spot?
+- [ ] Is the strike set before or after the premium is known? (Setting it after = manipulation)
+- [ ] Can the vault operator time the strike selection to maximize their own premium income at depositor expense?
+- [ ] Are deposited funds locked in a way that prevents front-running the strike announcement?
+- [ ] Is the premium received per option validated against an on-chain minimum?
+
+### Multi-Leg Strategies and Complex Payoffs
+
+- [ ] Is the payoff calculation for spreads, straddles, condors correct under all settlement scenarios?
+- [ ] For calendar spreads: is the near-leg settlement price independent of the far-leg strike?
+- [ ] Can a combination strategy be settled partially (near-leg) before the far-leg is priced?
+- [ ] Are signed integers used where payoffs can be negative? (Net debit spreads)
+
+---
+
+## Prediction Markets (Polymarket/CTF, Augur-style)
+
+Prediction markets let users bet on real-world event outcomes. Their contracts are often
+simple (binary outcome AMMs), but the critical security surface is the **resolution layer**:
+who decides what happened, and can that be manipulated?
+
+### Market Resolution and Oracle Trust
+
+- [ ] Who resolves the market? (UMA Optimistic Oracle, Chainlink, centralized admin, DAO vote)
+- [ ] Is the resolver economically incentivized to resolve correctly? What's the cost to manipulate?
+- [ ] Can the resolver be bribed for less than the outstanding positions' value?
+- [ ] Is there a dispute/escalation mechanism? Can disputes be front-run or griefed?
+- [ ] What happens if the resolver fails to respond in time? (Markets stuck, funds locked)
+- [ ] For UMA-style optimistic resolution: is the dispute bond large enough to deter manipulation?
+
+### Conditional Token (ERC-1155) Logic (Gnosis CTF-based)
+
+Many prediction markets use Gnosis's Conditional Token Framework (CTF) with ERC-1155 tokens.
+
+- [ ] Are conditional tokens split and merged correctly? (`splitPosition` / `mergePositions`)
+- [ ] Can a user merge positions they don't fully own (partial merge attack)?
+- [ ] Are redemption conditions exclusive (exactly one outcome wins) or can multiple outcomes be valid simultaneously?
+- [ ] Can an attacker create a circular condition dependency that makes redemption impossible?
+- [ ] Is `reportPayouts()` callable by anyone, or restricted to the oracle? (If anyone: griefable)
+
+### AMM-Based Prediction Markets (LMSR, CPMM)
+
+- [ ] Does the AMM enforce prices within [0, 1] for all outcomes?
+- [ ] Is there an AMM invariant that a sufficiently large trade could break (price outside bounds)?
+- [ ] Can liquidity be added/removed in a way that manipulates the implied probability?
+- [ ] Is there a sandwich attack vector at market resolution (large buy → resolve → sell)?
+- [ ] For order-book-based markets: is there a minimum order size to prevent spam griefing?
+
+### Market Creation and Lifecycle
+
+- [ ] Can anyone create a market? If so, can malicious markets trick users into losing funds?
+  (e.g., ambiguous question wording, resolver who is the creator)
+- [ ] Is there a collateral token whitelist, or can a scam token be used as collateral?
+- [ ] When a market resolves "invalid", are all positions redeemable 1:1 for collateral?
+- [ ] Is there a market creation fee that prevents spam but doesn't disproportionately centralize market creation?
+- [ ] Can a market be closed (trading halted) before resolution? By whom?
+
+### Timing and Insider Attacks
+
+- [ ] Is market resolution information available on-chain before the resolution transaction settles? (Insider MEV)
+- [ ] Can a user who knows the outcome (e.g., an oracle operator) take a large position before resolution?
+- [ ] Is there a position-taking blackout period before resolution (e.g., 1h before cutoff)?
+
+---
+
+## Gnosis Safe Modules and Guards
+
+Safe modules extend a multisig wallet with programmable functionality via `delegatecall`.
+Because modules execute in the **Safe's own storage context**, a malicious or buggy module
+is equivalent to a compromised signer — it can drain funds, change owners, or modify
+the Safe's configuration.
+
+### Module Installation and Trust
+
+- [ ] Is `enableModule()` gated by Safe threshold? A module that can enable itself bypasses all security.
+- [ ] Can a module enable other modules? (Module A enables malicious Module B)
+- [ ] Is there a time-lock between module installation proposal and activation?
+- [ ] Are module permissions scoped (Zodiac Roles Modifier pattern) rather than full Safe access?
+- [ ] Is the list of enabled modules accessible? Can the size grow unboundedly (gas DoS on execTransaction)?
+
+### `delegatecall` Storage Collisions
+
+Modules called via `delegatecall` execute in the Safe's storage layout. If a module declares
+state variables, they overwrite the Safe's storage slots.
+
+```solidity
+// Gnosis Safe storage layout (simplified):
+// slot 0: singleton (implementation address)
+// slot 1: modules linked list head
+// slot 2: owners mapping
+// slot 3: ownerCount
+// slot 4: threshold
+// slot 5: nonce
+
+// DANGEROUS: Module with state variable at slot 4 overwrites threshold
+contract MaliciousModule {
+    address public unused0;  // slot 0 — overwrites singleton!
+    address public unused1;  // slot 1 — overwrites modules head
+    address public unused2;  // slot 2
+    address public unused3;  // slot 3
+    uint256 public myVar;    // slot 4 — OVERWRITES THRESHOLD to 0 if set to 0
+    // Setting myVar = 0 would set threshold = 0, making the Safe trivially bypassable
+}
+```
+
+- [ ] Does the module use `delegatecall`? If so, does it have any state variables?
+- [ ] Are all state variables in the module stored using namespaced storage (keccak256 slots)?
+- [ ] Is the module's storage layout audited against the Safe's known slot assignments?
+
+### Fallback Handler Exploitation
+
+The Safe's fallback handler receives calls that don't match any Safe function signature.
+A malicious fallback handler can intercept arbitrary calls to the Safe address.
+
+- [ ] What fallback handler is set? Is it audited?
+- [ ] Can the fallback handler execute state-changing operations in the Safe's context?
+- [ ] Can the fallback handler be used to call `enableModule()` or `changeThreshold()` indirectly?
+- [ ] Is the fallback handler changeable without Safe threshold approval?
+
+### Guard Bypass and Circumvention
+
+Guards are called before and after every Safe transaction to validate parameters.
+An incorrectly implemented guard can be bypassed.
+
+- [ ] Does the guard check `to`, `value`, `data`, `operation` (CALL vs DELEGATECALL)?
+- [ ] Can the guard be bypassed via a module that calls `execTransactionFromModule()`?
+  (Module-executed transactions skip the guard's `checkTransaction` in some Safe versions)
+- [ ] Can the guard be disabled by a module, removing all protection?
+- [ ] Does the guard handle the case where `data.length == 0` (plain ETH transfer)?
+
+### Role-Based Access Modules (Zodiac Roles Modifier)
+
+- [ ] Are role assignments limited to the minimum set of Safe addresses?
+- [ ] Can a role grant itself additional permissions (role escalation)?
+- [ ] Are function-level allowlists tight enough? (e.g., allowing `transfer(address,uint256)` should not allow `transferFrom()`)
+- [ ] Is there a mechanism to revoke a role if a member is compromised?
+
+### Recovery Modules (Social Recovery)
+
+- [ ] Who are the recovery guardians? Are they sufficiently independent from the Safe owners?
+- [ ] What is the recovery threshold? Can a single guardian trigger a recovery?
+- [ ] Is there a time-lock on recovery execution during which the current owner can cancel?
+- [ ] Can recovery guardians be added/removed without the current owner's consent?
+- [ ] Can an attacker grief the recovery process by repeatedly triggering it (resets the time-lock)?

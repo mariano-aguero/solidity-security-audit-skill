@@ -176,6 +176,21 @@ Use this when you know what you're looking for but not which file covers it.
 | Modular lending — Morpho Blue permissionless markets | defi-checklist.md | Modular Lending Protocols |
 | Modular lending — Euler V2 EVC cross-vault health | defi-checklist.md | Modular Lending Protocols → EVC |
 | CeDeFi & Recursive Leverage — checklist | defi-checklist.md | CeDeFi & Recursive Leverage |
+| RWA — NAV manipulation by pool manager | defi-checklist.md | Real World Assets → Off-Chain Trust |
+| RWA — senior/junior tranche accounting errors | defi-checklist.md | Real World Assets → Tranche Accounting |
+| RWA — epoch redemption window timing attacks | defi-checklist.md | Real World Assets → Epoch Redemptions |
+| RWA — KYC/transfer restriction bypass | defi-checklist.md | Real World Assets → Transfer Restrictions |
+| Options — settlement oracle manipulation at expiry | defi-checklist.md | Options → Settlement Oracle |
+| Options — IV manipulation in AMM-based pricing | defi-checklist.md | Options → IV and Pricing |
+| Options — undercollateralized option writing | defi-checklist.md | Options → Collateral and Writing |
+| Options vault (Ribbon-style) — adversarial strike selection | defi-checklist.md | Options → Automated Vaults |
+| Prediction market — resolver/oracle bribe attack | defi-checklist.md | Prediction Markets → Resolution |
+| Prediction market — CTF conditional token merge attack | defi-checklist.md | Prediction Markets → CTF Logic |
+| Prediction market — AMM price outside [0,1] | defi-checklist.md | Prediction Markets → AMM |
+| Safe module — storage collision via delegatecall | defi-checklist.md | Gnosis Safe Modules → Storage Collisions |
+| Safe module — `enableModule()` without time-lock | defi-checklist.md | Gnosis Safe Modules → Installation |
+| Safe guard — bypassed via `execTransactionFromModule()` | defi-checklist.md | Gnosis Safe Modules → Guards |
+| Safe recovery module — guardian grief / time-lock reset | defi-checklist.md | Gnosis Safe Modules → Recovery |
 | V4 hook `onlyPoolManager` requirement (Cork Protocol $11M) | defi-checklist.md | Uniswap V4 Hooks → Callback Security |
 | Airdrop — `sweepUnclaimed()` access control | defi-checklist.md | Points & Airdrop Protocols → Merkle-Based |
 | Perpetual DEX — vault as liquidation absorber (Hyperliquid pattern) | perpetual-dex.md | §9 |
@@ -401,6 +416,11 @@ Use this when you know what you're looking for but not which file covers it.
 | Bridge validator threshold ≤ 5/9 or stale temporary validator grant | exploit-case-studies #17 (Ronin), l2-crosschain Bridge Security |
 | Lending protocol prices collateral from its own internal DEX spot market | exploit-case-studies #18 (Mango), taxonomy §4.1 + §4.3 |
 | Bridge verifies Merkle proof using off-chain library (Go/Rust) without independent audit | exploit-case-studies #19 (BNB Chain), taxonomy §16 |
+| RWA pool where NAV is set by a single admin with no time-lock | defi-checklist RWA → Off-Chain Trust |
+| Options protocol settling at a spot price (not TWAP) | defi-checklist Options → Settlement Oracle |
+| Prediction market with a single centralized resolver, no dispute mechanism | defi-checklist Prediction Markets → Resolution |
+| Safe with a module that has state variables (potential storage collision) | defi-checklist Safe Modules → Storage Collisions |
+| `enableModule()` callable without owner threshold | defi-checklist Safe Modules → Installation |
 | Bridge uses MPC / TSS with all key operators in one jurisdiction or under one person | exploit-case-studies #20 (Multichain), taxonomy §16 |
 | No emergency pause mechanism independent of the compromised key | exploit-case-studies #20 (Multichain) |
 | `delete` on transient variable (compiler 0.8.28–0.8.33 + via-ir) | taxonomy §19.8 (TransientStorageClearingHelperCollision) |
