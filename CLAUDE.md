@@ -11,7 +11,7 @@ The skill transforms AI agents into Solidity security auditors following methodo
 ## Architecture
 
 ```
-SKILL.md                        # Entry point - audit modes + 5-phase workflow
+SKILL.md                        # Entry point - 5 audit modes + 5-phase workflow
 references/
 ├── vulnerability-taxonomy.md   # 50+ vulnerability types with code (incl. ERC-7702, V4 hooks)
 ├── defi-checklist.md           # Protocol + token checklists (incl. restaking, airdrop)
