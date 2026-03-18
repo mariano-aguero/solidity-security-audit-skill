@@ -87,6 +87,10 @@ description: >
   "cross-margin contagion", "isolated to cross margin switch",
   "xUSD exploit", "Stream Finance exploit", "hardcoded oracle dollar",
   "Hyperliquid HLP exploit", "HLP liquidation absorber", "dual role vault",
+  "BNB Chain bridge exploit", "BSC bridge Merkle proof", "iavl library bug", "forged Merkle proof bridge",
+  "Multichain exploit", "MPC key centralization", "TSS bridge centralization", "MPC bridge audit",
+  "bridge operator jurisdiction", "single point of failure bridge", "MPC key rotation",
+  "off-chain proof library audit", "ICS23 proof verification", "cross-chain proof forgery",
   "Code4rena", "C4 contest", "Sherlock contest", "Immunefi", "Cantina contest",
   "CodeHawks", "Cyfrin Updraft", "warden submission", "Watson submission",
   "bug bounty submission", "audit contest", "audit competition", "contest finding",
@@ -451,6 +455,11 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.7.0
+- `references/exploit-case-studies.md #19` — BNB Chain Bridge $570M (Oct 2022): Merkle proof forgery via iavl Go library bug; off-chain verification attack surface; defense-in-depth with transfer caps and time-locks; audit checklist for off-chain proof libraries
+- `references/exploit-case-studies.md #20` — Multichain $130M (Jul 2023): MPC key centralization under single CEO; jurisdiction risk (Chinese authorities); operational security audit framework; MPC bridge architecture with guardian pause + time-locked large transfers
+- **README.md fix**: normalized inconsistent bold in "What's Included" table, updated exploit count to 20, added Contest Mode row
 
 ### New in v3.6.0
 - `references/vulnerability-taxonomy.md §23` — Solidity 0.9.0 breaking changes: `transfer()`/`send()` removal, new reentrancy surface on migration to `.call{}()`, unchecked return value pattern

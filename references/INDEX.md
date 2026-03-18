@@ -400,6 +400,9 @@ Use this when you know what you're looking for but not which file covers it.
 | Community vault absorbing liquidations | perpetual-dex §9 (Hyperliquid HLP pattern) |
 | Bridge validator threshold ≤ 5/9 or stale temporary validator grant | exploit-case-studies #17 (Ronin), l2-crosschain Bridge Security |
 | Lending protocol prices collateral from its own internal DEX spot market | exploit-case-studies #18 (Mango), taxonomy §4.1 + §4.3 |
+| Bridge verifies Merkle proof using off-chain library (Go/Rust) without independent audit | exploit-case-studies #19 (BNB Chain), taxonomy §16 |
+| Bridge uses MPC / TSS with all key operators in one jurisdiction or under one person | exploit-case-studies #20 (Multichain), taxonomy §16 |
+| No emergency pause mechanism independent of the compromised key | exploit-case-studies #20 (Multichain) |
 | `delete` on transient variable (compiler 0.8.28–0.8.33 + via-ir) | taxonomy §19.8 (TransientStorageClearingHelperCollision) |
 | EIP-7702 sweeper delegation / `tx.origin == msg.sender` bypass | taxonomy §17.6, automated-detection ERC-7702 |
 | `sweepUnclaimed()` without timelock or access control | defi-checklist Points & Airdrop → Merkle-Based |
@@ -420,6 +423,8 @@ Use this when you know what you're looking for but not which file covers it.
 | Hyperliquid HLP exploit analysis | exploit-case-studies.md | #16 |
 | Ronin Bridge — validator threshold + stale permissions ($625M) | exploit-case-studies.md | #17 |
 | Mango Markets — self-trading oracle manipulation ($117M) | exploit-case-studies.md | #18 |
+| BNB Chain Bridge — Merkle proof forgery via iavl library bug ($570M) | exploit-case-studies.md | #19 |
+| Multichain — MPC key centralization, CEO arrested ($130M) | exploit-case-studies.md | #20 |
 | `payable(addr).transfer()` or `.send()` found | taxonomy §23 (Solidity 0.9.0 removal + reentrancy surface) |
 | Solidity 0.8.20+ deployed on non-Ethereum chain without evmVersion lock | taxonomy §24 (PUSH0 cross-chain) |
 | `upgradeTo()` without proxiableUUID check / UUPS proxy | taxonomy §25.3 (brick attack) |
