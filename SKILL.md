@@ -80,7 +80,11 @@ description: >
   "skew manipulation funding", "funding rate oracle", "insurance fund drain",
   "cross-margin contagion", "isolated to cross margin switch",
   "xUSD exploit", "Stream Finance exploit", "hardcoded oracle dollar",
-  "Hyperliquid HLP exploit", "HLP liquidation absorber", "dual role vault".
+  "Hyperliquid HLP exploit", "HLP liquidation absorber", "dual role vault",
+  "Code4rena", "C4 contest", "Sherlock contest", "Immunefi", "Cantina contest",
+  "CodeHawks", "Cyfrin Updraft", "warden submission", "Watson submission",
+  "bug bounty submission", "audit contest", "audit competition", "contest finding",
+  "submit to contest", "contest report", "H/M finding", "QA report warden".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -103,8 +107,118 @@ Before starting, identify the audit mode:
 | **Re-audit / Diff** | Previous audit exists; team applied fixes or added features | `references/diff-audit.md` |
 | **Integration Review** | Contract integrates Uniswap, Chainlink, Aave, Curve, etc. | `references/defi-integrations.md` + Phase 3 |
 | **Quick Scan** | Rapid assessment, limited time | `references/quick-reference.md` — abbreviated Phase 0 (5 min max), run Phases 1–2 only, focus Phase 3 on Critical/High patterns from `quick-reference.md`. **Output:** bullet list of Critical/High findings only; each entry: severity tag, location (`File.sol#L`), one-line description, remediation pointer. No full report structure required. |
+| **Contest** | Submitting to Code4rena, Sherlock, Immunefi, Cantina, or CodeHawks | See **Contest Mode** section below — platform-specific output format, strategy, and validity rules |
 
 For severity classification guidance at any point, consult `references/severity-decision-tree.md`.
+
+---
+
+## Contest Mode
+
+**Activate when** the user mentions: "Code4rena", "C4", "Sherlock", "Immunefi", "Cantina",
+"CodeHawks", "Cyfrin", "warden submission", "Watson submission", "bug bounty submission",
+"audit contest", "audit competition", "contest finding", or "submit to contest".
+
+### Step 0 — Identify the Platform
+
+| Platform | Model | Reward Structure | Severity Used |
+|----------|-------|-----------------|---------------|
+| **Code4rena** | Competitive | H/M split pool; Low = QA pool; Gas = Gas pool | H / M / Low / NC / Gas |
+| **Sherlock** | Competitive | H/M split; Low = no payout | H / M only (paid) |
+| **Immunefi** | Bug bounty | Tiered fixed payout per severity | Critical / High / Medium / Low |
+| **Cantina** | Competitive | H/M/Low reward tiers | Critical / H / M / Low / Info |
+| **CodeHawks / Cyfrin** | Competitive | Similar to C4 | H / M / Low / Info / Gas |
+
+Once identified, apply the exact submission format from `references/report-template.md → Contest Submission Format`.
+
+### Step 1 — Scope Verification
+
+Before any review:
+- Read the contest README, `scope.txt`, and known issues list in the contest repo
+- Mark all out-of-scope contracts — findings there are immediately invalid
+- Note "Admin is trusted" and other protocol assumptions that eliminate entire bug classes
+- Check if a bot race report has been submitted (C4 bots claim floating pragma, missing zero-checks, unchecked returns — avoid these)
+
+### Step 2 — Priority Stack (Contest ROI)
+
+Contests reward unique, high-impact findings. Allocate review time accordingly:
+
+**Highest ROI → spend 70% of time here:**
+- Reentrancy (all variants, especially cross-function and read-only)
+- Oracle manipulation (spot price, TWAP bypass, stale feeds)
+- Access control gaps on privileged functions
+- Business logic errors (incorrect fee math, state machine violations, off-by-one)
+- Economic attacks (flash loan vectors, slippage, MEV)
+
+**Medium ROI → spend 25%:**
+- Integer precision / rounding direction
+- Missing input validation (zero-address, bounds — only if exploitable, not bot-fodder)
+- DoS vectors (unbounded loops, griefing with real impact)
+- Signature replay / EIP-712 errors
+
+**Low ROI — skip unless trivial to add:**
+- Gas optimizations (only if contest has a Gas pool)
+- Code style, naming (NC / Info → no payout on most platforms)
+- Findings already listed as known issues
+
+### Step 3 — Validity Pre-Check
+
+Before writing each finding, apply this filter:
+
+```
+Is there a working attack path an external actor can execute?
+├─ No → Invalid (likely rejected)
+│
+Is the root cause inside the contest scope?
+├─ No → Out of scope (invalid)
+│
+Does the impact require a trusted role (admin, owner)?
+├─ Yes, and admin is listed as trusted → Low at best (often invalid)
+│
+Can the impact be quantified in USD?
+├─ Yes → always include the estimate (judges weight concrete impact)
+├─ No → describe the qualitative harm precisely
+│
+Is there a working PoC?
+├─ H/M without PoC → likely downgraded or rejected
+├─ Build a Foundry test before writing the report
+```
+
+### Step 4 — Platform-Specific Rules
+
+**Code4rena:**
+- Each H/M = separate GitHub issue; QA findings bundled in one QA report
+- Duplicate = same root cause (not same symptom) → split reward pool
+- Unique findings with PoC earn the most; first-mover advantage on uncommon bugs
+- Link every finding to exact GitHub permalink (commit hash, not branch)
+- Use `diff` format in mitigations when possible
+
+**Sherlock:**
+- Strict pre-conditions template required: "Internal pre-conditions" + "External pre-conditions"
+- `admin is trusted` = admin-abuse findings are invalid (not even Low)
+- "Loss of 1 wei" alone = invalid; needs meaningful dollar impact or significant disruption
+- Escalation period: Watson escalation reviewed by Senior Watsons; escalate if you believe judge is wrong
+- Valid states must persist after the PoC transaction (not reset by next block)
+
+**Immunefi:**
+- Bug bounty: disclose privately first; no public disclosure until patched
+- Critical/High require a working PoC; Medium may be accepted with clear description
+- Impact must be real: "theoretical" or "best case" attacks typically rejected
+- Include: affected product version, environment (mainnet/testnet), reproduction steps
+- Do not include in contest format — use private disclosure channel
+
+**Cantina / CodeHawks:**
+- Similar to C4 in structure; include `Context:` field with exact file + line reference
+- CodeHawks requires explicit `Likelihood` and `Impact` labels in addition to combined `Severity`
+
+### Step 5 — Output
+
+Use the exact per-platform format from `references/report-template.md → Contest Submission Format`.
+
+**Do not use private audit report format (no Executive Summary, no Scope section, no Appendix).**
+
+Each finding is standalone and must be independently understandable.
+Judges read hundreds of findings — front-load the impact in the first sentence.
 
 ---
 

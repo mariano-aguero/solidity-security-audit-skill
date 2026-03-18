@@ -629,6 +629,61 @@ Technical explanation referencing specific code. State the violated invariant.
 
 ---
 
+### Immunefi (Bug Bounty — Private Disclosure)
+
+Immunefi is a **bug bounty** (not a contest). Submit privately; no public disclosure until patched.
+
+```markdown
+**Title**: [Severity] Concise description of vulnerability
+
+**Severity**: Critical / High / Medium / Low
+
+**Affected Product**: [Protocol Name] — Smart Contract
+**Affected Version**: [Commit hash or version tag]
+**Environment**: Ethereum Mainnet / [chain]
+
+**Description**
+Technical explanation of the vulnerability. State exactly which function and line is affected.
+Reference the ERC/standard violated if applicable.
+
+**Impact**
+Quantify in USD if possible. State conditions required for exploitation.
+Example: "An attacker with no special privileges can drain the entire vault (current TVL ~$5M)
+in a single transaction by calling `withdraw()` before `balances` is updated."
+
+**Proof of Concept**
+Foundry test or step-by-step reproduction:
+
+```solidity
+function test_Exploit() public {
+    // Fork mainnet at block X
+    // Setup attacker contract
+    // Execute attack
+    // Assert funds drained
+}
+```
+
+**Recommended Fix**
+```solidity
+// Before (vulnerable)
+...
+// After (secure)
+...
+```
+
+**Additional Notes**
+- Have you verified this on a fork/testnet? [Yes/No]
+- Estimated time to exploit (if deployed): [e.g., "any time, no preconditions"]
+```
+
+**Immunefi-specific rules:**
+- Do NOT disclose publicly before receiving response (violates responsible disclosure)
+- Critical/High require working PoC — no PoC = likely downgraded
+- Payout depends on protocol's bounty table (not a shared pool like C4)
+- Protocol has 48h to acknowledge, then 10 days to triage
+
+---
+
 ### Severity Comparison Across Platforms
 
 | Severity | Code4rena | Sherlock | Cantina/Cyfrin |
