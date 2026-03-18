@@ -117,7 +117,7 @@ forge test --fork-url $ETH_RPC_URL
 | **High** | Fund loss with conditions | Oracle manipulation, access control bypass |
 | **Medium** | Limited impact, specific conditions | Griefing, temporary DoS, front-running |
 | **Low** | Theoretical, best practice | Missing events, floating pragma |
-| **Info** | Code quality | Naming, unused variables, gas |
+| **Informational** | Code quality | Naming, unused variables, gas |
 
 ---
 
@@ -228,7 +228,7 @@ Don't report these without deeper analysis:
 ```markdown
 ## [SEV-ID] Title
 
-**Severity**: Critical/High/Medium/Low/Info
+**Severity**: Critical/High/Medium/Low/Informational
 **File**: `Contract.sol#L42`
 
 ### Description
