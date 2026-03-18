@@ -191,6 +191,9 @@ Use this when you know what you're looking for but not which file covers it.
 | Safe module — `enableModule()` without time-lock | defi-checklist.md | Gnosis Safe Modules → Installation |
 | Safe guard — bypassed via `execTransactionFromModule()` | defi-checklist.md | Gnosis Safe Modules → Guards |
 | Safe recovery module — guardian grief / time-lock reset | defi-checklist.md | Gnosis Safe Modules → Recovery |
+| Slither reports 200+ findings — how to triage efficiently | tool-integration.md | §1 Slither Triage Cheat Sheet |
+| Slither fires `reentrancy-eth` but `nonReentrant` is present | tool-integration.md | §1 Triage → FP Guide → reentrancy-eth |
+| Slither fires `unchecked-transfer` but SafeERC20 is used | tool-integration.md | §1 Triage → FP Guide → unchecked-transfer |
 | V4 hook `onlyPoolManager` requirement (Cork Protocol $11M) | defi-checklist.md | Uniswap V4 Hooks → Callback Security |
 | Airdrop — `sweepUnclaimed()` access control | defi-checklist.md | Points & Airdrop Protocols → Merkle-Based |
 | Perpetual DEX — vault as liquidation absorber (Hyperliquid pattern) | perpetual-dex.md | §9 |
@@ -253,6 +256,10 @@ Use this when you know what you're looking for but not which file covers it.
 | Tool | File | Section |
 |------|------|---------|
 | Slither — static analysis | tool-integration.md | §1 Slither |
+| Slither triage — 200 findings, priority order, FP identification guide | tool-integration.md | §1 Slither Triage Cheat Sheet |
+| Slither triage — false positive patterns per detector | tool-integration.md | §1 Triage → FP Guide |
+| Slither triage — `.slither.config.json` suppression | tool-integration.md | §1 Triage → Config |
+| Slither triage — `slither-check-upgradeability` workflow | tool-integration.md | §1 Triage → Upgradeability |
 | Aderyn v0.6 — LSP server, VS Code extension, CI integration | tool-integration.md | §2 Aderyn |
 | Foundry Forge — testing & fuzzing | tool-integration.md | §3 Foundry |
 | Echidna 2025 — verification mode, multi-solver, Foundry reproducer | tool-integration.md | §4 Echidna |

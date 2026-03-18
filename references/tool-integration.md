@@ -128,6 +128,205 @@ It cannot detect business logic errors or economic attack vectors.
 
 ---
 
+### Slither Triage Cheat Sheet — What to Do With 200 Findings
+
+A production Slither run typically generates 100–300 findings. The distribution is roughly:
+**~60% false positives or zero-value informational**, ~30% real Medium/Low, ~10% genuine High.
+Knowing which detectors to investigate first — and when to skip — is more valuable than
+knowing all detector names.
+
+#### Step 1 — Filter Before Reading
+
+```bash
+# Exclude test files, mocks, and dependencies (most false positives live here)
+slither . --filter-paths "test/,mock/,lib/,node_modules/,script/"
+
+# Focus on High and Medium only (use for time-constrained audits / contests)
+slither . --exclude-informational --exclude-low \
+          --filter-paths "test/,mock/,lib/"
+
+# Run against a single contract to focus on the most critical logic
+slither contracts/Core.sol
+
+# JSON output for grep/jq processing
+slither . --json slither.json --filter-paths "test/,lib/"
+
+# Extract only High-impact findings from JSON
+cat slither.json | jq '.results.detectors[] | select(.impact == "High") | {check: .check, description: .description}'
+```
+
+#### Step 2 — Priority Order
+
+Work findings in this order, stopping when time runs out:
+
+| Priority | Detectors | Action |
+|----------|-----------|--------|
+| **P0 — Investigate immediately** | `reentrancy-eth`, `suicidal`, `arbitrary-send-eth`, `controlled-delegatecall`, `msg-value-loop`, `unprotected-upgrade` | Read the code. These are almost always real. |
+| **P1 — Investigate after P0** | `reentrancy-no-eth`, `unchecked-transfer`, `uninitialized-state`, `tautology`, `write-after-write`, `tx-origin` | High signal. Check for FP conditions (see below). |
+| **P2 — Context required** | `divide-before-multiply`, `incorrect-equality`, `locked-ether`, `shadowing-state`, `reentrancy-benign` | Often real, but many legitimate patterns trigger these. Read the surrounding code. |
+| **P3 — Skip unless full audit** | `naming-convention`, `solc-version`, `pragma`, `dead-code`, `unused-state`, `low-level-calls` (used correctly), `too-many-digits` | Noise in most codebases. Do last or not at all in a contest. |
+
+#### Step 3 — False Positive Identification Guide
+
+For each detector, know when to immediately close it as a FP:
+
+**`reentrancy-eth` / `reentrancy-no-eth`**
+- FP if the function has `nonReentrant` modifier from a battle-tested source (OZ, Solmate)
+- FP if the external call is to a trusted contract with known behavior (e.g., Chainlink `latestRoundData`)
+- FP if state updates happen *before* the external call (strict CEI)
+- Real if: no reentrancy guard, effects after interactions, untrusted callee
+
+**`unchecked-transfer`**
+- FP if using `SafeERC20.safeTransfer()` / `SafeERC20.safeTransferFrom()` (OZ SafeERC20)
+- FP if transfer target is `address(this)` (cannot fail meaningfully)
+- FP if the token is a known non-reverting token and the return value is genuinely irrelevant
+- Real if: raw `token.transfer()` or `token.transferFrom()` return value is ignored on external token
+
+**`divide-before-multiply`**
+- FP if the division is intentional integer truncation (e.g., `block.timestamp / PERIOD`)
+- FP if both operations are on different variables (Slither sometimes overreports cross-variable)
+- FP in Uniswap/Curve math where specific rounding direction is intentional
+- Real if: precision loss affects fee calculation, share pricing, or liquidation thresholds
+
+**`tx-origin`**
+- FP if it's an informational check ("is the original sender an EOA?") not used for auth
+- FP in some meta-transaction forwarder patterns where the check is intentional
+- Real if: `require(tx.origin == owner)` or `require(tx.origin == msg.sender)` as auth guard
+- Note post-Pectra (ERC-7702): `tx.origin == msg.sender` is no longer a reliable EOA check
+
+**`controlled-delegatecall`**
+- FP if the target is validated against a whitelist before the call
+- FP in Diamond proxy patterns where `facetAddress(selector)` is the source
+- Real if: `delegatecall(target, data)` where `target` comes from user input
+
+**`locked-ether`**
+- FP if the contract intentionally holds ETH and withdrawals go through a claim pattern
+- FP if there's a `receive()` function that accumulates fees
+- Real if: contract can receive ETH but has no code path to send it out
+
+**`shadowing-state`**
+- FP if it's in a test file or an intentional override pattern
+- Real if: a local variable shadows a state variable in a way that masks a read
+
+**`msg-value-loop`**
+- Almost always real — `msg.value` inside a loop means only the first iteration gets the value
+- FP only if the loop is unreachable or intentionally short-circuits at iteration 1
+
+**`unprotected-upgrade`**
+- FP if `onlyOwner` / `onlyAdmin` check is inherited but Slither can't trace through inheritance
+- Real if: `upgradeTo()` is callable by anyone, or the `_authorizeUpgrade()` override is empty
+
+#### Step 4 — Grouping and Deduplication
+
+Slither often reports the same underlying issue multiple times across call paths.
+
+```bash
+# Group by detector name to see volume per detector type
+cat slither.json | jq '[.results.detectors[] | .check] | group_by(.) | map({detector: .[0], count: length}) | sort_by(-.count)'
+
+# List all unique contracts/functions affected by reentrancy-eth
+cat slither.json | jq '.results.detectors[] | select(.check == "reentrancy-eth") | .elements[].name' | sort -u
+
+# Find detectors that fired on the same function (high-confidence signals)
+cat slither.json | jq '.results.detectors[] | .elements[] | select(.type == "function") | .name' | sort | uniq -d
+```
+
+When two or more different detectors fire on the same function, that function deserves
+immediate manual review — it has multiple distinct issues or the issues compound.
+
+#### Step 5 — Suppression and Documentation
+
+Once you've confirmed a finding is a false positive, suppress it with inline comments
+so future runs are clean. Document *why* it's a FP.
+
+```solidity
+// Good suppression pattern — explains the FP:
+// slither-disable-next-line reentrancy-eth
+// SafeERC20 used throughout; CEI enforced above; this call is to a trusted feed
+(bool ok, bytes memory data) = chainlinkFeed.call(abi.encodeWithSelector(PRICE_SIG));
+
+// For a full function:
+// slither-disable-start unchecked-transfer
+function _transferFees() internal {
+    // Using SafeERC20 — return value check is internal to safeTransfer
+    token.safeTransfer(feeRecipient, fees);
+}
+// slither-disable-end unchecked-transfer
+
+// For a whole file (put near top, use sparingly):
+// slither-disable-file naming-convention
+```
+
+#### Step 6 — Config File for Persistent Suppression
+
+Create `.slither.config.json` at repo root to suppress noisy categories project-wide:
+
+```json
+{
+  "filter_paths": "test,mock,lib,node_modules,script",
+  "exclude_informational": false,
+  "exclude_low": false,
+  "detectors_to_exclude": "naming-convention,solc-version,pragma,too-many-digits",
+  "fail_on": "high",
+  "json": "slither-report.json",
+  "sarif": "slither.sarif"
+}
+```
+
+> **Note:** Never exclude `reentrancy-eth`, `arbitrary-send-eth`, or `suicidal` from config.
+> Only exclude detectors you've confirmed are universally FP in your codebase.
+
+#### Step 7 — Upgrade and Upgradeability-Specific Run
+
+Run `slither-check-upgradeability` separately from the main pass — it requires different arguments
+and outputs storage layout diffs between proxy and implementation:
+
+```bash
+# Check current implementation
+slither-check-upgradeability contracts/Proxy.sol ProxyName \
+  contracts/Implementation.sol ImplementationV1
+
+# Check upgrade from V1 to V2 (catches storage layout breaks)
+slither-check-upgradeability contracts/Proxy.sol ProxyName \
+  contracts/ImplementationV2.sol ImplementationV2 \
+  --proxy-filename contracts/Proxy.sol \
+  --proxy-name ProxyName
+
+# Key findings to never ignore from upgradeability check:
+# - "Order of variables cannot be modified" → storage layout break (CRITICAL)
+# - "New variables should be placed after old ones" → layout break
+# - "Missing initializer" → uninitialized proxy
+# - "Initializer is not called" → proxy left in uninitialized state
+```
+
+#### Quick Reference — Triage Decision Card
+
+```
+SLITHER FINDING
+      │
+      ├─ From test/ mock/ lib/? → SKIP
+      │
+      ├─ Impact: HIGH
+      │    ├─ reentrancy-eth: nonReentrant present + CEI? → FP; else INVESTIGATE
+      │    ├─ arbitrary-send-eth: user-controlled target? → REAL
+      │    ├─ suicidal: → almost always REAL
+      │    ├─ controlled-delegatecall: target validated? → FP; else REAL
+      │    └─ msg-value-loop: → almost always REAL
+      │
+      ├─ Impact: MEDIUM
+      │    ├─ unchecked-transfer: SafeERC20? → FP; raw transfer? → REAL
+      │    ├─ tx-origin: used as auth guard? → REAL; informational? → FP
+      │    ├─ divide-before-multiply: affects pricing/fees? → INVESTIGATE
+      │    └─ reentrancy-no-eth: CEI + guard? → FP; else → INVESTIGATE
+      │
+      └─ Impact: LOW / INFO
+           ├─ naming-convention, pragma, solc-version → SKIP (unless full audit)
+           ├─ locked-ether: no withdraw path? → INVESTIGATE
+           └─ shadowing-state: test file? → SKIP; production? → CHECK
+```
+
+---
+
 ## 2. Aderyn
 
 **Aderyn** is a Rust-based static analyzer by Cyfrin, purpose-built for Solidity security.

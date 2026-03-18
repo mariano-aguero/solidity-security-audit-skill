@@ -65,6 +65,9 @@ description: >
   "Fusaka gas cap", "EIP-7825", "per-transaction gas limit",
   "app chain fork", "Berachain fork", "forked L1 inherited bugs",
   "Aderyn v0.6", "Aderyn LSP server", "echidna verification mode", "halmos recon reproducer",
+  "slither triage", "too many slither findings", "slither false positive", "slither 200 findings",
+  "slither filter", "slither config", "slither suppress", "slither FP", "slither findings triage",
+  "slither-check-upgradeability", "slither priority", "when to skip slither finding",
   "Solidity 0.9.0", "transfer deprecated", "send deprecated solidity",
   "transfer removed 0.9", "send removed 0.9", "migrate from transfer call",
   "PUSH0 cross-chain", "PUSH0 opcode incompatible", "evm-version paris", "evmVersion paris",
@@ -470,6 +473,9 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.9.0
+- `references/tool-integration.md §1 Slither Triage Cheat Sheet` — 7-step framework for handling 100–300 Slither findings: priority order table (P0→P3), per-detector false positive identification guide (9 detectors), jq filter commands, grouping/deduplication bash, inline suppression patterns, `.slither.config.json` template, `slither-check-upgradeability` workflow, and a quick-reference triage decision card
 
 ### New in v3.8.0
 - `references/defi-checklist.md §RWA` — Real World Assets: NAV manipulation, senior/junior tranche accounting, epoch-based redemption timing, pool manager trust, KYC transfer restriction bypass, default/liquidation off-chain trust
