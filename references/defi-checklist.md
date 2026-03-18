@@ -45,6 +45,8 @@ Specialized security checklist organized by protocol type.
 - [ ] Is there multisig requirement for high-impact actions?
 - [ ] Can admin keys be rotated without disrupting the protocol?
 - [ ] Are emergency functions appropriately restricted?
+- [ ] Does any function use `tx.origin == msg.sender` or `tx.origin` as an auth guard? Post-Pectra (ERC-7702), EOAs can delegate execution — this check no longer reliably identifies EOA callers (see `vulnerability-taxonomy.md §17.6`)
+- [ ] Does the protocol assume `msg.sender` cannot be a smart contract with EOA privileges? ERC-7702 delegated EOAs break this assumption.
 
 ---
 
