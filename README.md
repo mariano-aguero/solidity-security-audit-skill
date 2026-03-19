@@ -17,9 +17,9 @@ This skill transforms your AI agent into a comprehensive smart contract security
 | Category | Content |
 |----------|---------|
 | **Vulnerability Patterns** | 25 sections, 100+ vulnerability types with code examples (incl. ERC-7702, V4 hooks, transient storage, PUSH0, ERC-1967) |
-| **Protocol Checklists** | Lending, AMM, Vaults, Bridges, Governance, Staking, NFT, Restaking/LRT, V4 Hooks, Airdrop |
+| **Protocol Checklists** | Lending, AMM, Vaults, Bridges, Governance, Staking, NFT, Restaking/LRT, V4 Hooks, Airdrop, RWA, Options, Prediction Markets, Safe Modules |
 | **Token Standards** | ERC-20, ERC-721, ERC-1155, ERC-4626 security checks |
-| **Tool Integration** | Slither (SARIF), Foundry (coverage), Echidna, Aderyn, Halmos, Certora, Slang AST |
+| **Tool Integration** | Slither (SARIF + 7-step triage cheat sheet), Foundry (coverage), Echidna, Aderyn, Halmos, Certora, Slang AST |
 | **PoC Templates** | Foundry templates incl. V4 hook drain, transient storage bypass, ERC-7702 abuse |
 | **Real Exploits** | 20 case studies: The DAO → Bybit ($1.5B), Ronin ($625M), Mango, BNB Chain, Multichain |
 | **L2 Security** | Sequencer, bridges, Blast rebasing, zkEVM specifics, EIP-4844, precompiles |
@@ -47,6 +47,7 @@ The skill supports multiple audit modes depending on context:
 | **Re-audit / Diff** | Previous audit exists; team applied fixes or added features |
 | **Integration Review** | Contract integrates Uniswap, Chainlink, Aave, Curve, etc. |
 | **Quick Scan** | Rapid assessment from the one-page cheat sheet |
+| **Contest Mode** | Submitting to Code4rena, Sherlock, Immunefi, Cantina, or CodeHawks |
 
 ### 5-Phase Audit Workflow
 
@@ -193,6 +194,34 @@ Apply CEI pattern and add ReentrancyGuard...
 ```
 
 ## Changelog
+
+### v3.10.0 (2026-03)
+- **New**: Context Gathering pre-phase — structured questions (scope, version, chain, prior audits, protocol type) before auditing; safe defaults table; fast path for single-function pastes
+
+### v3.9.0 (2026-03)
+- **Updated** `tool-integration.md` — Slither Triage Cheat Sheet: 7-step framework for 100–300 findings; P0→P3 priority table; per-detector false positive guide (9 detectors); `.slither.config.json` template; `slither-check-upgradeability` workflow; triage decision card
+
+### v3.8.0 (2026-03)
+- **New** `defi-checklist.md` — RWA Protocols section (NAV manipulation, tranche accounting, epoch redemptions, KYC bypass)
+- **New** `defi-checklist.md` — Options & Structured Products section (settlement oracle, IV manipulation, undercollateralized writing, automated vaults)
+- **New** `defi-checklist.md` — Prediction Markets section (resolver bribe, CTF merge, AMM price bounds, insider MEV)
+- **New** `defi-checklist.md` — Gnosis Safe Modules & Guards section (delegatecall collision, enableModule time-lock, guard bypass, Zodiac escalation)
+- **Updated** `SKILL.md` — Phase 0 routing table: 13 → 17 protocol types
+
+### v3.7.0 (2026-03)
+- **New** `exploit-case-studies.md #19` — BNB Chain Bridge $570M (Merkle proof forgery via iavl library bug)
+- **New** `exploit-case-studies.md #20` — Multichain $130M (MPC key centralization; jurisdiction risk)
+
+### v3.6.0 (2026-03)
+- **New** `vulnerability-taxonomy.md §23` — Solidity 0.9.0: `transfer()`/`send()` removal, new reentrancy surface
+- **New** `vulnerability-taxonomy.md §24` — PUSH0 cross-chain compatibility (EIP-3855, non-Shanghai chains)
+- **New** `vulnerability-taxonomy.md §25` — ERC-1967 proxy storage slot corruption, UUPS brick attack
+
+### v3.5.0 (2026-03)
+- **New**: Contest Mode — platform routing (C4, Sherlock, Immunefi, Cantina, CodeHawks), ROI strategy, validity pre-check, per-platform rules
+- **New** `exploit-case-studies.md #17` — Ronin Bridge $625M (validator threshold + stale permissions)
+- **New** `exploit-case-studies.md #18` — Mango Markets $117M (oracle manipulation via self-trading)
+- **Updated** `report-template.md` — Immunefi bug bounty submission format
 
 ### v2.0.3 (2026-02)
 - **Updated** `README.md` — Echidna and Halmos added to Tool Integration section with usage examples (`echidna_*` and `check_*` function conventions); explicit install commands for both tools
