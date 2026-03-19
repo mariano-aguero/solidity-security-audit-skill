@@ -168,8 +168,8 @@ and **state them explicitly** at the start of the audit:
 
 ### Fast Path — Single Function Paste
 
-When a user pastes only one function (≤30 lines, no imports, no state variables), skip
-the context questions and do a **Quick Scan** directly. State:
+When a user pastes an isolated function (≤30 lines, no visible contract state or constructor),
+skip the context questions and do a **Quick Scan** directly. State:
 
 > "Reviewing this function in isolation. For a full audit including state variables,
 > access control, and cross-contract interactions, share the full contract."

@@ -675,6 +675,8 @@ See `vulnerability-taxonomy.md §4.7` for code examples.
 
 ## Real World Assets (RWA) Protocols (Centrifuge, Maple, Goldfinch, TrueFi-style)
 
+> See also: `vulnerability-taxonomy.md §4` (Oracle & Price Manipulation), `§16` (Cross-Chain & Bridge Risks)
+
 RWA protocols tokenize off-chain assets — loans, invoices, real estate, treasury bills.
 Their core security challenge is the **trust bridge between on-chain code and off-chain legal reality**.
 The smart contract cannot seize collateral or enforce repayment; it relies on legal structures
@@ -739,6 +741,8 @@ priority redemption. Miscounting tranche sizes or loss absorption order is a cri
 
 ## Options & Structured Products (Dopex, Lyra, Opyn/Gamma, Ribbon Finance-style)
 
+> See also: `vulnerability-taxonomy.md §4` (Oracle & Price Manipulation), `§9` (Front-Running & MEV)
+
 Options protocols price, underwrite, and settle derivative contracts on-chain.
 Their core risk is that pricing correctness depends on **implied volatility (IV)** — which
 is nearly impossible to source trustlessly — and **settlement oracle integrity** at expiry,
@@ -789,6 +793,8 @@ The most critical attack vector: manipulate the spot price at the exact block wh
 
 ## Prediction Markets (Polymarket/CTF, Augur-style)
 
+> See also: `vulnerability-taxonomy.md §4.1` (Spot Price Dependency), `§9` (Front-Running & MEV)
+
 Prediction markets let users bet on real-world event outcomes. Their contracts are often
 simple (binary outcome AMMs), but the critical security surface is the **resolution layer**:
 who decides what happened, and can that be manipulated?
@@ -838,6 +844,8 @@ Many prediction markets use Gnosis's Conditional Token Framework (CTF) with ERC-
 ---
 
 ## Gnosis Safe Modules and Guards
+
+> See also: `vulnerability-taxonomy.md §6` (Proxy & Upgradeability Issues), `§25` (ERC-1967 Proxy Storage Slot Corruption)
 
 Safe modules extend a multisig wallet with programmable functionality via `delegatecall`.
 Because modules execute in the **Safe's own storage context**, a malicious or buggy module
