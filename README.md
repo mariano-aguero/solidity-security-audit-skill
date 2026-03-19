@@ -53,7 +53,7 @@ The skill supports multiple audit modes depending on context:
 
 1. **Reconnaissance** — Architecture mapping, trust model, external dependencies
 2. **Automated Analysis** — Slither (with SARIF), Aderyn, Foundry coverage
-3. **Manual Review** — Systematic vulnerability taxonomy (50+ types)
+3. **Manual Review** — Systematic vulnerability taxonomy (100+ types, 25 sections)
 4. **Protocol-Specific** — DeFi checklists by protocol type
 5. **Report Generation** — Severity-classified findings with PoC
 
@@ -76,6 +76,18 @@ The skill supports multiple audit modes depending on context:
 - Governance: flash loan voting, timelock bypass
 - **Restaking/LRT**: slashing propagation, operator concentration, withdrawal queues
 - **Points/Airdrop**: double-claim, Merkle root rug, vesting bypass
+- **RWA**: NAV manipulation, tranche accounting, epoch redemptions, KYC bypass
+- **Options**: settlement oracle, IV manipulation, undercollateralized writing
+- **Prediction Markets**: resolver bribe, CTF merge attack, AMM price bounds
+- **Safe Modules**: delegatecall storage collision, enableModule, guard bypass
+
+**Compiler & Upgrade**
+- **Solidity 0.9.0**: `transfer()`/`send()` removal, new reentrancy surface on migration
+- **PUSH0 cross-chain**: EIP-3855 incompatibility on non-Shanghai chains (evmVersion)
+- **ERC-1967 slot corruption**: UUPS brick attack, delegatecall overwrite, layout migration
+- **Supply chain**: compromised npm/CI, blind signing (Bybit $1.5B pattern)
+- **ERC-6909**: dual approval confusion, inflation attack (Uniswap V4 claim tokens)
+- **EOF (EIP-7692)**: gas/code observability removed, EXTDELEGATECALL restrictions
 
 **Emerging Areas**
 - L2/Cross-chain: sequencer risks, message passing, finality
@@ -131,7 +143,7 @@ minimize classification subjectivity.
 solidity-security-audit-skill/
 ├── SKILL.md                         # Entry point: audit modes + 5-phase workflow
 └── references/
-    ├── vulnerability-taxonomy.md    # 50+ vulnerabilities with code (incl. ERC-7702, V4 hooks)
+    ├── vulnerability-taxonomy.md    # 100+ vulnerabilities, 25 sections (incl. ERC-7702, V4 hooks, §20-§25)
     ├── defi-checklist.md            # Protocol checklists (incl. restaking, V4 hooks, airdrop)
     ├── tool-integration.md          # Slither/SARIF, Foundry/coverage, Slang AST, Echidna
     ├── industry-standards.md        # SWC, severity, EIPs (incl. EIP-1153, EIP-7702), firms
@@ -147,7 +159,14 @@ solidity-security-audit-skill/
     ├── account-abstraction.md       # ERC-4337 security
     ├── diff-audit.md                # Re-audit and change review methodology  [v2]
     ├── severity-decision-tree.md    # Structured severity classification       [v2]
-    └── defi-integrations.md         # Uniswap v3/v4, Chainlink, Aave, Curve   [v2]
+    ├── defi-integrations.md         # Uniswap v3/v4, Chainlink, Aave, Curve   [v2]
+    ├── intent-protocols.md          # Permit2, UniswapX, 1inch Fusion, ERC-7683 [v3]
+    ├── perpetual-dex.md             # GMX v2, Synthetix, liquidation, LP solvency [v3]
+    ├── zkvm-specific.md             # ZK proof bugs, Noir, SP1, Polygon CDK    [v3]
+    ├── staking-consensus.md         # Pectra: EIP-7002/7251/6110, LST/restaking [v3.1]
+    ├── ai-code-patterns.md          # LLM anti-patterns, vibe-coding checklist  [v3.4]
+    ├── glamsterdam.md               # EIP-7732 ePBS + EIP-7928 BALs            [v3.4]
+    └── INDEX.md                     # Topic → file:section navigation map
 ```
 
 ## Usage
