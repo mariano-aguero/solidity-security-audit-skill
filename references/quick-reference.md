@@ -158,6 +158,34 @@ forge test --fork-url $ETH_RPC_URL
 4. Finality assumptions
 5. Rate limiting
 
+### RWA / Tokenized Assets
+1. NAV manipulation by pool manager (time-lock? multi-sig?)
+2. Senior/junior tranche accounting correctness
+3. Epoch redemption front-running
+4. KYC / transfer restriction bypass via DEX
+5. Off-chain default declaration — can NAV be inflated?
+
+### Options & Structured Products
+1. Settlement oracle — spot price at expiry (flash-loan manipulable?)
+2. Implied volatility source — centralized or TWAP-based?
+3. Undercollateralized option writing
+4. Automated vault strike selection (adversarial input?)
+5. Multi-leg payoff calculation edge cases
+
+### Prediction Markets
+1. Resolver trust — single centralized resolver + bribe risk
+2. CTF conditional token merge attack (ERC-1155 accounting)
+3. AMM price bounds enforced to [0,1]?
+4. Market resolution front-running / insider MEV
+5. Market creation spam / griefing
+
+### Multisig / Safe Modules
+1. `delegatecall` storage collision (map module slots vs Safe layout)
+2. `enableModule()` — time-lock and threshold requirements
+3. Fallback handler — arbitrary delegatecall path?
+4. Guard bypass via `execTransactionFromModule()`
+5. Zodiac role escalation / social recovery grief
+
 ---
 
 ## DeFi Integration Checks
