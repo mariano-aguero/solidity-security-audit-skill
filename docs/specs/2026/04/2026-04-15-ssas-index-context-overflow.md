@@ -7,7 +7,8 @@
 **target_date:** 2026-04-29  
 **project:** solidity-security-audit-skill  
 **source:** `references/INDEX.md` (459 lines, ~12k tokens)  
-**status:** open  
+**status:** in-progress  
+**started_at:** 2026-04-15T21:50:00-03:00  
 **issue:** <!-- to be filled after GitHub issue creation -->
 
 ---
@@ -77,3 +78,14 @@ references/
 ## Rollback
 
 Restore the original `INDEX.md` from git history and revert SKILL.md changes.
+
+
+## Implementation Notes
+
+- Implemented 2026-04-15 by automated execute-tasks run.
+- Created 4 sub-index files: INDEX-vulns.md (150L), INDEX-defi.md (97L), INDEX-tools.md (80L), INDEX-advanced.md (141L). All under 150-line limit.
+- Master INDEX.md rewritten as 29-line category guide. Under 80-line limit.
+- SKILL.md Phase 3 and Phase 4 updated with explicit sub-index load instructions. Navigation section expanded with 4 sub-index entries.
+- CLAUDE.md architecture table updated with 4 new INDEX sub-files at [v3.5]. Maintenance guideline updated.
+- Deviations: "By Secure Pattern / Fix" rows placed in INDEX-vulns.md (not a separate file) as they are closely related to vulnerability remediation — stays under 150L limit.
+- Slither FP rows that were in the "By Protocol" section moved to INDEX-defi.md since they appear in DeFi audit context.

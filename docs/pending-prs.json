@@ -1,10 +1,10 @@
 [
   {
-    "traceability_id": "2026-04-15-ssas-package-version-stale",
-    "title": "fix(package): bump version to 3.10.0 to match actual content state",
-    "branch": "fix/2026-04-15-ssas-package-version-stale",
+    "traceability_id": "2026-04-15-ssas-index-context-overflow",
+    "title": "fix(index): split INDEX.md into 4 focused sub-indexes to prevent LLM context overflow",
+    "branch": "fix/2026-04-15-ssas-index-context-overflow",
     "base": "main",
     "labels": "bug,high-priority",
-    "body": "## Summary\n\n- Bumps `package.json` `\"version\"` from `3.3.0` to `3.10.0` to match the actual content state reflected in git history (commits for v3.5.0 through v3.10.0)\n- Adds `.github/workflows/create-prs.yml` for automated PR creation via `pending-prs.json`\n- Stops `.gitignore` from ignoring `docs/` (prerequisite for spec tracking)\n- Marks spec `2026-04-15-ssas-package-version-stale` as `in-progress` in INDEX.md and the spec file\n\n**Spec:** [docs/specs/2026/04/2026-04-15-ssas-package-version-stale.md](docs/specs/2026/04/2026-04-15-ssas-package-version-stale.md)\n\n## Acceptance Criteria\n\n- [x] `cat package.json | grep version` outputs `\"version\": \"3.10.0\"`\n- [x] No other `package.json` fields are altered\n\n## Testing Notes\n\nThis is a pure metadata change with no functional impact on skill behavior. Low risk. Verified by inspection that only the `version` field was changed.\n\n## Related\n\nRefs: `2026-04-15-ssas-package-version-stale`"
+    "body": "## Summary\n\n- Rewrites `references/INDEX.md` from 459 lines (~12k tokens) to a 29-line master category guide\n- Creates 4 focused sub-indexes, each under 150 lines:\n  - `INDEX-vulns.md` (150L) — vulnerability types + secure patterns → load during **Phase 3**\n  - `INDEX-defi.md` (97L) — DeFi protocols, tokens, invariants → load during **Phase 4**\n  - `INDEX-tools.md` (80L) — tools, detection patterns, PoC templates → load during **Phase 2**\n  - `INDEX-advanced.md` (141L) — L2/AA/ZK/staking + quick lookup table\n- Updates `SKILL.md` Phase 3 and Phase 4 with explicit sub-index load instructions; expands Navigation section\n- Updates `CLAUDE.md` architecture table and maintenance guideline\n\n**Spec:** [docs/specs/2026/04/2026-04-15-ssas-index-context-overflow.md](docs/specs/2026/04/2026-04-15-ssas-index-context-overflow.md)\n\n## Acceptance Criteria\n\n- [x] Each sub-index is under 150 lines\n- [x] Master `INDEX.md` is under 80 lines (29L)\n- [x] `SKILL.md` Phase 3 references `INDEX-vulns.md` directly\n- [x] `SKILL.md` Phase 4 references `INDEX-defi.md` directly\n\n## Testing Notes\n\nDocumentation-only change. Verified all line counts programmatically. No reference file content was altered — only the index structure was reorganized.\n\nRefs: `2026-04-15-ssas-index-context-overflow`"
   }
 ]

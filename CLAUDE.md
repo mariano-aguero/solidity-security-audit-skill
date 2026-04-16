@@ -34,7 +34,11 @@ references/
 ├── perpetual-dex.md            # GMX v2, Synthetix Perps, liquidation, LP solvency            [v3]
 ├── zkvm-specific.md            # ZK proof verification, zkSync/zkEVM gaps, circuit bugs       [v3]
 ├── staking-consensus.md        # Pectra: EIP-7002/7251/6110, LST/restaking post-Pectra        [v3.1]
-├── INDEX.md                    # Topic → file:section navigation map         [v2]
+├── INDEX.md                    # Master index → points to 4 focused sub-indexes [v2, split v3.5]
+├── INDEX-vulns.md              # Vuln types + secure patterns (Phase 3)        [v3.5]
+├── INDEX-defi.md               # DeFi protocols, tokens, invariants (Phase 4)  [v3.5]
+├── INDEX-tools.md              # Tools, detection patterns, PoC templates       [v3.5]
+├── INDEX-advanced.md           # L2/AA/ZK/staking + quick lookup table         [v3.5]
 ├── ai-code-patterns.md         # LLM-specific anti-patterns, vibe-coding checklist [v3.4]
 └── glamsterdam.md              # EIP-7732 ePBS + EIP-7928 BALs               [v3.4]
 ```
@@ -56,7 +60,7 @@ When updating this skill:
 - **Re-audit workflow**: Update `diff-audit.md` with new diff patterns, remediation verification checklists, or storage layout tooling
 - **Severity classification**: Update `severity-decision-tree.md` when new vulnerability types need dedicated decision trees
 - **DeFi integrations**: Add new protocol integration patterns to `defi-integrations.md` (new DEX, oracle, lending protocol)
-- **Index**: When adding new sections to any reference file, add corresponding entries to `INDEX.md` in the appropriate table
+- **Index**: When adding new sections to any reference file, add entries to the appropriate sub-index (`INDEX-vulns.md`, `INDEX-defi.md`, `INDEX-tools.md`, or `INDEX-advanced.md`). Keep the master `INDEX.md` under 80 lines and each sub-index under 150 lines.
 
 ## Severity Classification
 
