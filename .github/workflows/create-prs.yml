@@ -1,0 +1,91 @@
+name: Create Pending PRs
+
+on:
+  push:
+    paths:
+      - 'docs/pending-prs.json'
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  create-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create PRs from pending-prs.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'EOF'
+          const { execSync } = require('child_process');
+          const { writeFileSync, unlinkSync } = require('fs');
+          const { join } = require('path');
+          const { tmpdir } = require('os');
+
+          const prs = JSON.parse(require('fs').readFileSync('docs/pending-prs.json', 'utf8'));
+          const repo = process.env.GITHUB_REPOSITORY;
+          const results = [];
+
+          for (const pr of prs) {
+            const bodyFile = join(tmpdir(), `pr-${Date.now()}.md`);
+            writeFileSync(bodyFile, pr.body);
+            const labelFlag = pr.labels ? `--label "${pr.labels}"` : '';
+            try {
+              const url = execSync(
+                `gh pr create --repo "${repo}" --title ${JSON.stringify(pr.title)} --body-file "${bodyFile}" --head "${pr.branch}" --base "${pr.base || 'main'}" ${labelFlag}`,
+                { encoding: 'utf8' }
+              ).trim();
+              const number = url.split('/').pop();
+              console.log(`✅ PR #${number} — ${pr.title}`);
+              results.push({ traceability_id: pr.traceability_id, number, url });
+            } catch (e) {
+              console.error(`❌ Failed: ${pr.title}\n${e.message}`);
+            } finally {
+              try { unlinkSync(bodyFile); } catch {}
+            }
+          }
+
+          require('fs').writeFileSync('docs/pr-results.json', JSON.stringify(results, null, 2));
+          EOF
+
+      - name: Update INDEX.md with PR URLs
+        run: |
+          python3 - <<'EOF'
+          import json, re
+
+          results = json.load(open('docs/pr-results.json'))
+          index_path = 'docs/specs/INDEX.md'
+
+          with open(index_path) as f:
+              content = f.read()
+
+          for r in results:
+              tid = r['traceability_id']
+              url = r['url']
+              num = r['number']
+              # Update status to in-review
+              content = re.sub(
+                  r'(\| ' + re.escape(tid) + r' \|(?:[^|]*\|){5}) open (\|)',
+                  r'\1 in-review \2',
+                  content
+              )
+
+          with open(index_path, 'w') as f:
+              f.write(content)
+
+          print(f"Updated INDEX.md with {len(results)} PR URLs.")
+          EOF
+
+      - name: Remove pending files and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          rm -f docs/pending-prs.json docs/pr-results.json
+          git add docs/specs/INDEX.md
+          git diff --cached --quiet || git commit -m "ci(prs): create pending PRs and update INDEX.md"
+          git push
