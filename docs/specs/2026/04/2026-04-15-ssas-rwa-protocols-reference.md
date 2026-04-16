@@ -9,7 +9,7 @@
 **source:** `references/defi-checklist.md` (scattered RWA entries), `SKILL.md` (trigger keywords)  
 **status:** in-progress  
 **started_at:** 2026-04-16T00:00:00-03:00  
-**issue:** <!-- to be filled after GitHub issue creation -->
+**issue:** #4
 
 ---
 
