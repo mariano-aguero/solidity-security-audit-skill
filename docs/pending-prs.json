@@ -1,0 +1,10 @@
+[
+  {
+    "traceability_id": "2026-04-15-ssas-package-version-stale",
+    "title": "fix(package): bump version to 3.10.0 to match actual content state",
+    "branch": "fix/2026-04-15-ssas-package-version-stale",
+    "base": "main",
+    "labels": "bug,high-priority",
+    "body": "## Summary\n\n- Bumps `package.json` `\"version\"` from `3.3.0` to `3.10.0` to match the actual content state reflected in git history (commits for v3.5.0 through v3.10.0)\n- Adds `.github/workflows/create-prs.yml` for automated PR creation via `pending-prs.json`\n- Stops `.gitignore` from ignoring `docs/` (prerequisite for spec tracking)\n- Marks spec `2026-04-15-ssas-package-version-stale` as `in-progress` in INDEX.md and the spec file\n\n**Spec:** [docs/specs/2026/04/2026-04-15-ssas-package-version-stale.md](docs/specs/2026/04/2026-04-15-ssas-package-version-stale.md)\n\n## Acceptance Criteria\n\n- [x] `cat package.json | grep version` outputs `\"version\": \"3.10.0\"`\n- [x] No other `package.json` fields are altered\n\n## Testing Notes\n\nThis is a pure metadata change with no functional impact on skill behavior. Low risk. Verified by inspection that only the `version` field was changed.\n\n## Related\n\nRefs: `2026-04-15-ssas-package-version-stale`"
+  }
+]
