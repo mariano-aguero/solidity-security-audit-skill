@@ -1,0 +1,86 @@
+[
+  {
+    "traceability_id": "2026-04-15-ssas-package-version-stale",
+    "title": "bug(high): Fix stale package.json version (3.3.0 → 3.10.0)",
+    "labels": "bug",
+    "body": "**traceability_id:** `2026-04-15-ssas-package-version-stale`\n\n**Problem:** `package.json` declares `\"version\": \"3.3.0\"` but git history contains commits referencing v3.5.0–v3.10.0. A `npm publish` today would push stale content.\n\n**Fix:** Change `\"version\": \"3.3.0\"` → `\"3.10.0\"` in `package.json`.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-package-version-stale.md` (branch `find-tasks/2026-04-15`)"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-readme-badge-stale",
+    "title": "bug(medium): Fix stale v2.0 badge in README",
+    "labels": "bug,documentation",
+    "body": "**traceability_id:** `2026-04-15-ssas-readme-badge-stale`\n\n**Problem:** README badge shows `v2.0-improvements` while skill is at v3.10.0.\n\n**Fix:** Replace with dynamic npm version badge so it auto-updates on future releases.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-readme-badge-stale.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-index-context-overflow",
+    "title": "bug(high): Split INDEX.md — exceeds LLM context limits (459 lines)",
+    "labels": "bug",
+    "body": "**traceability_id:** `2026-04-15-ssas-index-context-overflow`\n\n**Problem:** `references/INDEX.md` is 459 lines (~12k tokens) and grows with each new reference file. Loading it as a single file causes truncation in LLM context, defeating its purpose as a fast-lookup tool.\n\n**Fix:** Split into `INDEX-vulns.md`, `INDEX-defi.md`, `INDEX-tools.md`, `INDEX-advanced.md` with a lightweight master INDEX.md under 80 lines.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-index-context-overflow.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-rwa-protocols-reference",
+    "title": "feat(high): Create references/rwa-protocols.md",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-rwa-protocols-reference`\n\n**Problem:** RWA protocol security (Centrifuge, Maple, Goldfinch, tokenized T-bills) is only covered via scattered checklist entries. No dedicated deep-reference exists.\n\n**Proposed:** New file covering NAV oracle manipulation, epoch redemption race conditions, tranche accounting attacks, KYC bypass (ERC-1400/ERC-3643), off-chain asset trust model. Use `perpetual-dex.md` as structural template.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-rwa-protocols-reference.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-fusaka-eof-reference",
+    "title": "feat(high): Create references/fusaka-eof.md",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-fusaka-eof-reference`\n\n**Problem:** EOF/Fusaka (EIP-7692) is a major EVM change comparable to Pectra. Current coverage in `vulnerability-taxonomy.md §22` is only 4 sub-items — insufficient for auditors reviewing EOF contracts.\n\n**Proposed:** Full reference file covering GAS/EXTCODESIZE/SELFDESTRUCT removal, EXTDELEGATECALL restrictions, deploy-time validation, EIP-7825 gas cap, migration guidance, audit checklist. Use `glamsterdam.md` as structural template.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-fusaka-eof-reference.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-severity-trees-new-categories",
+    "title": "improvement(medium): Add severity decision trees for EOF, ERC-7702, transient storage, ZK-VM",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-severity-trees-new-categories`\n\n**Problem:** `severity-decision-tree.md` covers classic categories but lacks trees for vulnerability types added in v3.4+: EOF opcodes, ERC-7702 sweeper attacks, transient storage compiler bugs, ZK-VM proof failures.\n\n**Proposed:** Add 4 structured decision trees following the existing format in the file.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-severity-trees-new-categories.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-tool-integration-aderyn-halmos",
+    "title": "improvement(medium): Add Aderyn v0.6 LSP and Halmos --recon to tool-integration.md",
+    "labels": "enhancement,documentation",
+    "body": "**traceability_id:** `2026-04-15-ssas-tool-integration-aderyn-halmos`\n\n**Problem:** SKILL.md trigger keywords include `Aderyn v0.6`, `Aderyn LSP server`, `halmos recon reproducer`, and `echidna verification mode` but `tool-integration.md` has no documentation for these features.\n\n**Proposed:** Add setup instructions for Aderyn v0.6 LSP server (VS Code config), Halmos `--recon` mode with output interpretation, and Echidna verification mode.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-tool-integration-aderyn-halmos.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-post-pectra-staking-observations",
+    "title": "improvement(medium): Add post-Pectra real-world observations to staking-consensus.md",
+    "labels": "enhancement,documentation",
+    "body": "**traceability_id:** `2026-04-15-ssas-post-pectra-staking-observations`\n\n**Problem:** `staking-consensus.md` presents Pectra EIPs as theoretical/forward-looking. Pectra has been live ~11 months (since May 2025) — real-world edge cases should be documented.\n\n**Proposed:** Add a \"Post-Pectra Observations (May 2025 – April 2026)\" section tagging each anticipated risk as `[CONFIRMED]`, `[MITIGATED]`, or `[NOT OBSERVED]`.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-post-pectra-staking-observations.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-poc-templates-erc7702-eof",
+    "title": "improvement(medium): Expand poc-templates.md with ERC-7702 and EOF Foundry templates",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-poc-templates-erc7702-eof`\n\n**Problem:** No PoC templates exist for ERC-7702 sweeper attacks or EOF opcode removal issues, despite both being documented in the vulnerability taxonomy.\n\n**Proposed:** Add 3 Foundry templates: ERC-7702 sweeper campaign simulation, EOF EXTDELEGATECALL legacy contract blocking, GAS opcode removal breaking gas-dependent reentrancy guard.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-poc-templates-erc7702-eof.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-options-protocols-reference",
+    "title": "feat(medium): Create references/options-protocols.md",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-options-protocols-reference`\n\n**Problem:** Options protocols (Ribbon, Dopex, Lyra, Opyn, Hegic) are only covered by checklist entries. No deep reference for settlement oracle manipulation, IV oracle attacks, undercollateralized writing, margin cascades.\n\n**Proposed:** New file with 8 sections following `perpetual-dex.md` as template. 400–600 lines.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-options-protocols-reference.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-prediction-markets-reference",
+    "title": "feat(medium): Create references/prediction-markets.md",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-prediction-markets-reference`\n\n**Problem:** Prediction markets (Polymarket, Gnosis CTF, Azuro) use unique mechanics (LMSR AMM, conditional tokens, resolver oracles) not covered by existing references.\n\n**Proposed:** New file with 7 sections covering resolver manipulation, LMSR invariant breaks, conditional token transfer attacks, market resolution griefing. 350–500 lines.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-prediction-markets-reference.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-safe-modules-reference",
+    "title": "feat(medium): Create references/safe-modules.md",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-safe-modules-reference`\n\n**Problem:** Gnosis Safe module security (enableModule attacks, guard bypass via delegatecall, fallback handler hijacking, Zodiac compatibility, social recovery) is only in DeFi checklist entries. No dedicated reference.\n\n**Proposed:** New file with 9 sections following `account-abstraction.md` structure. 400–600 lines.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-safe-modules-reference.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-validate-refs-script",
+    "title": "feat(medium): Add cross-reference validation script (docs/scripts/validate-refs.sh)",
+    "labels": "enhancement,tooling",
+    "body": "**traceability_id:** `2026-04-15-ssas-validate-refs-script`\n\n**Problem:** No tooling validates that `file:§section` cross-references in INDEX.md resolve to existing headings. Broken references degrade navigability without any CI signal.\n\n**Proposed:** Bash script + GitHub Actions workflow. Exits 1 on broken references. Enables pre-commit and CI validation.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-validate-refs-script.md`"
+  },
+  {
+    "traceability_id": "2026-04-15-ssas-move-security-supplement",
+    "title": "feat(medium): Add Move/Sui security supplement (references/move-security.md)",
+    "labels": "enhancement",
+    "body": "**traceability_id:** `2026-04-15-ssas-move-security-supplement`\n\n**Problem:** The skill has a Cetus DEX case study ($223M on Sui) but no reference material for auditing Move/Sui or Aptos contracts. Resource ownership, linear types, ObjectCap misuse, and borrow checker bypass are not covered anywhere.\n\n**Proposed:** New file `references/move-security.md` with 8 sections. 300–500 lines.\n\n**Spec:** `docs/specs/2026/04/2026-04-15-ssas-move-security-supplement.md`"
+  }
+]

@@ -1,0 +1,108 @@
+name: Create Pending Issues
+
+on:
+  push:
+    paths:
+      - 'docs/pending-issues.json'
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create issues from pending-issues.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'EOF'
+          const { execSync } = require('child_process');
+          const { writeFileSync, unlinkSync } = require('fs');
+          const { join } = require('path');
+          const { tmpdir } = require('os');
+
+          const issues = JSON.parse(require('fs').readFileSync('docs/pending-issues.json', 'utf8'));
+          const repo = process.env.GITHUB_REPOSITORY;
+          const results = [];
+
+          for (const issue of issues) {
+            // Skip if traceability_id already exists in open issues
+            try {
+              const existing = execSync(
+                `gh issue list --repo "${repo}" --search "${issue.traceability_id}" --json number,title --limit 3`,
+                { encoding: 'utf8' }
+              ).trim();
+              const found = JSON.parse(existing);
+              if (found.length > 0) {
+                console.log(`⏭️  Skipping #${found[0].number} — already exists: ${issue.traceability_id}`);
+                results.push({ traceability_id: issue.traceability_id, number: found[0].number, url: `https://github.com/${repo}/issues/${found[0].number}`, skipped: true });
+                continue;
+              }
+            } catch (e) {}
+
+            // Write body to temp file (avoids shell escaping issues)
+            const bodyFile = join(tmpdir(), `issue-${Date.now()}.md`);
+            writeFileSync(bodyFile, issue.body);
+
+            const labelFlag = issue.labels ? `--label "${issue.labels}"` : '';
+            try {
+              const url = execSync(
+                `gh issue create --repo "${repo}" --title ${JSON.stringify(issue.title)} --body-file "${bodyFile}" ${labelFlag}`,
+                { encoding: 'utf8' }
+              ).trim();
+              const number = url.split('/').pop();
+              console.log(`✅ #${number} — ${issue.title}`);
+              results.push({ traceability_id: issue.traceability_id, number, url });
+            } catch (e) {
+              console.error(`❌ Failed: ${issue.title}\n${e.message}`);
+            } finally {
+              try { unlinkSync(bodyFile); } catch {}
+            }
+          }
+
+          // Save results for next step
+          require('fs').writeFileSync('docs/issue-results.json', JSON.stringify(results, null, 2));
+          console.log(`\nDone: ${results.length} issues processed.`);
+          EOF
+
+      - name: Update specs INDEX.md with issue URLs
+        run: |
+          python3 - <<'EOF'
+          import json, re
+
+          results = json.load(open('docs/issue-results.json'))
+          index_path = 'docs/specs/INDEX.md'
+
+          with open(index_path) as f:
+              content = f.read()
+
+          for r in results:
+              tid = r['traceability_id']
+              url = r['url']
+              num = r['number']
+              # Replace "| — |" with "| [#NUM](URL) |" in the row for this tid
+              content = re.sub(
+                  r'(\| ' + re.escape(tid) + r' \|(?:[^|]*\|){4}) — (\|)',
+                  r'\1 [#' + str(num) + r'](' + url + r') \2',
+                  content
+              )
+
+          with open(index_path, 'w') as f:
+              f.write(content)
+
+          print(f"Updated INDEX.md with {len(results)} issue URLs.")
+          EOF
+
+      - name: Remove pending-issues.json and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          rm -f docs/pending-issues.json docs/issue-results.json
+          git add docs/specs/INDEX.md
+          git add -A docs/
+          git diff --cached --quiet || git commit -m "ci(issues): create pending issues and update INDEX.md"
+          git push
