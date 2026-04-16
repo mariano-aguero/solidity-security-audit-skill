@@ -4,9 +4,9 @@ Traceability table for all generated specs. Updated automatically by `find-tasks
 
 | traceability_id | title | type | criticality | created_at | spec | issue | status |
 |---|---|---|---|---|---|---|---|
-| 2026-04-15-ssas-package-version-stale | Fix Stale package.json Version | bug | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-package-version-stale.md) | — | in-progress |
+| 2026-04-15-ssas-package-version-stale | Fix Stale package.json Version | bug | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-package-version-stale.md) | — | done |
 | 2026-04-15-ssas-readme-badge-stale | Fix Stale README Version Badge | bug | medium | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-readme-badge-stale.md) | — | open |
-| 2026-04-15-ssas-index-context-overflow | Split INDEX.md to Prevent LLM Context Overflow | bug | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-index-context-overflow.md) | — | open |
+| 2026-04-15-ssas-index-context-overflow | Split INDEX.md to Prevent LLM Context Overflow | bug | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-index-context-overflow.md) | — | in-progress |
 | 2026-04-15-ssas-rwa-protocols-reference | Create references/rwa-protocols.md | feature | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-rwa-protocols-reference.md) | — | open |
 | 2026-04-15-ssas-fusaka-eof-reference | Create references/fusaka-eof.md | feature | high | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-fusaka-eof-reference.md) | — | open |
 | 2026-04-15-ssas-severity-trees-new-categories | Add Severity Decision Trees for New Vulnerability Categories | improvement | medium | 2026-04-15 | [spec](2026/04/2026-04-15-ssas-severity-trees-new-categories.md) | — | open |

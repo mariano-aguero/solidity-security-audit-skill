@@ -397,7 +397,9 @@ categories these tools check. Read `references/tool-integration.md` for details.
 ### Phase 3 — Manual Review (Core)
 
 This is where the highest-value findings come from. Follow the vulnerability
-taxonomy in `references/vulnerability-taxonomy.md` systematically:
+taxonomy in `references/vulnerability-taxonomy.md` systematically.
+
+**Navigation:** Load `references/INDEX-vulns.md` to quickly locate which file:section covers a given vulnerability type or secure pattern. For DeFi-specific topics, load `references/INDEX-defi.md` instead. See `references/INDEX.md` for the full category guide.
 
 **CRITICAL PRIORITY — Check these first:**
 - Reentrancy (all variants: cross-function, cross-contract, read-only)
@@ -433,7 +435,7 @@ taxonomy in `references/vulnerability-taxonomy.md` systematically:
 ### Phase 4 — DeFi-Specific Analysis
 
 When auditing DeFi protocols, apply the specialized checklist from
-`references/defi-checklist.md`. Key areas:
+`references/defi-checklist.md`. Load `references/INDEX-defi.md` to navigate protocol-specific entries and invariant tests. Key areas:
 
 - **Lending protocols**: Liquidation logic, collateral factor manipulation, bad debt scenarios
 - **AMMs/DEXs**: Slippage protection, price impact calculations, LP token accounting
@@ -600,7 +602,11 @@ patterns, consult these reference files:
 - `references/automated-detection.md` — TSTORE Poison version detector + co-usage regex patterns
 
 ### Navigation
-- `references/INDEX.md` — Topic → file:section map; use when you know the topic but not which file covers it
+- `references/INDEX.md` — Master index; lists category guide pointing to 4 focused sub-indexes
+- `references/INDEX-vulns.md` — Vulnerability types + secure patterns → load during **Phase 3**
+- `references/INDEX-defi.md` — DeFi protocols, tokens, invariants → load during **Phase 4**
+- `references/INDEX-tools.md` — Tools, detection patterns, PoC templates → load during **Phase 2** or when writing PoCs
+- `references/INDEX-advanced.md` — L2/AA/ZK/staking + "I found X" quick lookup table → load for specialized contexts
 
 Load these files as needed based on the specific audit context.
 
