@@ -24,10 +24,16 @@ Sub-index for DeFi protocol security and invariant testing.
 | Modular lending — Morpho Blue permissionless markets | defi-checklist.md | Modular Lending Protocols |
 | Modular lending — Euler V2 EVC cross-vault health | defi-checklist.md | Modular Lending Protocols → EVC |
 | CeDeFi & Recursive Leverage — checklist | defi-checklist.md | CeDeFi & Recursive Leverage |
-| RWA — NAV manipulation by pool manager | defi-checklist.md | Real World Assets → Off-Chain Trust |
-| RWA — senior/junior tranche accounting errors | defi-checklist.md | Real World Assets → Tranche Accounting |
-| RWA — epoch redemption window timing attacks | defi-checklist.md | Real World Assets → Epoch Redemptions |
-| RWA — KYC/transfer restriction bypass | defi-checklist.md | Real World Assets → Transfer Restrictions |
+| RWA — deep reference | rwa-protocols.md | (all sections) |
+| RWA — trust model, pool manager privilege | rwa-protocols.md | §1 Trust Model & Architecture |
+| RWA — NAV oracle manipulation, stale NAV | rwa-protocols.md | §2 NAV Oracle Manipulation |
+| RWA — epoch redemption race conditions | rwa-protocols.md | §3 Epoch Redemption Race Conditions |
+| RWA — senior/junior tranche accounting | rwa-protocols.md | §4 Tranche Accounting Attacks |
+| RWA — KYC/transfer restriction bypass | rwa-protocols.md | §5 KYC/Transfer Restriction Bypass |
+| RWA — default handling, write-down timing | rwa-protocols.md | §6 Default Handling |
+| RWA — Centrifuge, Maple, T-bill vaults | rwa-protocols.md | §7 Protocol-Specific Patterns |
+| RWA — comprehensive audit checklist | rwa-protocols.md | §8 RWA Audit Checklist |
+| RWA — high-level checklist | defi-checklist.md | Real World Assets |
 | Options — settlement oracle manipulation at expiry | defi-checklist.md | Options → Settlement Oracle |
 | Options — IV manipulation in AMM-based pricing | defi-checklist.md | Options → IV and Pricing |
 | Options — undercollateralized option writing | defi-checklist.md | Options → Collateral and Writing |

@@ -326,7 +326,7 @@ Execute audits in this order. Each phase builds on the previous one.
 | AI-Generated Code | `ai-code-patterns.md` | `audit-questions.md §AI` | Bybit (supply chain) |
 | Intent / Solver | `intent-protocols.md` | `defi-checklist.md §Intents` | — |
 | CeDeFi / Synthetic | `vulnerability-taxonomy.md §4.7` | `defi-checklist.md §CeDeFi` | xUSD ($285M) |
-| RWA / Tokenized Assets | `vulnerability-taxonomy.md §16` | `defi-checklist.md §RWA` | — |
+| RWA / Tokenized Assets | `rwa-protocols.md` | `defi-checklist.md §RWA` | — |
 | Options / Structured Products | `vulnerability-taxonomy.md §4` | `defi-checklist.md §Options` | — |
 | Prediction Markets | `vulnerability-taxonomy.md §4.1` | `defi-checklist.md §Prediction` | — |
 | Multisig / Safe Modules | `vulnerability-taxonomy.md §25` | `defi-checklist.md §Safe` | Radiant Capital |
@@ -443,6 +443,7 @@ When auditing DeFi protocols, apply the specialized checklist from
 - **Bridges**: Message verification, replay protection, validator trust assumptions
 - **Governance**: Vote manipulation, flash loan governance attacks, timelock bypass
 - **Staking**: Reward calculation precision, stake/unstake timing attacks
+- **RWA protocols**: Load `references/rwa-protocols.md` for NAV oracle trust, tranche accounting, epoch redemptions, KYC transfer restrictions, default handling
 
 ### Phase 5 — Report Generation
 
@@ -532,6 +533,11 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.11.0
+- `references/rwa-protocols.md` — Deep reference for RWA protocol security: trust model & pool manager privilege escalation, NAV oracle manipulation, epoch redemption race conditions, tranche accounting attacks, KYC/transfer restriction bypass (ERC-1400/ERC-3643), default handling & write-down timing, protocol-specific patterns (Centrifuge, Maple, T-bill vaults), comprehensive audit checklist
+- `SKILL.md` Phase 0 routing table: RWA row now points to `rwa-protocols.md` instead of `vulnerability-taxonomy.md §16`
+- `SKILL.md` Phase 4: added RWA loading instruction
 
 ### New in v3.9.0
 - `references/tool-integration.md §1 Slither Triage Cheat Sheet` — 7-step framework for handling 100–300 Slither findings: priority order table (P0→P3), per-detector false positive identification guide (9 detectors), jq filter commands, grouping/deduplication bash, inline suppression patterns, `.slither.config.json` template, `slither-check-upgradeability` workflow, and a quick-reference triage decision card
