@@ -40,7 +40,8 @@ references/
 ├── INDEX-tools.md              # Tools, detection patterns, PoC templates       [v3.5]
 ├── INDEX-advanced.md           # L2/AA/ZK/staking + quick lookup table         [v3.5]
 ├── ai-code-patterns.md         # LLM-specific anti-patterns, vibe-coding checklist [v3.4]
-└── glamsterdam.md              # EIP-7732 ePBS + EIP-7928 BALs               [v3.4]
+├── glamsterdam.md              # EIP-7732 ePBS + EIP-7928 BALs               [v3.4]
+└── rwa-protocols.md            # RWA security: NAV, tranches, epochs, KYC, defaults [v3.11]
 ```
 
 **References** are loaded on-demand based on audit context. Files cross-reference each other to avoid duplication.

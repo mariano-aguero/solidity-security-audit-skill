@@ -675,6 +675,7 @@ See `vulnerability-taxonomy.md §4.7` for code examples.
 
 ## Real World Assets (RWA) Protocols (Centrifuge, Maple, Goldfinch, TrueFi-style)
 
+> **Deep reference**: `rwa-protocols.md` — trust model, NAV manipulation, epoch redemptions, tranche accounting, KYC bypass, default handling, protocol case studies, and full audit checklist with code examples.
 > See also: `vulnerability-taxonomy.md §4` (Oracle & Price Manipulation), `§16` (Cross-Chain & Bridge Risks)
 
 RWA protocols tokenize off-chain assets — loans, invoices, real estate, treasury bills.
