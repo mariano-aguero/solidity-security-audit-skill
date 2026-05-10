@@ -7,8 +7,9 @@
 **target_date:** 2026-04-29  
 **project:** solidity-security-audit-skill  
 **source:** `references/defi-checklist.md` (scattered RWA entries), `SKILL.md` (trigger keywords)  
-**status:** in-progress  
+**status:** done  
 **started_at:** 2026-04-16T00:00:00-03:00  
+**completed_at:** 2026-05-10T00:00:00-03:00  
 **issue:** #4
 
 ---
@@ -62,7 +63,7 @@ Each section follows the pattern established in `perpetual-dex.md`:
 3. Add `rwa-protocols.md` to the architecture table in `CLAUDE.md` under references.
 4. Add any new trigger keywords to `SKILL.md` trigger keyword list.
 5. Update `SKILL.md` Phase 4 (Protocol-Specific) to mention loading `rwa-protocols.md` for RWA audits.
-6. Remove duplicate scattered entries from `defi-checklist.md` and replace with cross-references to the new file.
+6. Add a cross-reference pointer in `defi-checklist.md` §RWA section to the new deep-reference file. _(Decision: keep the high-level RWA checklist in `defi-checklist.md` as a quick-scan entrypoint and use `rwa-protocols.md` as the deep reference. Cross-reference instead of remove — same pattern as other protocol checklists.)_
 
 ## Risks
 
@@ -76,7 +77,7 @@ Each section follows the pattern established in `perpetual-dex.md`:
 - INDEX.md has a row for the new file.
 - CLAUDE.md architecture table lists the file.
 - SKILL.md Phase 4 references rwa-protocols.md.
-- No duplicate RWA content between `defi-checklist.md` and the new file (cross-references instead).
+- `defi-checklist.md` §RWA has a cross-reference pointer to `rwa-protocols.md` (high-level checklist remains as quick-scan entrypoint; deep content lives in the new file).
 
 ## Rollback
 
