@@ -548,6 +548,9 @@ patterns, consult these reference files:
 - `references/poc-templates.md` — ERC-7702 PoC modernized: uses Foundry 1.0+ cheatcodes (`vm.signDelegation`, `vm.attachDelegation`, `vm.signAndAttachDelegation`) instead of commented-out calls; 4 runnable tests: malicious delegation drain, cross-chain replay (chainId=0), sponsored transaction sandbox escape, delegation revocation via `address(0)`
 - `references/poc-templates.md` — New EOF Container Compatibility PoC section (EIP-7692/Fusaka): legacy proxy-to-EOF impl DELEGATECALL breakage, SELFDESTRUCT removal secure pattern, invalid EOF container validation, 10-item EOF migration audit checklist, CLI commands for `forge build --eof` and `forge test --eof`
 
+### New in v3.16.0
+- `references/severity-decision-tree.md` — 4 new decision trees for emerging vulnerability categories: EOF (EIP-7692/Fusaka), ERC-7702 (Pectra auth-list delegation), Transient Storage (EIP-1153 TSTORE/TLOAD incl. TSTORE poison and 2300-gas bypass), ZK-VM / proof verification (verifier completeness, circuit underconstraining, sequencer escape hatches, proof aggregation)
+
 ### New in v3.14.0
 - `references/safe-modules.md` — Deep reference for Safe module, guard, and fallback handler security: trust model and proxy architecture, module installation lifecycle and linked-list manipulation, delegatecall storage collisions (slot map + ERC-7201 defense), guard bypass via `execTransactionFromModule` (pre-v1.4.1), fallback handler ERC-1271 replay, social recovery timing attacks, Zodiac framework patterns (Reality Module bond economics, Roles Modifier v2 scoping, Bridge/Connext Module replay), comprehensive 42-item audit checklist
 - `SKILL.md` Phase 0 routing table: Safe Modules row now points to `safe-modules.md` instead of `vulnerability-taxonomy.md §25`
