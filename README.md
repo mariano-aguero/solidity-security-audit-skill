@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://claude.ai/code"><img src="https://img.shields.io/badge/Claude_Code-Compatible-D97706?style=for-the-badge" alt="Claude Code Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://github.com/mariano-aguero/solidity-security-audit-skill/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/v2.0-improvements-blue?style=for-the-badge" alt="v2 improvements"></a>
+  <a href="https://github.com/mariano-aguero/solidity-security-audit-skill/releases"><img src="https://img.shields.io/badge/version-v3.11.0-blue?style=for-the-badge" alt="version v3.11.0"></a>
 </p>
 
 # Solidity Security Audit Skill
