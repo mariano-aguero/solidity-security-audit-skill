@@ -59,6 +59,15 @@ Sub-index for DeFi protocol security and invariant testing.
 | Prediction market — resolver/oracle bribe attack | defi-checklist.md | Prediction Markets → Resolution |
 | Prediction market — CTF conditional token merge attack | defi-checklist.md | Prediction Markets → CTF Logic |
 | Prediction market — AMM price outside [0,1] | defi-checklist.md | Prediction Markets → AMM |
+| Safe module — deep reference | safe-modules.md | (all sections) |
+| Safe module — trust model, proxy architecture, Zodiac topology | safe-modules.md | §1 Trust Model & Architecture |
+| Safe module — enableModule escalation, linked list manipulation | safe-modules.md | §2 Module Installation & Lifecycle |
+| Safe module — delegatecall storage collision (slot map) | safe-modules.md | §3 delegatecall Storage Collisions |
+| Safe module — guard bypass via execTransactionFromModule | safe-modules.md | §4 Guards & Bypass Vectors |
+| Safe module — fallback handler attacks, ERC-1271 replay | safe-modules.md | §5 Fallback Handler Attacks |
+| Safe module — social recovery timing, guardian collusion | safe-modules.md | §6 Recovery & Social Recovery Modules |
+| Safe module — Reality Module, Roles v2, Bridge/Connext | safe-modules.md | §7 Zodiac Framework Specific Patterns |
+| Safe module — comprehensive audit checklist (42 items) | safe-modules.md | §8 Comprehensive Checklist |
 | Safe module — storage collision via delegatecall | defi-checklist.md | Gnosis Safe Modules → Storage Collisions |
 | Safe module — `enableModule()` without time-lock | defi-checklist.md | Gnosis Safe Modules → Installation |
 | Safe guard — bypassed via `execTransactionFromModule()` | defi-checklist.md | Gnosis Safe Modules → Guards |

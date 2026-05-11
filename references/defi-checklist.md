@@ -850,6 +850,8 @@ Many prediction markets use Gnosis's Conditional Token Framework (CTF) with ERC-
 
 ## Gnosis Safe Modules and Guards
 
+> **Deep reference:** See `safe-modules.md` for vulnerable/secure code patterns and the comprehensive audit checklist.
+
 > See also: `vulnerability-taxonomy.md §6` (Proxy & Upgradeability Issues), `§25` (ERC-1967 Proxy Storage Slot Corruption)
 
 Safe modules extend a multisig wallet with programmable functionality via `delegatecall`.
