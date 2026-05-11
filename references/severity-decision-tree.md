@@ -284,6 +284,147 @@ Is there a signature validation issue?
     └─ MEDIUM (signature phishing possible)
 ```
 
+### EOF (EIP-7692, Fusaka)
+
+```
+Is the contract or its caller affected by EOF migration?
+│
+├─ Contract uses SELFDESTRUCT and is recompiled to EOF?
+│   ├─ Path used for active fund recovery / refund logic?
+│   │   └─ HIGH (function reverts at runtime, funds locked)
+│   └─ SELFDESTRUCT only in deprecated/dead path?
+│       └─ LOW (compile-time warning sufficient)
+│
+├─ Legacy proxy DELEGATECALLs into EOF implementation?
+│   ├─ Production proxy serving live funds?
+│   │   └─ CRITICAL (delegatecall fails, proxy bricked)
+│   └─ Test/dev proxy only?
+│       └─ MEDIUM (deploy guard required)
+│
+├─ EOF contract uses EXTDELEGATECALL into legacy bytecode?
+│   └─ HIGH (EXTDELEGATECALL only valid into other EOF, silent failure)
+│
+├─ Inline assembly uses JUMP/JUMPI in EOF compilation target?
+│   └─ HIGH (compile-time validation rejects, deployment fails silently in some toolchains)
+│
+└─ Contract deployed before checking EVM version (paris vs prague vs osaka)?
+    ├─ Solc 0.8.20+ default emits PUSH0 → fails on pre-Shanghai chains?
+    │   └─ HIGH (silent deploy failure on L2/sidechains)
+    └─ Explicit evmVersion set?
+        └─ INFORMATIONAL (review chain compatibility matrix)
+```
+
+> See `vulnerability-taxonomy.md §22` (EOF) and `§24` (PUSH0 cross-chain).
+
+### ERC-7702 (Pectra Auth-List Delegation)
+
+```
+Is the contract an ERC-7702 implementation or interacts with delegated EOAs?
+│
+├─ Implementation lacks initialization guard?
+│   ├─ Anyone can call initialize() on victim's delegated EOA?
+│   │   └─ CRITICAL (account takeover, full drain)
+│   └─ Initialize gated by signature/auth?
+│       └─ MEDIUM (review auth strength)
+│
+├─ Authorization signed with chainId=0 (wildcard)?
+│   ├─ Implementation deployed on multiple chains?
+│   │   └─ CRITICAL (cross-chain replay = takeover everywhere)
+│   └─ Single-chain implementation?
+│       └─ HIGH (still replayable if deployed elsewhere later)
+│
+├─ Implementation uses non-namespaced storage (no ERC-7201)?
+│   ├─ Multiple implementations may delegate to same EOA over its lifetime?
+│   │   └─ HIGH (storage collision between delegations)
+│   └─ Single canonical implementation?
+│       └─ MEDIUM (defense-in-depth)
+│
+├─ Sponsored tx pattern: relayer pays gas, callback into delegated EOA?
+│   ├─ Callback can transfer value or change state?
+│   │   └─ HIGH (sandbox escape, relayer becomes attack vector)
+│   └─ Callback restricted to read-only?
+│       └─ LOW
+│
+└─ No mechanism to revoke delegation (sign to address(0))?
+    └─ MEDIUM (compromised auth permanent until manual rotation)
+```
+
+> See `vulnerability-taxonomy.md §10` (ERC-7702) and `account-abstraction.md`.
+
+### Transient Storage (EIP-1153, TSTORE/TLOAD)
+
+```
+Does the contract use TSTORE/TLOAD or rely on a transient-storage reentrancy guard?
+│
+├─ Reentrancy guard implemented with TSTORE?
+│   ├─ Compiled with solc 0.8.28–0.8.33 + --via-ir?
+│   │   └─ CRITICAL (TSTORE poison: guard can be cleared by callback,
+│   │                bypassing protection — see §19.6)
+│   └─ Compiled with solc 0.8.27 or 0.8.34+?
+│       └─ INFORMATIONAL (verify guard is per-tx, cleared correctly)
+│
+├─ TSTORE used to pass data across cross-contract calls?
+│   ├─ Caller assumes value persists across call to untrusted contract?
+│   │   └─ HIGH (callee can TSTORE-overwrite or read sensitive state)
+│   └─ Same-contract usage only, with namespaced slot?
+│       └─ LOW
+│
+├─ TSTORE not cleared at end of public entry function?
+│   ├─ Same transaction makes second entry through different function?
+│   │   └─ HIGH (state leak between unrelated calls in same tx)
+│   └─ Only one entry per tx by design?
+│       └─ MEDIUM (still risky if assumption is implicit)
+│
+├─ 2300-gas stipend assumed to block reentrancy via .transfer()/.send()?
+│   └─ HIGH (TSTORE costs <100 gas — stipend no longer protects, see §19.7)
+│
+└─ TSTORE used in upgradeable contract storage layout?
+    └─ INFORMATIONAL (transient state is not persisted, but document intent)
+```
+
+> See `vulnerability-taxonomy.md §19.6` (TSTORE Poison) and `§19.7` (2300-gas bypass).
+
+### ZK-VM / ZK Proof Verification
+
+```
+Is the vulnerability in the proof verification, circuit, or rollup architecture?
+│
+├─ Verifier accepts proofs with insufficient public input commitment?
+│   ├─ Public inputs include user balance / state root / messages?
+│   │   └─ CRITICAL (fake state transition accepted, mass fund theft)
+│   └─ Public inputs are read-only metadata?
+│       └─ HIGH
+│
+├─ Circuit underconstrained (witness allows multiple valid solutions)?
+│   ├─ Affects token amounts, ownership, or state transitions?
+│   │   └─ CRITICAL (forge any state, see Polygon zkEVM 2023, zkSync Boojum)
+│   └─ Affects only emit/logs?
+│       └─ MEDIUM
+│
+├─ Trusted setup compromised or single-party (no MPC ceremony)?
+│   ├─ SNARK requires trusted setup (Groth16, PLONK with structured reference)?
+│   │   └─ HIGH (proof forgery if setup secret leaked)
+│   └─ Transparent SNARK/STARK (no trusted setup)?
+│       └─ LOW
+│
+├─ L2 sequencer can censor or fail with no escape hatch?
+│   ├─ Funds inaccessible until sequencer recovery?
+│   │   └─ HIGH (centralization → user fund freeze)
+│   └─ Forced inclusion mechanism present and tested?
+│       └─ INFORMATIONAL
+│
+├─ Proof aggregation: multiple proofs combined into one?
+│   ├─ Aggregation circuit not audited or recursive setup unclear?
+│   │   └─ HIGH (single bug invalidates all aggregated state)
+│   └─ Audited recursive aggregation (e.g., Plonky2)?
+│       └─ MEDIUM (still novel surface)
+│
+└─ Verifier upgradeable without timelock or governance?
+    └─ HIGH (verifier swap = retroactive proof rejection or fund loss)
+```
+
+> See `references/zkvm-specific.md` and `vulnerability-taxonomy.md §16` (Cross-chain & ZK).
+
 ---
 
 ## Severity Definitions with Concrete Examples

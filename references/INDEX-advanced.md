@@ -69,6 +69,10 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | EIP-7928 BALs — MEV transparency | glamsterdam.md | §2 |
 | Re-audit / diff audit methodology | diff-audit.md | (full file) |
 | Severity classification decision trees | severity-decision-tree.md | (full file) |
+| Severity tree — EOF (EIP-7692, Fusaka) | severity-decision-tree.md | Decision Trees → EOF |
+| Severity tree — ERC-7702 (Pectra delegation) | severity-decision-tree.md | Decision Trees → ERC-7702 |
+| Severity tree — Transient Storage (TSTORE/TLOAD) | severity-decision-tree.md | Decision Trees → Transient Storage |
+| Severity tree — ZK-VM / proof verification | severity-decision-tree.md | Decision Trees → ZK-VM |
 | Audit report format (private) | report-template.md | Report Structure |
 | Contest submission format (Code4rena, Sherlock) | report-template.md | Contest Submission Format |
 | Real exploit case studies | exploit-case-studies.md | (full file) |
