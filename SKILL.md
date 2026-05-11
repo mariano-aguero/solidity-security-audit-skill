@@ -331,7 +331,7 @@ Execute audits in this order. Each phase builds on the previous one.
 | CeDeFi / Synthetic | `vulnerability-taxonomy.md §4.7` | `defi-checklist.md §CeDeFi` | xUSD ($285M) |
 | RWA / Tokenized Assets | `rwa-protocols.md` | `defi-checklist.md §RWA` | — |
 | Options / Structured Products | `options-protocols.md` | `defi-checklist.md §Options` | Deus DAO, Lyra AVAX |
-| Prediction Markets | `vulnerability-taxonomy.md §4.1` | `defi-checklist.md §Prediction` | — |
+| Prediction Markets | `prediction-markets.md` | `defi-checklist.md §Prediction` | Polymarket UMA disputes, Augur REP |
 | Multisig / Safe Modules | `vulnerability-taxonomy.md §25` | `defi-checklist.md §Safe` | Radiant Capital |
 
 Before touching code, build a mental model of what the protocol does and what
@@ -448,6 +448,7 @@ When auditing DeFi protocols, apply the specialized checklist from
 - **Staking**: Reward calculation precision, stake/unstake timing attacks
 - **RWA protocols**: Load `references/rwa-protocols.md` for NAV oracle trust, tranche accounting, epoch redemptions, KYC transfer restrictions, default handling
 - **Options protocols**: Load `references/options-protocols.md` for settlement oracle manipulation, IV attacks, collateral/margin, vault strategy risks, multi-leg payoff correctness
+- **Prediction markets**: Load `references/prediction-markets.md` for resolution oracle trust, CTF split/merge logic, AMM pricing bounds, market creation attacks, timing/MEV at resolution
 
 ### Phase 5 — Report Generation
 
@@ -537,6 +538,11 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.13.0
+- `references/prediction-markets.md` — Deep reference for prediction market security: resolution oracle trust models (UMA optimistic oracle, Chainlink, centralized, DAO), CTF split/merge position attacks, AMM pricing bounds (LMSR/CPMM), market creation lifecycle attacks, timing/MEV at resolution (commit-reveal, blackout periods), protocol-specific patterns (Polymarket, Azuro, Augur v2, PancakeSwap Prediction, SX Network, Overtime Markets), comprehensive 42-item audit checklist
+- `SKILL.md` Phase 0 routing table: Prediction Markets row now points to `prediction-markets.md` instead of `vulnerability-taxonomy.md §4.1`
+- `SKILL.md` Phase 4: added Prediction Markets loading instruction
 
 ### New in v3.12.0
 - `references/options-protocols.md` — Deep reference for on-chain options protocol security: settlement oracle manipulation (flash-loan at expiry, TWAP defense, circuit breakers), IV attacks (admin IV, AMM-based IV drainage, Lyra AVAX pattern), collateral & margin (undercollateralized writing, maintenance margin, liquidation), vault strategy risks (adversarial strike selection, epoch timing, Gnosis Auction abuse), multi-leg payoff correctness (unsigned math, spread caps, calendar spread independence), protocol-specific patterns (Lyra v2, Opyn Gamma, Ribbon, Dopex SSOV, Premia v3), comprehensive 42-item audit checklist
