@@ -111,7 +111,11 @@ description: >
   "Code4rena", "C4 contest", "Sherlock contest", "Immunefi", "Cantina contest",
   "CodeHawks", "Cyfrin Updraft", "warden submission", "Watson submission",
   "bug bounty submission", "audit contest", "audit competition", "contest finding",
-  "submit to contest", "contest report", "H/M finding", "QA report warden".
+  "submit to contest", "contest report", "H/M finding", "QA report warden",
+  "vm.signDelegation", "vm.attachDelegation", "vm.signAndAttachDelegation",
+  "ERC-7702 Foundry", "ERC-7702 PoC", "delegation revocation",
+  "forge build --eof", "forge test --eof", "EOF PoC", "EOF migration",
+  "EXTDELEGATECALL proxy", "selfdestruct EOF", "EOF container validation".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -539,6 +543,10 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.15.0
+- `references/poc-templates.md` — ERC-7702 PoC modernized: uses Foundry 1.0+ cheatcodes (`vm.signDelegation`, `vm.attachDelegation`, `vm.signAndAttachDelegation`) instead of commented-out calls; 4 runnable tests: malicious delegation drain, cross-chain replay (chainId=0), sponsored transaction sandbox escape, delegation revocation via `address(0)`
+- `references/poc-templates.md` — New EOF Container Compatibility PoC section (EIP-7692/Fusaka): legacy proxy-to-EOF impl DELEGATECALL breakage, SELFDESTRUCT removal secure pattern, invalid EOF container validation, 10-item EOF migration audit checklist, CLI commands for `forge build --eof` and `forge test --eof`
 
 ### New in v3.14.0
 - `references/safe-modules.md` — Deep reference for Safe module, guard, and fallback handler security: trust model and proxy architecture, module installation lifecycle and linked-list manipulation, delegatecall storage collisions (slot map + ERC-7201 defense), guard bypass via `execTransactionFromModule` (pre-v1.4.1), fallback handler ERC-1271 replay, social recovery timing attacks, Zodiac framework patterns (Reality Module bond economics, Roles Modifier v2 scoping, Bridge/Connext Module replay), comprehensive 42-item audit checklist
