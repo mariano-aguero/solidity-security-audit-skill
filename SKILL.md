@@ -544,6 +544,9 @@ patterns, consult these reference files:
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
 
+### New in v3.17.0
+- `references/staking-consensus.md §5` — Post-Pectra Observations (May 2025 – mid-2026): LST/LRT protocol adaptation (Lido, Rocket Pool, EtherFi, EigenLayer), observed incidents & near-misses (no major exploit leveraged Pectra primitives), exit queue & validator consolidation data, 10-item refined audit heuristics checklist (hardcoded 32 ETH, 0x01/0x02 prefix, dual-slashing), 7 open risk areas
+
 ### New in v3.15.0
 - `references/poc-templates.md` — ERC-7702 PoC modernized: uses Foundry 1.0+ cheatcodes (`vm.signDelegation`, `vm.attachDelegation`, `vm.signAndAttachDelegation`) instead of commented-out calls; 4 runnable tests: malicious delegation drain, cross-chain replay (chainId=0), sponsored transaction sandbox escape, delegation revocation via `address(0)`
 - `references/poc-templates.md` — New EOF Container Compatibility PoC section (EIP-7692/Fusaka): legacy proxy-to-EOF impl DELEGATECALL breakage, SELFDESTRUCT removal secure pattern, invalid EOF container validation, 10-item EOF migration audit checklist, CLI commands for `forge build --eof` and `forge test --eof`

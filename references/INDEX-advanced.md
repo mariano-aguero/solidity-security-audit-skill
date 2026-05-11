@@ -64,7 +64,10 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | EIP-7251 — consolidation race conditions | staking-consensus.md | §2.2 |
 | EIP-6110 — validator deposit front-running | staking-consensus.md | §3 EIP-6110 |
 | Pectra combined attack scenarios | staking-consensus.md | §4 Combined Attacks |
-| Post-Pectra staking audit checklist | staking-consensus.md | §5 Checklist |
+| Post-Pectra observations (LST/LRT adaptation) | staking-consensus.md | §5.1 LST/LRT Protocol Adaptation |
+| Post-Pectra incidents & near-misses | staking-consensus.md | §5.2 Observed Incidents |
+| Post-Pectra audit heuristics (hardcoded 32 ETH, 0x02 prefix) | staking-consensus.md | §5.4 Heuristics Refined |
+| Post-Pectra staking audit checklist | staking-consensus.md | §6 Checklist |
 | EIP-7732 ePBS — payload withholding | glamsterdam.md | §1 |
 | EIP-7928 BALs — MEV transparency | glamsterdam.md | §2 |
 | Re-audit / diff audit methodology | diff-audit.md | (full file) |
@@ -111,7 +114,8 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | ERC-7683 `originData` not verified against orderId | intent-protocols §8.3 Parameter Substitution |
 | ERC-7683 contract uses `msg.sender == user` auth | intent-protocols §8.2 Filler Trust Model |
 | Liquid staking with `triggerValidatorExit()` | staking-consensus §1 EIP-7002 |
-| Staking insurance fund sized for 32 ETH max | staking-consensus §2.1 Slashing Amplification |
+| Staking insurance fund sized for 32 ETH max | staking-consensus §2.1 Slashing Amplification, §5.4 Heuristics |
+| Hardcoded `MAX_EFFECTIVE_BALANCE = 32 ether` | staking-consensus §5.4 Heuristics Refined |
 | Validator consolidation with BLS not verified | staking-consensus §2.2 Consolidation Race |
 | Two-step deposit (pubkey then credentials separate) | staking-consensus §3.1 Deposit Front-Running |
 | ERC-6909 dual approval — `isOperator` bypasses allowance | taxonomy §21.1 |
