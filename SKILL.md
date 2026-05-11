@@ -544,6 +544,9 @@ patterns, consult these reference files:
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
 
+### New in v3.18.0
+- `references/fusaka-eof.md` — Migration & deployment audit playbook for EOF (EIP-7692, Fusaka): compiler/tooling support matrix (solc / Foundry --eof / Slither / Aderyn), legacy → EOF migration recipes (reentrancy guards, EOA detection, dynamic jumps, gas-based logic, SELFDESTRUCT refunds, CREATE2 factories), proxy & upgrade decision matrix (all-EOF / all-legacy / hybrid forbidden / mid-life migration), L2 multi-chain rollout considerations (evmVersion config, PUSH0 incident pattern, sidechain compat), audit workflow (pre-audit questionnaire, bytecode magic-byte verification, reporting template), 30-item migration audit checklist (Pre-deploy / Deploy / Post-deploy)
+
 ### New in v3.17.0
 - `references/staking-consensus.md §5` — Post-Pectra Observations (May 2025 – mid-2026): LST/LRT protocol adaptation (Lido, Rocket Pool, EtherFi, EigenLayer), observed incidents & near-misses (no major exploit leveraged Pectra primitives), exit queue & validator consolidation data, 10-item refined audit heuristics checklist (hardcoded 32 ETH, 0x01/0x02 prefix, dual-slashing), 7 open risk areas
 
