@@ -76,6 +76,13 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | Severity tree — ERC-7702 (Pectra delegation) | severity-decision-tree.md | Decision Trees → ERC-7702 |
 | Severity tree — Transient Storage (TSTORE/TLOAD) | severity-decision-tree.md | Decision Trees → Transient Storage |
 | Severity tree — ZK-VM / proof verification | severity-decision-tree.md | Decision Trees → ZK-VM |
+| EOF / Fusaka — migration & deployment audit playbook | fusaka-eof.md | (full file) |
+| EOF — compiler & tooling support matrix (solc, Foundry, Slither, Aderyn) | fusaka-eof.md | §2 |
+| EOF — legacy → EOF migration recipes (reentrancy, EOA, jumps, gas) | fusaka-eof.md | §3 |
+| EOF — proxy & upgrade path decision matrix (hybrid forbidden) | fusaka-eof.md | §4 |
+| EOF — L2 / multi-chain rollout (evmVersion, PUSH0 pattern) | fusaka-eof.md | §5 |
+| EOF — audit workflow + reporting template | fusaka-eof.md | §6 |
+| EOF — 30-item migration audit checklist | fusaka-eof.md | §8 |
 | Audit report format (private) | report-template.md | Report Structure |
 | Contest submission format (Code4rena, Sherlock) | report-template.md | Contest Submission Format |
 | Real exploit case studies | exploit-case-studies.md | (full file) |
