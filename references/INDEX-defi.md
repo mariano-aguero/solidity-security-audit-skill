@@ -47,6 +47,15 @@ Sub-index for DeFi protocol security and invariant testing.
 | Options — IV manipulation in AMM-based pricing | defi-checklist.md | Options → IV and Pricing |
 | Options — undercollateralized option writing | defi-checklist.md | Options → Collateral and Writing |
 | Options vault (Ribbon-style) — adversarial strike selection | defi-checklist.md | Options → Automated Vaults |
+| Prediction market — deep reference | prediction-markets.md | (all sections) |
+| Prediction market — resolution oracle trust (UMA, Chainlink, DAO) | prediction-markets.md | §1 Trust Model & Architecture |
+| Prediction market — UMA dispute economics, resolver bribery | prediction-markets.md | §2 Market Resolution & Oracle Manipulation |
+| Prediction market — CTF split/merge, reportPayouts access | prediction-markets.md | §3 Conditional Token (ERC-1155 CTF) Logic |
+| Prediction market — LMSR/CPMM bounds, sandwich at resolution | prediction-markets.md | §4 AMM-Based Pricing Attacks |
+| Prediction market — malicious creation, invalid resolution | prediction-markets.md | §5 Market Creation & Lifecycle Attacks |
+| Prediction market — insider MEV, commit-reveal, blackout | prediction-markets.md | §6 Timing & MEV Attacks |
+| Prediction market — Polymarket, Azuro, Augur, PancakeSwap | prediction-markets.md | §7 Protocol-Specific Patterns |
+| Prediction market — comprehensive audit checklist (42 items) | prediction-markets.md | §8 Comprehensive Checklist |
 | Prediction market — resolver/oracle bribe attack | defi-checklist.md | Prediction Markets → Resolution |
 | Prediction market — CTF conditional token merge attack | defi-checklist.md | Prediction Markets → CTF Logic |
 | Prediction market — AMM price outside [0,1] | defi-checklist.md | Prediction Markets → AMM |

@@ -796,6 +796,8 @@ The most critical attack vector: manipulate the spot price at the exact block wh
 
 ## Prediction Markets (Polymarket/CTF, Augur-style)
 
+> **Deep reference:** See `prediction-markets.md` for vulnerable/secure code patterns and the comprehensive audit checklist.
+
 > See also: `vulnerability-taxonomy.md §4.1` (Spot Price Dependency), `§9` (Front-Running & MEV)
 
 Prediction markets let users bet on real-world event outcomes. Their contracts are often
