@@ -235,7 +235,8 @@ Always check before reviewing transient storage or via-ir builds:
 | Solidity 0.8.20+ without explicit `evmVersion` | Emits PUSH0 (EIP-3855) — fails on non-Shanghai chains | Set `evm_version = "paris"` for cross-chain; see §24 |
 | `upgradeTo(newImpl)` without `proxiableUUID()` check | UUPS brick attack — proxy permanently stuck | Use OZ `_upgradeToAndCallUUPS`; see §25.3 |
 | Raw `sstore` near ERC-1967 slot values in implementation | Overwrites proxy implementation pointer | Audit all assembly slots vs §25.1 constants |
-| EOF-targeted deploy (EIP-7692/Fusaka) | `EXTDELEGATECALL` breaks legacy contracts | Full EOF checklist at §22 |
+| EOF-targeted deploy (EIP-7692/Fusaka) | `EXTDELEGATECALL` breaks legacy contracts; `selfdestruct` removed | Full EOF checklist at §22 + PoC: `poc-templates.md` EOF Container Compatibility |
+| ERC-7702 delegation (Pectra) | Malicious delegation, chainId=0 replay, sponsored tx escape | PoC: `poc-templates.md` ERC-7702 Malicious Delegation (uses `vm.signDelegation`) |
 | OZ v4→v5 upgrade without migration | Storage slot collision | Run `@openzeppelin/upgrade-safe-checker`; see §6.6 |
 | Custom math with bit-shift overflow guard | Sentinel value off-by-one (Cetus $223M) | Verify boundary: see §3.4 |
 

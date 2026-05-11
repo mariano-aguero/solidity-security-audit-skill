@@ -75,6 +75,11 @@ Sub-index for tooling, automated detection, and proof-of-concept templates.
 | Governance attack | poc-templates.md | Governance Attack PoC |
 | Uniswap V4 hook drain | poc-templates.md | Uniswap V4 Hook Drain PoC |
 | Transient storage guard bypass | poc-templates.md | Transient Storage Reentrancy Guard Bypass PoC |
-| ERC-7702 malicious delegation | poc-templates.md | ERC-7702 Malicious Delegation PoC |
+| ERC-7702 malicious delegation (Foundry cheatcodes) | poc-templates.md | ERC-7702 Malicious Delegation PoC |
+| ERC-7702 cross-chain replay (chainId=0) | poc-templates.md | ERC-7702 Malicious Delegation PoC → test_CrossChainReplayChainIdZero |
+| ERC-7702 sponsored tx sandbox escape | poc-templates.md | ERC-7702 Malicious Delegation PoC → test_SponsoredTxSandboxEscape |
+| EOF legacy proxy → EOF impl breakage | poc-templates.md | EOF Container Compatibility PoC |
+| EOF selfdestruct removal | poc-templates.md | EOF Container Compatibility PoC → test_SelfdestructReplacementPattern |
+| EOF container validation failure | poc-templates.md | EOF Container Compatibility PoC → test_InvalidEOFContainerRejected |
 | Simulation guard bypass (Safe/multisig) | poc-templates.md | Simulation Guard Bypass PoC |
 | Supply chain / bytecode verification | poc-templates.md | Supply Chain Verification PoC |

@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://claude.ai/code"><img src="https://img.shields.io/badge/Claude_Code-Compatible-D97706?style=for-the-badge" alt="Claude Code Compatible"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License"></a>
-  <a href="https://github.com/mariano-aguero/solidity-security-audit-skill/releases"><img src="https://img.shields.io/badge/version-v3.14.0-blue?style=for-the-badge" alt="version v3.14.0"></a>
+  <a href="https://github.com/mariano-aguero/solidity-security-audit-skill/releases"><img src="https://img.shields.io/badge/version-v3.15.0-blue?style=for-the-badge" alt="version v3.15.0"></a>
 </p>
 
 # Solidity Security Audit Skill
@@ -20,7 +20,7 @@ This skill transforms your AI agent into a comprehensive smart contract security
 | **Protocol Checklists** | Lending, AMM, Vaults, Bridges, Governance, Staking, NFT, Restaking/LRT, V4 Hooks, Airdrop, RWA, Options, Prediction Markets, Safe Modules |
 | **Token Standards** | ERC-20, ERC-721, ERC-1155, ERC-4626 security checks |
 | **Tool Integration** | Slither (SARIF + 7-step triage cheat sheet), Foundry (coverage), Echidna, Aderyn, Halmos, Certora, Slang AST |
-| **PoC Templates** | Foundry templates incl. V4 hook drain, transient storage bypass, ERC-7702 abuse |
+| **PoC Templates** | Foundry templates incl. V4 hook drain, transient storage bypass, ERC-7702 abuse, EOF compatibility |
 | **Real Exploits** | 20 case studies: The DAO → Bybit ($1.5B), Ronin ($625M), Mango, BNB Chain, Multichain |
 | **L2 Security** | Sequencer, bridges, Blast rebasing, zkEVM specifics, EIP-4844, precompiles |
 | **Account Abstraction** | ERC-4337 accounts, paymasters, bundlers, ERC-7702, ERC-7579 modules |

@@ -21,7 +21,7 @@ references/
 ├── audit-questions.md          # Questions per function type
 ├── secure-patterns.md          # Secure code reference
 ├── report-template.md          # Audit report format
-├── poc-templates.md            # Foundry PoC templates (incl. V4 hooks, transient storage)
+├── poc-templates.md            # Foundry PoC templates (incl. V4 hooks, transient storage, ERC-7702, EOF)
 ├── invariants.md               # Protocol invariants
 ├── exploit-case-studies.md     # Real exploit analysis
 ├── quick-reference.md          # One-page cheat sheet
