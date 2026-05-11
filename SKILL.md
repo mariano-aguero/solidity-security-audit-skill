@@ -332,7 +332,7 @@ Execute audits in this order. Each phase builds on the previous one.
 | RWA / Tokenized Assets | `rwa-protocols.md` | `defi-checklist.md §RWA` | — |
 | Options / Structured Products | `options-protocols.md` | `defi-checklist.md §Options` | Deus DAO, Lyra AVAX |
 | Prediction Markets | `prediction-markets.md` | `defi-checklist.md §Prediction` | Polymarket UMA disputes, Augur REP |
-| Multisig / Safe Modules | `vulnerability-taxonomy.md §25` | `defi-checklist.md §Safe` | Radiant Capital |
+| Multisig / Safe Modules | `safe-modules.md` | `defi-checklist.md §Safe` | Radiant Capital |
 
 Before touching code, build a mental model of what the protocol does and what
 can go wrong economically. This shapes where you spend time in Phase 3.
@@ -449,6 +449,7 @@ When auditing DeFi protocols, apply the specialized checklist from
 - **RWA protocols**: Load `references/rwa-protocols.md` for NAV oracle trust, tranche accounting, epoch redemptions, KYC transfer restrictions, default handling
 - **Options protocols**: Load `references/options-protocols.md` for settlement oracle manipulation, IV attacks, collateral/margin, vault strategy risks, multi-leg payoff correctness
 - **Prediction markets**: Load `references/prediction-markets.md` for resolution oracle trust, CTF split/merge logic, AMM pricing bounds, market creation attacks, timing/MEV at resolution
+- **Safe modules / multisig**: Load `references/safe-modules.md` for module installation lifecycle, delegatecall storage collisions, guard bypass vectors, fallback handler attacks, social recovery, Zodiac framework patterns
 
 ### Phase 5 — Report Generation
 
@@ -538,6 +539,11 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.14.0
+- `references/safe-modules.md` — Deep reference for Safe module, guard, and fallback handler security: trust model and proxy architecture, module installation lifecycle and linked-list manipulation, delegatecall storage collisions (slot map + ERC-7201 defense), guard bypass via `execTransactionFromModule` (pre-v1.4.1), fallback handler ERC-1271 replay, social recovery timing attacks, Zodiac framework patterns (Reality Module bond economics, Roles Modifier v2 scoping, Bridge/Connext Module replay), comprehensive 42-item audit checklist
+- `SKILL.md` Phase 0 routing table: Safe Modules row now points to `safe-modules.md` instead of `vulnerability-taxonomy.md §25`
+- `SKILL.md` Phase 4: added Safe modules loading instruction
 
 ### New in v3.13.0
 - `references/prediction-markets.md` — Deep reference for prediction market security: resolution oracle trust models (UMA optimistic oracle, Chainlink, centralized, DAO), CTF split/merge position attacks, AMM pricing bounds (LMSR/CPMM), market creation lifecycle attacks, timing/MEV at resolution (commit-reveal, blackout periods), protocol-specific patterns (Polymarket, Azuro, Augur v2, PancakeSwap Prediction, SX Network, Overtime Markets), comprehensive 42-item audit checklist
