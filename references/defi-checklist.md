@@ -742,6 +742,8 @@ priority redemption. Miscounting tranche sizes or loss absorption order is a cri
 
 ## Options & Structured Products (Dopex, Lyra, Opyn/Gamma, Ribbon Finance-style)
 
+> **Deep reference:** See `options-protocols.md` for vulnerable/secure code patterns and the comprehensive audit checklist.
+
 > See also: `vulnerability-taxonomy.md §4` (Oracle & Price Manipulation), `§9` (Front-Running & MEV)
 
 Options protocols price, underwrite, and settle derivative contracts on-chain.

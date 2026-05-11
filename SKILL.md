@@ -96,6 +96,9 @@ description: >
   "options protocol", "options settlement oracle", "implied volatility manipulation", "IV oracle",
   "options expiry manipulation", "covered call vault", "put selling vault", "Ribbon Finance audit",
   "Dopex audit", "Lyra audit", "Opyn audit", "Hegic audit", "option strike manipulation",
+  "Premia audit", "Aevo audit", "Thetanuts audit", "options-protocols.md", "oToken",
+  "theta vault", "SSOV", "option collateral", "option margin", "option settlement",
+  "call spread payoff", "IV drainage", "Deus DAO oracle", "Gnosis Auction abuse",
   "prediction market", "prediction market oracle", "resolver manipulation", "conditional token",
   "CTF conditional", "Gnosis CTF", "LMSR AMM", "market resolution bribe", "Polymarket audit",
   "Gnosis Safe module", "Safe module audit", "Safe guard", "Safe fallback handler",
@@ -327,7 +330,7 @@ Execute audits in this order. Each phase builds on the previous one.
 | Intent / Solver | `intent-protocols.md` | `defi-checklist.md §Intents` | — |
 | CeDeFi / Synthetic | `vulnerability-taxonomy.md §4.7` | `defi-checklist.md §CeDeFi` | xUSD ($285M) |
 | RWA / Tokenized Assets | `rwa-protocols.md` | `defi-checklist.md §RWA` | — |
-| Options / Structured Products | `vulnerability-taxonomy.md §4` | `defi-checklist.md §Options` | — |
+| Options / Structured Products | `options-protocols.md` | `defi-checklist.md §Options` | Deus DAO, Lyra AVAX |
 | Prediction Markets | `vulnerability-taxonomy.md §4.1` | `defi-checklist.md §Prediction` | — |
 | Multisig / Safe Modules | `vulnerability-taxonomy.md §25` | `defi-checklist.md §Safe` | Radiant Capital |
 
@@ -444,6 +447,7 @@ When auditing DeFi protocols, apply the specialized checklist from
 - **Governance**: Vote manipulation, flash loan governance attacks, timelock bypass
 - **Staking**: Reward calculation precision, stake/unstake timing attacks
 - **RWA protocols**: Load `references/rwa-protocols.md` for NAV oracle trust, tranche accounting, epoch redemptions, KYC transfer restrictions, default handling
+- **Options protocols**: Load `references/options-protocols.md` for settlement oracle manipulation, IV attacks, collateral/margin, vault strategy risks, multi-leg payoff correctness
 
 ### Phase 5 — Report Generation
 
@@ -533,6 +537,11 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.12.0
+- `references/options-protocols.md` — Deep reference for on-chain options protocol security: settlement oracle manipulation (flash-loan at expiry, TWAP defense, circuit breakers), IV attacks (admin IV, AMM-based IV drainage, Lyra AVAX pattern), collateral & margin (undercollateralized writing, maintenance margin, liquidation), vault strategy risks (adversarial strike selection, epoch timing, Gnosis Auction abuse), multi-leg payoff correctness (unsigned math, spread caps, calendar spread independence), protocol-specific patterns (Lyra v2, Opyn Gamma, Ribbon, Dopex SSOV, Premia v3), comprehensive 42-item audit checklist
+- `SKILL.md` Phase 0 routing table: Options row now points to `options-protocols.md` instead of `vulnerability-taxonomy.md §4`
+- `SKILL.md` Phase 4: added Options loading instruction
 
 ### New in v3.11.0
 - `references/rwa-protocols.md` — Deep reference for RWA protocol security: trust model & pool manager privilege escalation, NAV oracle manipulation, epoch redemption race conditions, tranche accounting attacks, KYC/transfer restriction bypass (ERC-1400/ERC-3643), default handling & write-down timing, protocol-specific patterns (Centrifuge, Maple, T-bill vaults), comprehensive audit checklist

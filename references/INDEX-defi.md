@@ -34,6 +34,16 @@ Sub-index for DeFi protocol security and invariant testing.
 | RWA — Centrifuge, Maple, T-bill vaults | rwa-protocols.md | §7 Protocol-Specific Patterns |
 | RWA — comprehensive audit checklist | rwa-protocols.md | §8 RWA Audit Checklist |
 | RWA — high-level checklist | defi-checklist.md | Real World Assets |
+| Options — deep reference | options-protocols.md | (all sections) |
+| Options — trust model, oracle dependency chain | options-protocols.md | §1 Trust Model & Architecture |
+| Options — settlement oracle flash-loan manipulation | options-protocols.md | §2 Settlement Oracle Manipulation |
+| Options — IV attacks, AMM IV drainage, Lyra AVAX | options-protocols.md | §3 Implied Volatility Attacks |
+| Options — collateral, margin, writer liquidation | options-protocols.md | §4 Collateral & Margin |
+| Options — vault strategy, strike selection, epoch | options-protocols.md | §5 Vault Strategy Risks |
+| Options — multi-leg payoff, spread math, calendar | options-protocols.md | §6 Multi-Leg Strategies |
+| Options — Lyra v2, Opyn Gamma, Ribbon, Dopex, Premia | options-protocols.md | §7 Protocol-Specific Patterns |
+| Options — comprehensive audit checklist (42 items) | options-protocols.md | §8 Comprehensive Checklist |
+| Options — high-level checklist | defi-checklist.md | Options → Settlement Oracle |
 | Options — settlement oracle manipulation at expiry | defi-checklist.md | Options → Settlement Oracle |
 | Options — IV manipulation in AMM-based pricing | defi-checklist.md | Options → IV and Pricing |
 | Options — undercollateralized option writing | defi-checklist.md | Options → Collateral and Writing |
