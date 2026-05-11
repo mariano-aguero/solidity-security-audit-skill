@@ -42,6 +42,7 @@ references/
 ├── ai-code-patterns.md         # LLM-specific anti-patterns, vibe-coding checklist [v3.4]
 ├── glamsterdam.md              # EIP-7732 ePBS + EIP-7928 BALs               [v3.4]
 ├── fusaka-eof.md               # EOF/Fusaka migration & deployment audit playbook [v3.18]
+├── move-security.md            # Move/Sui/Aptos audit supplement: resource model, objects, capabilities [v3.19]
 ├── rwa-protocols.md            # RWA security: NAV, tranches, epochs, KYC, defaults [v3.11]
 ├── options-protocols.md        # Options security: settlement oracle, IV, collateral, vaults [v3.12]
 ├── prediction-markets.md      # Prediction market security: resolution oracle, CTF, AMM pricing, MEV [v3.13]

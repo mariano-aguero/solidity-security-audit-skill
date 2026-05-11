@@ -115,7 +115,10 @@ description: >
   "vm.signDelegation", "vm.attachDelegation", "vm.signAndAttachDelegation",
   "ERC-7702 Foundry", "ERC-7702 PoC", "delegation revocation",
   "forge build --eof", "forge test --eof", "EOF PoC", "EOF migration",
-  "EXTDELEGATECALL proxy", "selfdestruct EOF", "EOF container validation".
+  "EXTDELEGATECALL proxy", "selfdestruct EOF", "EOF container validation",
+  "Move language", "Move audit", "Sui audit", "Aptos audit", "Move resource",
+  "Sui object model", "Aptos fungible asset", "MoveBit", "OtterSec Move",
+  "hot potato Move", "capability token Move", "Sui PTB", "Move bytecode verifier".
   Even if the user simply pastes Solidity code and asks "is this safe?" or
   "any issues here?", use this skill.
 ---
@@ -337,6 +340,7 @@ Execute audits in this order. Each phase builds on the previous one.
 | Options / Structured Products | `options-protocols.md` | `defi-checklist.md §Options` | Deus DAO, Lyra AVAX |
 | Prediction Markets | `prediction-markets.md` | `defi-checklist.md §Prediction` | Polymarket UMA disputes, Augur REP |
 | Multisig / Safe Modules | `safe-modules.md` | `defi-checklist.md §Safe` | Radiant Capital |
+| Move / Sui / Aptos | `move-security.md` | — (supplement) | Cetus ($223M) |
 
 Before touching code, build a mental model of what the protocol does and what
 can go wrong economically. This shapes where you spend time in Phase 3.
@@ -543,6 +547,12 @@ patterns, consult these reference files:
 - `references/intent-protocols.md §8` — ERC-7683 Cross-Chain Intents (live on Base/Arbitrum): filler trust model, parameter substitution, double-fill, settlement finality race
 - `references/staking-consensus.md` — Pectra upgrade security: EIP-7002 (triggerable exits), EIP-7251 (MaxEB + slashing amplification), EIP-6110 (on-chain deposits)
 - `references/industry-standards.md` — OWASP Smart Contract Top 10 2025 table added
+
+### New in v3.19.0
+- `references/move-security.md` — Move language audit supplement for Sui/Aptos/Movement ecosystems: resource model security (ability mismatches, hot potato, capability tokens), Sui object model (ownership, versioning, dynamic fields, PTB composition), Aptos-specific patterns (resource accounts, Fungible Asset migration, randomness API), bytecode verifier guarantees vs gaps, common Move audit findings (capability leakage, arithmetic overflow, friend abuse, generic type confusion), cross-VM bridge security (EVM ↔ Move decimal/address/supply mismatches), 30-item Move audit checklist
+- `SKILL.md` triggers: +8 Move/Sui/Aptos keywords
+- `SKILL.md` Phase 0 routing table: Move/Sui/Aptos row added
+- `INDEX-advanced.md`: +8 entries for Move sections
 
 ### New in v3.18.0
 - `references/fusaka-eof.md` — Migration & deployment audit playbook for EOF (EIP-7692, Fusaka): compiler/tooling support matrix (solc / Foundry --eof / Slither / Aderyn), legacy → EOF migration recipes (reentrancy guards, EOA detection, dynamic jumps, gas-based logic, SELFDESTRUCT refunds, CREATE2 factories), proxy & upgrade decision matrix (all-EOF / all-legacy / hybrid forbidden / mid-life migration), L2 multi-chain rollout considerations (evmVersion config, PUSH0 incident pattern, sidechain compat), audit workflow (pre-audit questionnaire, bytecode magic-byte verification, reporting template), 30-item migration audit checklist (Pre-deploy / Deploy / Post-deploy)
