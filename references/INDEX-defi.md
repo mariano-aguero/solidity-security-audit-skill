@@ -43,7 +43,6 @@ Sub-index for DeFi protocol security and invariant testing.
 | Options — multi-leg payoff, spread math, calendar | options-protocols.md | §6 Multi-Leg Strategies |
 | Options — Lyra v2, Opyn Gamma, Ribbon, Dopex, Premia | options-protocols.md | §7 Protocol-Specific Patterns |
 | Options — comprehensive audit checklist (42 items) | options-protocols.md | §8 Comprehensive Checklist |
-| Options — high-level checklist | defi-checklist.md | Options → Settlement Oracle |
 | Options — settlement oracle manipulation at expiry | defi-checklist.md | Options → Settlement Oracle |
 | Options — IV manipulation in AMM-based pricing | defi-checklist.md | Options → IV and Pricing |
 | Options — undercollateralized option writing | defi-checklist.md | Options → Collateral and Writing |
