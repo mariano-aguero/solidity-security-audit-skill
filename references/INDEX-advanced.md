@@ -83,6 +83,14 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | EOF — L2 / multi-chain rollout (evmVersion, PUSH0 pattern) | fusaka-eof.md | §5 |
 | EOF — audit workflow + reporting template | fusaka-eof.md | §6 |
 | EOF — 30-item migration audit checklist | fusaka-eof.md | §8 |
+| Move language overview & EVM concept map (supplement) | move-security.md | §1 |
+| Move resource model — ability mismatches, hot potato, capabilities | move-security.md | §2 |
+| Sui object model — ownership, versioning, dynamic fields, PTB | move-security.md | §3 |
+| Aptos — resource accounts, Fungible Asset, randomness API | move-security.md | §4 |
+| Move bytecode verifier — guarantees vs gaps | move-security.md | §5 |
+| Common Move audit findings (capability leak, overflow, friend abuse) | move-security.md | §6 |
+| Cross-VM bridge security (EVM ↔ Move) | move-security.md | §7 |
+| Move audit checklist (30 items) | move-security.md | §8 |
 | Audit report format (private) | report-template.md | Report Structure |
 | Contest submission format (Code4rena, Sherlock) | report-template.md | Contest Submission Format |
 | Real exploit case studies | exploit-case-studies.md | (full file) |
@@ -154,3 +162,8 @@ Sub-index for L2/cross-chain, account abstraction, staking, ZK, and the fast-pat
 | `upgradeTo()` without proxiableUUID check / UUPS proxy | taxonomy §25.3 (brick attack) |
 | Raw `sstore` with hardcoded large slot value in implementation | taxonomy §25.2 (ERC-1967 collision) |
 | Storage variables reordered between V1 and V2 upgrade | taxonomy §25.5 (layout migration) |
+| Move struct with `copy` ability on a token type | move-security.md §2.2 (ability mismatch — infinite duplication) |
+| Move capability stored in a shared object | move-security.md §6.1 (capability leakage) |
+| Custom Move math library with bit-shift operations | move-security.md §6.2 + exploit-case-studies #12 (Cetus overflow) |
+| Sui PTB composing borrow + withdraw in single tx | move-security.md §3.4 (PTB composition bypass) |
+| EVM ↔ Sui/Aptos bridge with decimal mismatch | move-security.md §7.2 (token wrapping) |
